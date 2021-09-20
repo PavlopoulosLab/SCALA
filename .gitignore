@@ -1,0 +1,7 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+ligand_target_matrix.rds
+testMatrix.txt
+weighted_networks.rds
