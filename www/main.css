@@ -1,0 +1,31 @@
+body
+{
+  background-color: black !important;
+}
+
+.col-sm-4, .col-sm-6
+{
+  /*margin-top: 50px;*/
+}
+
+#mainDiv
+{
+  width: 90%;
+  height: 70vh;
+  background-color: lightblue;
+}
+
+.menu_item_div
+{
+ display: inline-block !important; 
+ vertical-align: middle !important;
+}
+
+#clusterBarplot
+{
+  display: inline-block;
+}
+
+td{ /* for tags */
+  word-break: break-all;
+}
