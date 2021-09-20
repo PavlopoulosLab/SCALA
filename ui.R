@@ -1,3 +1,5 @@
+# TODO add loading bar divs and source js file
+
 ui <- dashboardPage(
   
   skin = "black",
