@@ -1,88 +1,108 @@
 server <- function(input, output, session) {
   options(shiny.maxRequestSize=30*1024^2) #increase upload limit
-  source("global.R")
-  
+  source("global.R", local=TRUE)
   
   metaD <- reactiveValues(my_project_name="-", my_seurat="-", my_activePC=1, all_lin="0")
   
   #------------------Upload tab--------------------------------
-   observeEvent(input$uploadConfirm, {
-     
-     #Create the user directory for the input and output of the analysis
-       metaD$my_project_name <- input$projectID
-       minimum_cells <<- input$minCells
-       minimum_features <<- input$minFeatures
-       organism <<- input$radioSpecies
-       objectInputType <<- input$inputType
-     #  userId <- "User1_"
-     #  user_dir <- paste0("D:\\BSRC_Fleming\\aaa_PhD_template\\", userId, metaD$my_project_name)
-     #  dir.create(user_dir)
-     #  file.copy(from = input$matrix$datapath, to = paste0(user_dir, "\\", input$matrix$name), overwrite = TRUE)
-     #  file.copy(from = input$barcodes$datapath, to = paste0(user_dir, "\\", input$barcodes$name), overwrite = TRUE)
-     #  file.copy(from = input$genes$datapath, to = paste0(user_dir, "\\", input$genes$name), overwrite = TRUE)
-     #
-     #   seurat_data <- Read10X(user_dir)
-       if(objectInputType == "Input10x")
-       {
-         seurat_data <- Read10X("User1_Tg4w/")#"hg19/"
-         seurat_object <<- CreateSeuratObject(counts = seurat_data, project = metaD$my_project_name, min.cells = as.numeric(minimum_cells), min.features = as.numeric(minimum_features))
-         
-         init_seurat_object <<- CreateSeuratObject(counts = seurat_data, project = metaD$my_project_name, min.cells = as.numeric(minimum_cells), min.features = as.numeric(minimum_features))
-       }
-       else
-       {
-         testMatrix <- read.table("testMatrix.txt")
-         seurat_object <<- CreateSeuratObject(counts = testMatrix, project = metaD$my_project_name, min.cells = as.numeric(minimum_cells), min.features = as.numeric(minimum_features))
-         
-         init_seurat_object <<- CreateSeuratObject(counts = testMatrix, project = metaD$my_project_name, min.cells = as.numeric(minimum_cells), min.features = as.numeric(minimum_features))
-       }
-       
-       
+  observeEvent(input$uploadConfirm, {
+    session$sendCustomMessage("handler_startLoader", c("input_loader", 10))
+    session$sendCustomMessage("handler_disableButton", "uploadConfirm")
+    # Create the user directory for the input and output of the analysis
+    metaD$my_project_name <- input$projectID
+    minimum_cells <<- input$minCells
+    minimum_features <<- input$minFeatures
+    organism <<- input$radioSpecies
+    objectInputType <<- input$inputType
+    #  userId <- "User1_"
+    #  user_dir <- paste0("D:\\BSRC_Fleming\\aaa_PhD_template\\", userId, metaD$my_project_name)
+    #  dir.create(user_dir)
+    #  file.copy(from = input$matrix$datapath, to = paste0(user_dir, "\\", input$matrix$name), overwrite = TRUE)
+    #  file.copy(from = input$barcodes$datapath, to = paste0(user_dir, "\\", input$barcodes$name), overwrite = TRUE)
+    #  file.copy(from = input$genes$datapath, to = paste0(user_dir, "\\", input$genes$name), overwrite = TRUE)
+    #
+    #   seurat_data <- Read10X(user_dir)
+    if(objectInputType == "Input10x")
+    {
+      seurat_data <- Read10X("User1_Tg4w/")#"hg19/"
+      seurat_object <<- CreateSeuratObject(counts = seurat_data, project = metaD$my_project_name, min.cells = as.numeric(minimum_cells), min.features = as.numeric(minimum_features))
+      
+      init_seurat_object <<- CreateSeuratObject(counts = seurat_data, project = metaD$my_project_name, min.cells = as.numeric(minimum_cells), min.features = as.numeric(minimum_features))
+    }
+    else
+    {
+      testMatrix <- read.table("testMatrix.txt")
+      seurat_object <<- CreateSeuratObject(counts = testMatrix, project = metaD$my_project_name, min.cells = as.numeric(minimum_cells), min.features = as.numeric(minimum_features))
+      
+      init_seurat_object <<- CreateSeuratObject(counts = testMatrix, project = metaD$my_project_name, min.cells = as.numeric(minimum_cells), min.features = as.numeric(minimum_features))
+    }
     
-     if(organism == "mouse")
-     {
-       seurat_object[["percent.mt"]] <<- PercentageFeatureSet(seurat_object, pattern = "^mt-")
-       init_seurat_object[["percent.mt"]] <<- PercentageFeatureSet(init_seurat_object, pattern = "^mt-")
-     }
-     else
-     {
-       seurat_object[["percent.mt"]] <<- PercentageFeatureSet(seurat_object, pattern = "^MT-")
-       init_seurat_object[["percent.mt"]] <<- PercentageFeatureSet(init_seurat_object, pattern = "^MT-")
-     }
-       
-     #seurat_object <<- readRDS("Large_Pooled_example.RDS")#("pbmc.RDS")#("Tg4_degs.RDS") #../ALEX_Project/Fibroblast_Only_Analysis/imcs.combined_res0.5.RDS
-     metaD$my_seurat <- seurat_object
-     output$metadataTable <- renderDataTable(metaD$my_seurat@meta.data, options = list(pageLength = 20))
-     updateSelInpColor()
-     updateInputGeneList()
-     updateGeneSearchFP()
-     #updateInputLRclusters()
-     #updateInpuTrajectoryClusters()
-     print(organism)
-   })
+    
+    session$sendCustomMessage("handler_startLoader", c("input_loader", 25))
+    if(organism == "mouse")
+    {
+      seurat_object[["percent.mt"]] <<- PercentageFeatureSet(seurat_object, pattern = "^mt-")
+      init_seurat_object[["percent.mt"]] <<- PercentageFeatureSet(init_seurat_object, pattern = "^mt-")
+    }
+    else
+    {
+      seurat_object[["percent.mt"]] <<- PercentageFeatureSet(seurat_object, pattern = "^MT-")
+      init_seurat_object[["percent.mt"]] <<- PercentageFeatureSet(init_seurat_object, pattern = "^MT-")
+    }
+    
+    session$sendCustomMessage("handler_startLoader", c("input_loader", 50))
+    #seurat_object <<- readRDS("Large_Pooled_example.RDS")#("pbmc.RDS")#("Tg4_degs.RDS") #../ALEX_Project/Fibroblast_Only_Analysis/imcs.combined_res0.5.RDS
+    metaD$my_seurat <- seurat_object
+    output$metadataTable <- renderDataTable(metaD$my_seurat@meta.data, options = list(pageLength = 20))
+    session$sendCustomMessage("handler_startLoader", c("input_loader", 75))
+    updateSelInpColor()
+    updateInputGeneList()
+    updateGeneSearchFP()
+    # updateInputLRclusters()
+    # updateInpuTrajectoryClusters()
+    # print(organism)
+    
+    session$sendCustomMessage("handler_enableButton", "uploadConfirm")
+    session$sendCustomMessage("handler_startLoader", c("input_loader", 100))
+    session$sendCustomMessage("handler_finishLoader", "input_loader")
+  })
    
   #------------------Quality Control tab--------------------------------
    observeEvent(input$qcConfirm, {
+     session$sendCustomMessage("handler_startLoader", c("qc_loader", 10))
+     session$sendCustomMessage("handler_disableButton", "qcConfirm")
+     
      qc_minFeatures <<- input$minUniqueGenes
      qc_maxFeatures <<- input$maxUniqueGenes
      qc_maxMtPercent <<- input$maxMtReads
      
+     session$sendCustomMessage("handler_startLoader", c("qc_loader", 50))
      seurat_object <<- subset(init_seurat_object, subset = nFeature_RNA > as.numeric(qc_minFeatures) & nFeature_RNA < as.numeric(qc_maxFeatures) & percent.mt < as.double(qc_maxMtPercent)) #filter object
      
+     session$sendCustomMessage("handler_startLoader", c("qc_loader", 75))
      metaD$my_seurat <- seurat_object
      output$metadataTable <- renderDataTable(metaD$my_seurat@meta.data, options = list(pageLength = 20))
+     
+     session$sendCustomMessage("handler_enableButton", "qcConfirm")
+     session$sendCustomMessage("handler_startLoader", c("qc_loader", 100))
+     session$sendCustomMessage("handler_finishLoader", "qc_loader")
    })
    
   #------------------Normalization tab--------------------------------
    observeEvent(input$normalizeConfirm, {
+     session$sendCustomMessage("handler_startLoader", c("normalize_loader", 10))
+     session$sendCustomMessage("handler_disableButton", "normalizeConfirm")
+     
      normalize_normMethod <- input$radioNormalize
      normalize_normScaleFactor <- input$normScaleFactor
      seurat_object <<- NormalizeData(seurat_object, normalization.method = normalize_normMethod, scale.factor = as.numeric(normalize_normScaleFactor))
      
+     session$sendCustomMessage("handler_startLoader", c("normalize_loader", 25))
      normalize_hvgMethod <<- input$radioHVG
      normalize_hvgNGenes <<- input$nHVGs
      seurat_object <<- FindVariableFeatures(seurat_object, selection.method = normalize_hvgMethod, nfeatures = as.numeric(normalize_hvgNGenes))
      
+     session$sendCustomMessage("handler_startLoader", c("normalize_loader", 50))
      normalize_scaleRegressOut <- input$radioScaling
      all.genes <- rownames(seurat_object)
      if(normalize_scaleRegressOut == "Y")
@@ -94,8 +114,13 @@ server <- function(input, output, session) {
        seurat_object <<- ScaleData(seurat_object)
      }
      
+     session$sendCustomMessage("handler_startLoader", c("normalize_loader", 75))
      seurat_object <<- RunPCA(seurat_object, features = VariableFeatures(object = seurat_object))
      metaD$my_seurat <- seurat_object
+     
+     session$sendCustomMessage("handler_enableButton", "normalizeConfirm")
+     session$sendCustomMessage("handler_startLoader", c("normalize_loader", 100))
+     session$sendCustomMessage("handler_finishLoader", "normalize_loader")
    })
   
   #------------------PCA tab------------------------------------------
@@ -1004,7 +1029,7 @@ server <- function(input, output, session) {
     tableMeta <- metaD$my_seurat@meta.data
     f <- sapply(tableMeta, is.factor)
     factors <- colnames(tableMeta[, f])
-    print(factors)
+    # print(factors)
     updateSelectInput(session, "umapColorBy", choices = factors)
     updateSelectInput(session, "qcColorBy", choices = factors)
   }
@@ -1012,8 +1037,8 @@ server <- function(input, output, session) {
   updateGeneSearchFP <- function()
   {
     total_genes <- rownames(metaD$my_seurat@assays$RNA@counts)
-    updateSelectInput(session, 'findMarkersGeneSelect', choices = total_genes)
-    updateSelectInput(session, 'findMarkersGeneSelect2', choices = total_genes)
+    updateSelectizeInput(session, 'findMarkersGeneSelect', choices = total_genes, server = TRUE) # server-side selectize drastically improves performance
+    updateSelectizeInput(session, 'findMarkersGeneSelect2', choices = total_genes, server = TRUE)
   }
   
   updateInputGeneList <- function()
