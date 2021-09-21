@@ -66,6 +66,10 @@ hr{
   font-size: 22px;
 }
 
+.box-body{
+  min-height: 250px;
+}
+
 #clusterBarplot
 {
   display: inline-block;

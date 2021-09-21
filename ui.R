@@ -49,6 +49,9 @@ ui <- dashboardPage(
   #------------------------------------------------------------Body
   dashboardBody(
     tags$head(tags$link(rel = "stylesheet", type = "text/css", href = "main.css")),
+    tags$head(tags$link(rel = "stylesheet", type = "text/css", href="loading-bar.css")), # loading bar CSS
+    tags$head(tags$script(src = "rshiny_handlers.js")), # R to JS
+    tags$head(tags$script(src = "loading-bar.js")), # loading bar JS
     tabItems(
       #home tab
       tabItem(tabName = "home", 
@@ -92,6 +95,7 @@ ui <- dashboardPage(
                 box(
                   width = 8, solidHeader = TRUE, status = "info",
                   title = "Metadata table",
+                  div(class="ldBar", id="input_loader", "data-preset"="circle"),
                   dataTableOutput("metadataTable")
                 )
               ),
@@ -114,6 +118,7 @@ ui <- dashboardPage(
                 box(
                   width = 9, status = "info", solidHeader = TRUE,
                   title = "Quality control plots",
+                  div(class="ldBar", id="qc_loader", "data-preset"="circle"),
                   column(plotlyOutput(outputId = "nFeatureViolin", height = "100%"), width = 4),
                   column(plotlyOutput(outputId = "totalCountsViolin", height = "100%"), width = 4),
                   column(plotlyOutput(outputId = "mitoViolin", height = "100%"), width = 4),
@@ -171,6 +176,7 @@ ui <- dashboardPage(
                 box(
                   width = 8, status = "info", solidHeader = TRUE,
                   title = "Highly variable genes",
+                  div(class="ldBar", id="normalize_loader", "data-preset"="circle"),
                   plotlyOutput(outputId = "hvgScatter", height = "800px"),
                 ),  
               )
@@ -272,7 +278,7 @@ ui <- dashboardPage(
                               tabPanel("Feature plot", fluidRow(
                                 box(width = 3, status = "info", solidHeader = TRUE, title = "Options",
                                     #textInput(inputId = "findMarkersGeneSelect", label = "Search for gene:", value = "Actb"),
-                                    selectInput(inputId = 'findMarkersGeneSelect',
+                                    selectizeInput(inputId = 'findMarkersGeneSelect',
                                                    label = 'Search for gene:',
                                                    choices = NULL,
                                                    selected = NULL,
@@ -285,7 +291,7 @@ ui <- dashboardPage(
                               tabPanel("Violin plot", fluidRow(
                                 box(width = 3, status = "info", solidHeader = TRUE, title = "Options",
                                     #textInput(inputId = "findMarkersGeneSelect", label = "Search for gene:", value = "Actb"),
-                                    selectInput(inputId = 'findMarkersGeneSelect2',
+                                    selectizeInput(inputId = 'findMarkersGeneSelect2',
                                                 label = 'Search for gene:',
                                                 choices = NULL,
                                                 selected = NULL,
