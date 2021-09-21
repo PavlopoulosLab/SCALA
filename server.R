@@ -1,7 +1,6 @@
 server <- function(input, output, session) {
   options(shiny.maxRequestSize=30*1024^2) #increase upload limit
-  source("global.R")
-  
+  source("global.R", local=TRUE)
   
   metaD <- reactiveValues(my_project_name="-", my_seurat="-", my_activePC=1, all_lin="0")
   

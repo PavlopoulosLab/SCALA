@@ -3,6 +3,11 @@ body
   background-color: black !important;
 }
 
+hr{
+  margin-top: 5px;
+  margin-bottom: 5px;
+}
+
 .col-sm-4, .col-sm-6
 {
   /*margin-top: 50px;*/
@@ -15,10 +20,50 @@ body
   background-color: lightblue;
 }
 
+.logo{
+  height: 79px !important;
+}
+
+.sidebar-menu{
+  padding-top: 30px;
+}
+
+.sidebar-toggle{
+  height: 79px !important;
+  padding-top: 30px !important;
+}
+
 .menu_item_div
 {
  display: inline-block !important; 
  vertical-align: middle !important;
+}
+
+.div_container{
+  margin: 10px;
+  padding: 20px;
+  border-radius: 25px;
+  display: inline-block;
+  background-color: white;
+  box-shadow: 5px 5px #bcc0c4;
+}
+
+.container_title{
+  margin-top: 0;
+  margin-bottom: 20px;
+  font-weight: bold;
+  font-size: 24px;
+}
+
+.sub_title{
+  margin-top: 0;
+  margin-bottom: 15px;
+  font-weight: bold;
+  font-size: 22px;
+}
+
+.container_text{
+  font-size: 22px;
 }
 
 #clusterBarplot

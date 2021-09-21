@@ -1,20 +1,28 @@
 # TODO add loading bar divs and source js file
+source("help.R", local=TRUE)
 
 ui <- dashboardPage(
-  
+  title="scAnner",
   skin = "black",
   #------------------------------------------------------------Header
-  dashboardHeader(title="SCANNER"),
+  dashboardHeader(
+    titleWidth = "280px",
+    title = tags$img(src='logo.png')
+  ),
   #
   #------------------------------------------------------------Sidebar
   dashboardSidebar(
+    width = "280px",
+    
     sidebarMenu(
       menuItem(text = "HOME", tabName = "home", icon = icon("home")),
+      tags$hr(),
       menuItem(text = "DATA INPUT", tabName = "upload", icon = icon("upload")),
       menuItem(text = "QUALITY CONTROL", tabName = "qc", icon = icon("check-circle")),
       menuItem(tags$div("DATA NORMALIZATION",
                         tags$br(),
                         "& SCALING", class = "menu_item_div"), tabName = "normalize", icon = icon("balance-scale")),
+      tags$hr(),
       menuItem(tags$div("PRINCIPAL COMPONENT",
                         tags$br(),
                         "ANALYSIS", class = "menu_item_div"), tabName = "pca", icon = icon("chart-line")),
@@ -24,6 +32,7 @@ ui <- dashboardPage(
                         "REDUCTION (tSNE & UMAPS)", class = "menu_item_div"), tabName = "umap", icon = icon("draw-polygon")),
       menuItem(text = "MARKERS' IDENTIFICATION", tabName = "findMarkers", icon = icon("map-marker-alt")),
       menuItem(text = "CELL CYCLE PHASE ANALYSIS", tabName = "cellCycle", icon = icon("circle-notch")),
+      tags$hr(),
       menuItem(tags$div("FUNCTIONAL ENRICHMENT",
                         tags$br(),
                         "ANALYSIS", class = "menu_item_div"), tabName = "gProfiler", icon=icon("chart-bar")),
@@ -31,7 +40,10 @@ ui <- dashboardPage(
       menuItem(text = "TRAJECTORY ANALYSIS", tabName = "trajectory", icon = icon("route")),
       menuItem(tags$div("LIGAND - RECEPTOR",
                         tags$br(),
-                        "ANALYSIS", class = "menu_item_div"), tabName = "ligandReceptor", icon = icon("satellite-dish")) #icon("satellite-dish"))
+                        "ANALYSIS", class = "menu_item_div"), tabName = "ligandReceptor", icon = icon("satellite-dish")), #icon("satellite-dish"))
+      tags$hr(),
+      menuItem(text = "Help", tabName = "help", icon = icon("question")),
+      menuItem(text = "About", tabName = "about", icon = icon("info"))
     )
   ),
   #------------------------------------------------------------Body
@@ -40,8 +52,13 @@ ui <- dashboardPage(
     tabItems(
       #home tab
       tabItem(tabName = "home", 
-              HTML("<H1>Welcome home<H1>"),
-              tags$hr(style="border-color: black;")
+              div(id = "home_div", class = "div_container",
+                  h1(class = "container_title", "Welcome to scAnner"),
+                  HTML("<p class=container_text> This is a web tool that handles the analysis of scRNAseq data, 
+                  from data input, pre-processing and normalization, to PCA, UMAP, enrichment, clustering and visualization.
+                  </br> Try out our sample data and visit the Help pages for guidance. </p>"
+                  ),
+              )
       ),
       
       #Upload tab
@@ -453,6 +470,76 @@ ui <- dashboardPage(
                    tags$hr(),
                    plotlyOutput(outputId="ligandReceptorCuratedHeatmap", height = "1100px")
                  )
+               )
+      ),
+      
+      tabItem(tabName = "help",
+              fluidRow(
+                column(12, 
+                       tabsetPanel(
+                         tabPanel("Examples",
+                                  div(class = "div_container",
+                                      examples_help
+                                  )
+                         ),
+                         tabPanel("Data Input"
+                                  
+                         ),
+                         tabPanel("Quality Control"
+                                  
+                         ),
+                         tabPanel("Normalization"
+                                  
+                         ),
+                         tabPanel("PCA"
+                                  
+                         ),
+                         tabPanel("Clustering"
+                                  
+                         ),
+                         tabPanel("UMAP"
+                                  
+                         ),
+                         tabPanel("Markers"
+                                  
+                         ),
+                         tabPanel("Cell Cycle"
+                                  
+                         ),
+                         tabPanel("Enrichment"
+                                  
+                         ),
+                         tabPanel("Cluster Annotation"
+                                  
+                         ),
+                         tabPanel("Trajectory Analysis"
+                                  
+                         ),
+                         tabPanel("Ligand-Receptor Analysis"
+                                  
+                         )
+                       )
+                )
+              ) #fluidRow end
+      ),
+      
+      tabItem (tabName = "about",
+               div(id = "about_div", class = "div_container",
+                   h1(class = "container_title", "About scAnner"),
+                   HTML("<p class=container_text> scAnner is actively developed and maintained by the 
+                              Bioinformatics and Integrative Biology Lab. </br></br> </p> 
+                              <h2 class=sub_title> Developers </h2>
+                              <ul>
+                              <li> Christos Tzaferis, tzaferis[at]gmail[dot]com
+                              <li> Evangelos Karatzas, karatzas[at]fleming[dot]gr
+                              <li> George Kollias, kollias[at]fleming[dot]gr
+                              <li> Georgios A. Pavlopoulos, pavlopoulos[at]fleming[dot]gr 
+                              </ul>
+                              <footer>
+                              &copy; 2021 <a href=\"https://sites.google.com/site/pavlopoulossite\" target=\"_blank\">Bioinformatics and Integrative Biology Lab</a> | 
+                              <a href=\"https://www.fleming.gr\" target=\"_blank\">Biomedical Sciences Research Center \"Alexander Fleming\"</a>
+                              </footer>"
+                   )
                )
       )
       
