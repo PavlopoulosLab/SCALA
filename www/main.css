@@ -8,16 +8,13 @@ hr{
   margin-bottom: 5px;
 }
 
+td{ /* for tags */
+  word-break: break-all;
+}
+
 .col-sm-4, .col-sm-6
 {
   /*margin-top: 50px;*/
-}
-
-#mainDiv
-{
-  width: 90%;
-  height: 70vh;
-  background-color: lightblue;
 }
 
 .logo{
@@ -66,15 +63,31 @@ hr{
   font-size: 22px;
 }
 
+.box{
+  padding: 15px;
+  background-color: white !important;
+  background: white;
+  border: 1px solid white !important;
+  border-radius: 25px;
+  box-shadow: 5px 5px #bcc0c4;
+}
+
+.box-header{
+  background-color: #222d32 !important;
+}
+
 .box-body{
   min-height: 250px;
+}
+
+#mainDiv
+{
+  width: 90%;
+  height: 70vh;
+  background-color: lightblue;
 }
 
 #clusterBarplot
 {
   display: inline-block;
-}
-
-td{ /* for tags */
-  word-break: break-all;
 }
