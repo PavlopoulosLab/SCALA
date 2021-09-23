@@ -58,7 +58,7 @@ ui <- dashboardPage(
               div(id = "home_div", class = "div_container",
                   h1(class = "container_title", "Welcome to scAnner"),
                   HTML("<p class=container_text> This is a web tool that handles the analysis of scRNAseq data, 
-                  from data input, pre-processing and normalization, to PCA, UMAP, enrichment, clustering and visualization.
+                  from quality control and normalization, to dimensionality reduction, differential expression analysis, clustering and visualization.
                   </br> Try out our sample data and visit the Help pages for guidance. </p>"
                   ),
               )

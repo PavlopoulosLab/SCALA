@@ -190,9 +190,10 @@ server <- function(input, output, session) {
       g2m.genes <- cc.genes$g2m.genes
     }
     
-    metaD$my_seurat <- CellCycleScoring(metaD$my_seurat, s.features = s.genes, g2m.features = g2m.genes, set.ident = F)
-    metaD$my_seurat@meta.data$CC.Difference <- metaD$my_seurat$S.Score - metaD$my_seurat$G2M.Score
-    metaD$my_seurat@meta.data$Phase <- factor(metaD$my_seurat@meta.data$Phase, levels = c("G1", "S", "G2M"))
+    seurat_object <<- CellCycleScoring(seurat_object, s.features = s.genes, g2m.features = g2m.genes, set.ident = F)
+    seurat_object@meta.data$CC.Difference <<- seurat_object$S.Score - seurat_object$G2M.Score
+    seurat_object@meta.data$Phase <<- factor(seurat_object@meta.data$Phase, levels = c("G1", "S", "G2M"))
+    metaD$my_seurat <- seurat_object
     
     print("Cell_cycle_executed")
   })
@@ -316,7 +317,7 @@ server <- function(input, output, session) {
          plot_top = F)
     
     CIPR_top_results$index <- as.character(CIPR_top_results$index)
-    CIPR_top_results$index <- factor(CIPR_top_results$index, levels = as.character(seq(1:45)))
+    CIPR_top_results$index <- factor(CIPR_top_results$index, levels = as.character(seq(1:length(metaD$my_seurat$seurat_clusters))))#1:45
     cols = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(CIPR_top_results$cluster)))
     
     p <- ggplot(CIPR_top_results, aes(x=index, y=identity_score, fill = cluster, size=7)) +
