@@ -5,6 +5,15 @@ function shinyAlert(message){
   alert(message);
   return true;
 }
+
+// This function sends a string to the browser console log
+// @param messsage: Message to be printed
+// @return true
+function shinyLog(message){
+  console.log(message);
+  return true;
+}
+
 // This function disappears the requested button so the user does not
 // click it multiple times before current function execution is finished
 // @param btn: button element id
@@ -48,6 +57,7 @@ function finishLoader(m){
 }
 
 Shiny.addCustomMessageHandler("handler_alert", shinyAlert);
+Shiny.addCustomMessageHandler("handler_log", shinyLog);
 Shiny.addCustomMessageHandler("handler_disableButton", disableButton);
 Shiny.addCustomMessageHandler("handler_enableButton", enableButton);
 Shiny.addCustomMessageHandler("handler_startLoader", startLoader);
