@@ -101,48 +101,47 @@ server <- function(input, output, session) {
        session$sendCustomMessage("handler_enableButton", "qcConfirm")
      })
    })
-   
+  
   #------------------Normalization tab--------------------------------
-   observeEvent(input$normalizeConfirm, {
-     session$sendCustomMessage("handler_startLoader", c("normalize_loader", 10))
-     session$sendCustomMessage("handler_disableButton", "normalizeConfirm")
-     tryCatch({
-       normalize_normMethod <- input$radioNormalize
-       normalize_normScaleFactor <- input$normScaleFactor
-       seurat_object <<- NormalizeData(seurat_object, normalization.method = normalize_normMethod, scale.factor = as.numeric(normalize_normScaleFactor))
-       
-       session$sendCustomMessage("handler_startLoader", c("normalize_loader", 25))
-       normalize_hvgMethod <<- input$radioHVG
-       normalize_hvgNGenes <<- input$nHVGs
-       seurat_object <<- FindVariableFeatures(seurat_object, selection.method = normalize_hvgMethod, nfeatures = as.numeric(normalize_hvgNGenes))
-       
-       session$sendCustomMessage("handler_startLoader", c("normalize_loader", 50))
-       normalize_scaleRegressOut <- input$radioScaling
-       all.genes <- rownames(seurat_object)
-       if(normalize_scaleRegressOut == "Y")
-       {
-         seurat_object <<- ScaleData(seurat_object, vars.to.regress = "percent.mt")
-       }
-       else
-       {
-         seurat_object <<- ScaleData(seurat_object)
-       }
-       
-       session$sendCustomMessage("handler_startLoader", c("normalize_loader", 75))
-       seurat_object <<- RunPCA(seurat_object, features = VariableFeatures(object = seurat_object))
-       metaD$my_seurat <- seurat_object
-     }, warning = function(w) {
-       print(paste("Warning:  ", w))
-     }, error = function(e) {
-       print(paste("Error :  ", e))
-       session$sendCustomMessage("handler_alert", "The selected Normalization arguments cannot produce meaningful visualizations.")
-     }, finally = {
-       session$sendCustomMessage("handler_startLoader", c("normalize_loader", 100))
-       Sys.sleep(2)
-       session$sendCustomMessage("handler_finishLoader", "normalize_loader")
-       session$sendCustomMessage("handler_enableButton", "normalizeConfirm")
-     })
-   })
+  observeEvent(input$normalizeConfirm, {
+    session$sendCustomMessage("handler_log", " ### Starting normalization procedure ###")
+    session$sendCustomMessage("handler_startLoader", c("normalize_loader", 10))
+    session$sendCustomMessage("handler_disableButton", "normalizeConfirm")
+    tryCatch({
+      normalize_normMethod <- input$radioNormalize
+      normalize_normScaleFactor <- input$normScaleFactor
+      seurat_object <<- NormalizeData(seurat_object, normalization.method = normalize_normMethod, scale.factor = as.numeric(normalize_normScaleFactor))
+      session$sendCustomMessage("handler_log", "Finished performing log-normalization.")
+      session$sendCustomMessage("handler_startLoader", c("normalize_loader", 25))
+      
+      normalize_hvgMethod <<- input$radioHVG
+      normalize_hvgNGenes <<- input$nHVGs
+      seurat_object <<- FindVariableFeatures(seurat_object, selection.method = normalize_hvgMethod, nfeatures = as.numeric(normalize_hvgNGenes))
+      session$sendCustomMessage("handler_log", "Finished calculating gene and feature variances of standardized and clipped values.")
+      session$sendCustomMessage("handler_startLoader", c("normalize_loader", 50))
+      
+      normalize_scaleRegressOut <- input$radioScaling
+      # all.genes <- rownames(seurat_object) # TODO use below
+      if(normalize_scaleRegressOut == "Y") seurat_object <<- ScaleData(seurat_object, vars.to.regress = "percent.mt")
+      else seurat_object <<- ScaleData(seurat_object)
+      session$sendCustomMessage("handler_log", "Finished centering and scaling data matrix.")
+      session$sendCustomMessage("handler_startLoader", c("normalize_loader", 75))
+      
+      seurat_object <<- RunPCA(seurat_object, features = VariableFeatures(object = seurat_object)) # TODO move RunPCA to its own tab
+      metaD$my_seurat <- seurat_object # TODO possibly remove metaD$my_seurat across script
+    }, warning = function(w) {
+      print(paste("Warning:  ", w))
+    }, error = function(e) {
+      print(paste("Error :  ", e))
+      session$sendCustomMessage("handler_alert", "The selected Normalization arguments cannot produce meaningful visualizations.")
+    }, finally = {
+      session$sendCustomMessage("handler_startLoader", c("normalize_loader", 100))
+      Sys.sleep(2)
+      session$sendCustomMessage("handler_finishLoader", "normalize_loader")
+      session$sendCustomMessage("handler_enableButton", "normalizeConfirm")
+      session$sendCustomMessage("handler_log", " ### Finished normalization procedure ###")
+    })
+  })
   
   #------------------PCA tab------------------------------------------
   observeEvent(input$PCconfirm, {

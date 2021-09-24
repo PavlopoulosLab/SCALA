@@ -177,7 +177,7 @@ ui <- dashboardPage(
                   width = 8, status = "info", solidHeader = TRUE,
                   title = "Highly variable genes",
                   div(class="ldBar", id="normalize_loader", "data-preset"="circle"),
-                  plotlyOutput(outputId = "hvgScatter", height = "800px"),
+                  plotlyOutput(outputId = "hvgScatter", height = "800px")
                 ),  
               )
       ),
