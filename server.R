@@ -75,6 +75,89 @@ server <- function(input, output, session) {
   })
    
   #------------------Quality Control tab--------------------------------
+  observeEvent(input$qcDisplay, {
+    session$sendCustomMessage("handler_startLoader", c("qc_loader", 10))
+    session$sendCustomMessage("handler_disableButton", "qcDisplay")
+    output$nFeatureViolin <- renderPlotly(
+      {
+        p <- VlnPlot(seurat_object, features = c("nFeature_RNA"), pt.size = 0.5, group.by = input$qcColorBy,
+                     cols = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(seurat_object@meta.data[, input$qcColorBy])))) + 
+          theme_bw() + 
+          theme(
+            plot.title = element_blank(),
+            axis.title.x = element_blank(),
+            #axis.title.y = element_blank(),
+            legend.position = "none") +
+          labs(title = "", y="Genes detected/cell")
+        plotly::ggplotly(p, tooltip = c("x", "y")) 
+      }
+    )
+    output$totalCountsViolin <- renderPlotly(
+      {
+        p <- VlnPlot(seurat_object, features = c("nCount_RNA"), pt.size = 0.5, group.by = input$qcColorBy,
+                     cols = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(seurat_object@meta.data[, input$qcColorBy])))) + 
+          theme_bw() + 
+          theme(
+            plot.title = element_blank(),
+            axis.title.x = element_blank(),
+            #axis.title.y = element_blank(),
+            legend.position = "none")+
+          labs(title = "", y="Total counts/cell")
+        plotly::ggplotly(p, tooltip = c("x", "y")) 
+      }
+    )
+    output$mitoViolin <- renderPlotly(
+      {
+        p <- VlnPlot(seurat_object, features = c("percent.mt"), pt.size = 0.5, group.by = input$qcColorBy,
+                     cols = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(seurat_object@meta.data[, input$qcColorBy])))) + 
+          theme_bw() + 
+          theme(
+            plot.title = element_blank(),
+            axis.title.x = element_blank(),
+            #axis.title.y = element_blank(),
+            legend.position = "none")+
+          labs(title = "", y="% of reads mapped to mitochonrial genome/cell")
+        plotly::ggplotly(p, tooltip = c("x", "y"))
+      }
+    )
+    output$mtCounts <- renderPlotly(
+      {
+        # p <- ggplot(seurat_object@meta.data, aes(x=nCount_RNA, y=percent.mt, color=input$qcColorBy)) + 
+        #    geom_point() +
+        #    theme_bw()+
+        #    labs(x="Total reads/ cell", y="% of reads mapped to mitochondrial genome/ cell") +
+        #    theme(legend.position = "none")
+        p <- FeatureScatter(seurat_object, feature1 = "nCount_RNA", feature2 = "percent.mt", group.by = input$qcColorBy, 
+                            cols = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(seurat_object@meta.data[, input$qcColorBy]))))
+        gp <- plotly::ggplotly(p)
+        print(gp)
+      }
+    )
+    output$genesCounts <- renderPlotly(
+      {
+        # p <- ggplot(seurat_object@meta.data, aes(x=nCount_RNA, y=nFeature_RNA, color=input$qcColorBy)) + 
+        #    geom_point() +
+        #    theme_bw()+
+        #    labs(x="Total reads/ cell", y="Genes detected/ cell") +
+        #    theme(legend.position = "none")
+        p <- FeatureScatter(seurat_object, feature1 = "nCount_RNA", feature2 = "nFeature_RNA", group.by = input$qcColorBy, 
+                            cols = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(seurat_object@meta.data[, input$qcColorBy]))))
+        gp <- plotly::ggplotly(p)
+        print(gp)
+      }
+    )
+    output$cellStats <- renderPrint(
+      {
+        print(paste0("Total number of cells: ", nrow(seurat_object@meta.data)))
+      }
+    )
+    
+    session$sendCustomMessage("handler_startLoader", c("qc_loader", 100))
+    Sys.sleep(2)
+    session$sendCustomMessage("handler_finishLoader", "qc_loader")
+    session$sendCustomMessage("handler_enableButton", "qcDisplay")
+  })
+  
    observeEvent(input$qcConfirm, {
      session$sendCustomMessage("handler_startLoader", c("qc_loader", 10))
      session$sendCustomMessage("handler_disableButton", "qcConfirm")
@@ -87,8 +170,82 @@ server <- function(input, output, session) {
        seurat_object <<- subset(init_seurat_object, subset = nFeature_RNA > as.numeric(qc_minFeatures) & nFeature_RNA < as.numeric(qc_maxFeatures) & percent.mt < as.double(qc_maxMtPercent)) #filter object
        
        session$sendCustomMessage("handler_startLoader", c("qc_loader", 75))
-       metaD$my_seurat <- seurat_object
-       output$metadataTable <- renderDataTable(metaD$my_seurat@meta.data, options = list(pageLength = 20))
+       output$nFeatureViolin <- renderPlotly(
+         {
+           p <- VlnPlot(seurat_object, features = c("nFeature_RNA"), pt.size = 0.5, group.by = input$qcColorBy,
+                        cols = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(seurat_object@meta.data[, input$qcColorBy])))) + 
+             theme_bw() + 
+             theme(
+               plot.title = element_blank(),
+               axis.title.x = element_blank(),
+               #axis.title.y = element_blank(),
+               legend.position = "none") +
+             labs(title = "", y="Genes detected/cell")
+           plotly::ggplotly(p, tooltip = c("x", "y")) 
+         }
+       )
+       output$totalCountsViolin <- renderPlotly(
+         {
+           p <- VlnPlot(seurat_object, features = c("nCount_RNA"), pt.size = 0.5, group.by = input$qcColorBy,
+                        cols = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(seurat_object@meta.data[, input$qcColorBy])))) + 
+             theme_bw() + 
+             theme(
+               plot.title = element_blank(),
+               axis.title.x = element_blank(),
+               #axis.title.y = element_blank(),
+               legend.position = "none")+
+             labs(title = "", y="Total counts/cell")
+           plotly::ggplotly(p, tooltip = c("x", "y")) 
+         }
+       )
+       output$mitoViolin <- renderPlotly(
+         {
+           p <- VlnPlot(seurat_object, features = c("percent.mt"), pt.size = 0.5, group.by = input$qcColorBy,
+                        cols = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(seurat_object@meta.data[, input$qcColorBy])))) + 
+             theme_bw() + 
+             theme(
+               plot.title = element_blank(),
+               axis.title.x = element_blank(),
+               #axis.title.y = element_blank(),
+               legend.position = "none")+
+             labs(title = "", y="% of reads mapped to mitochonrial genome/cell")
+           plotly::ggplotly(p, tooltip = c("x", "y"))
+         }
+       )
+       output$mtCounts <- renderPlotly(
+         {
+           # p <- ggplot(seurat_object@meta.data, aes(x=nCount_RNA, y=percent.mt, color=input$qcColorBy)) + 
+           #    geom_point() +
+           #    theme_bw()+
+           #    labs(x="Total reads/ cell", y="% of reads mapped to mitochondrial genome/ cell") +
+           #    theme(legend.position = "none")
+           p <- FeatureScatter(seurat_object, feature1 = "nCount_RNA", feature2 = "percent.mt", group.by = input$qcColorBy, 
+                               cols = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(seurat_object@meta.data[, input$qcColorBy]))))
+           gp <- plotly::ggplotly(p)
+           print(gp)
+         }
+       )
+       output$genesCounts <- renderPlotly(
+         {
+           # p <- ggplot(seurat_object@meta.data, aes(x=nCount_RNA, y=nFeature_RNA, color=input$qcColorBy)) + 
+           #    geom_point() +
+           #    theme_bw()+
+           #    labs(x="Total reads/ cell", y="Genes detected/ cell") +
+           #    theme(legend.position = "none")
+           p <- FeatureScatter(seurat_object, feature1 = "nCount_RNA", feature2 = "nFeature_RNA", group.by = input$qcColorBy, 
+                               cols = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(seurat_object@meta.data[, input$qcColorBy]))))
+           gp <- plotly::ggplotly(p)
+           print(gp)
+         }
+       )
+       output$cellStats <- renderPrint(
+         {
+           print(paste0("Total number of cells: ", nrow(seurat_object@meta.data)))
+         }
+       )
+       
+       #metaD$my_seurat <- seurat_object
+       #output$metadataTable <- renderDataTable(metaD$my_seurat@meta.data, options = list(pageLength = 20))
      }, warning = function(w) {
        print(paste("Warning:  ", w))
      }, error = function(e) {
@@ -500,94 +657,94 @@ server <- function(input, output, session) {
   })
   
   #------------------------------------------------------------------Output rendering
-   output$nFeatureViolin <- renderPlotly(
-     {
-        p <- VlnPlot(metaD$my_seurat, features = c("nFeature_RNA"), pt.size = 0.5, group.by = input$qcColorBy,
-                     cols = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(metaD$my_seurat@meta.data[, input$qcColorBy])))) + 
-          theme_bw() + 
-          theme(
-           plot.title = element_blank(),
-           axis.title.x = element_blank(),
-           #axis.title.y = element_blank(),
-           legend.position = "none") +
-           labs(title = "", y="Genes detected/cell")
-        plotly::ggplotly(p, tooltip = c("x", "y")) 
-     }
-   )
-   output$totalCountsViolin <- renderPlotly(
-     {
-        p <- VlnPlot(metaD$my_seurat, features = c("nCount_RNA"), pt.size = 0.5, group.by = input$qcColorBy,
-                     cols = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(metaD$my_seurat@meta.data[, input$qcColorBy])))) + 
-          theme_bw() + 
-          theme(
-           plot.title = element_blank(),
-           axis.title.x = element_blank(),
-           #axis.title.y = element_blank(),
-           legend.position = "none")+
-           labs(title = "", y="Total counts/cell")
-        plotly::ggplotly(p, tooltip = c("x", "y")) 
-     }
-   )
-   output$mitoViolin <- renderPlotly(
-     {
-       p <- VlnPlot(metaD$my_seurat, features = c("percent.mt"), pt.size = 0.5, group.by = input$qcColorBy,
-                    cols = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(metaD$my_seurat@meta.data[, input$qcColorBy])))) + 
-         theme_bw() + 
-         theme(
-           plot.title = element_blank(),
-           axis.title.x = element_blank(),
-           #axis.title.y = element_blank(),
-           legend.position = "none")+
-          labs(title = "", y="% of reads mapped to mitochonrial genome/cell")
-       plotly::ggplotly(p, tooltip = c("x", "y"))
-     }
-   )
-   output$mtCounts <- renderPlotly(
-      {
-         # p <- ggplot(metaD$my_seurat@meta.data, aes(x=nCount_RNA, y=percent.mt, color=input$qcColorBy)) + 
-         #    geom_point() +
-         #    theme_bw()+
-         #    labs(x="Total reads/ cell", y="% of reads mapped to mitochondrial genome/ cell") +
-         #    theme(legend.position = "none")
-         p <- FeatureScatter(metaD$my_seurat, feature1 = "nCount_RNA", feature2 = "percent.mt", group.by = input$qcColorBy, 
-                             cols = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(metaD$my_seurat@meta.data[, input$qcColorBy]))))
-         gp <- plotly::ggplotly(p)
-         print(gp)
-      }
-   )
-   output$genesCounts <- renderPlotly(
-      {
-         # p <- ggplot(metaD$my_seurat@meta.data, aes(x=nCount_RNA, y=nFeature_RNA, color=input$qcColorBy)) + 
-         #    geom_point() +
-         #    theme_bw()+
-         #    labs(x="Total reads/ cell", y="Genes detected/ cell") +
-         #    theme(legend.position = "none")
-        p <- FeatureScatter(metaD$my_seurat, feature1 = "nCount_RNA", feature2 = "nFeature_RNA", group.by = input$qcColorBy, 
-                            cols = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(metaD$my_seurat@meta.data[, input$qcColorBy]))))
-         gp <- plotly::ggplotly(p)
-         print(gp)
-      }
-   )
-  output$nFeatureStats <- renderPrint(
-    {
-       summary(metaD$my_seurat@meta.data$nFeature_RNA)
-    }
-    
-  )
-  output$totalCountsStats <- renderPrint(
-     {
-        summary(metaD$my_seurat@meta.data$nCount_RNA)
-     }
-     
-  )
-  output$mitoStats <- renderPrint(
-     {
-        if(!identical(seurat_object, NULL))
-        {
-          summary(metaD$my_seurat@meta.data$percent.mt)
-        }
-     }
-  )
+  #  output$nFeatureViolin <- renderPlotly(
+  #    {
+  #       p <- VlnPlot(metaD$my_seurat, features = c("nFeature_RNA"), pt.size = 0.5, group.by = input$qcColorBy,
+  #                    cols = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(metaD$my_seurat@meta.data[, input$qcColorBy])))) + 
+  #         theme_bw() + 
+  #         theme(
+  #          plot.title = element_blank(),
+  #          axis.title.x = element_blank(),
+  #          #axis.title.y = element_blank(),
+  #          legend.position = "none") +
+  #          labs(title = "", y="Genes detected/cell")
+  #       plotly::ggplotly(p, tooltip = c("x", "y")) 
+  #    }
+  #  )
+  #  output$totalCountsViolin <- renderPlotly(
+  #    {
+  #       p <- VlnPlot(metaD$my_seurat, features = c("nCount_RNA"), pt.size = 0.5, group.by = input$qcColorBy,
+  #                    cols = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(metaD$my_seurat@meta.data[, input$qcColorBy])))) + 
+  #         theme_bw() + 
+  #         theme(
+  #          plot.title = element_blank(),
+  #          axis.title.x = element_blank(),
+  #          #axis.title.y = element_blank(),
+  #          legend.position = "none")+
+  #          labs(title = "", y="Total counts/cell")
+  #       plotly::ggplotly(p, tooltip = c("x", "y")) 
+  #    }
+  #  )
+  #  output$mitoViolin <- renderPlotly(
+  #    {
+  #      p <- VlnPlot(metaD$my_seurat, features = c("percent.mt"), pt.size = 0.5, group.by = input$qcColorBy,
+  #                   cols = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(metaD$my_seurat@meta.data[, input$qcColorBy])))) + 
+  #        theme_bw() + 
+  #        theme(
+  #          plot.title = element_blank(),
+  #          axis.title.x = element_blank(),
+  #          #axis.title.y = element_blank(),
+  #          legend.position = "none")+
+  #         labs(title = "", y="% of reads mapped to mitochonrial genome/cell")
+  #      plotly::ggplotly(p, tooltip = c("x", "y"))
+  #    }
+  #  )
+  #  output$mtCounts <- renderPlotly(
+  #     {
+  #        # p <- ggplot(metaD$my_seurat@meta.data, aes(x=nCount_RNA, y=percent.mt, color=input$qcColorBy)) + 
+  #        #    geom_point() +
+  #        #    theme_bw()+
+  #        #    labs(x="Total reads/ cell", y="% of reads mapped to mitochondrial genome/ cell") +
+  #        #    theme(legend.position = "none")
+  #        p <- FeatureScatter(metaD$my_seurat, feature1 = "nCount_RNA", feature2 = "percent.mt", group.by = input$qcColorBy, 
+  #                            cols = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(metaD$my_seurat@meta.data[, input$qcColorBy]))))
+  #        gp <- plotly::ggplotly(p)
+  #        print(gp)
+  #     }
+  #  )
+  #  output$genesCounts <- renderPlotly(
+  #     {
+  #        # p <- ggplot(metaD$my_seurat@meta.data, aes(x=nCount_RNA, y=nFeature_RNA, color=input$qcColorBy)) + 
+  #        #    geom_point() +
+  #        #    theme_bw()+
+  #        #    labs(x="Total reads/ cell", y="Genes detected/ cell") +
+  #        #    theme(legend.position = "none")
+  #       p <- FeatureScatter(metaD$my_seurat, feature1 = "nCount_RNA", feature2 = "nFeature_RNA", group.by = input$qcColorBy, 
+  #                           cols = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(metaD$my_seurat@meta.data[, input$qcColorBy]))))
+  #        gp <- plotly::ggplotly(p)
+  #        print(gp)
+  #     }
+  #  )
+  # output$nFeatureStats <- renderPrint(
+  #   {
+  #      summary(metaD$my_seurat@meta.data$nFeature_RNA)
+  #   }
+  #   
+  # )
+  # output$totalCountsStats <- renderPrint(
+  #    {
+  #       summary(metaD$my_seurat@meta.data$nCount_RNA)
+  #    }
+  #    
+  # )
+  # output$mitoStats <- renderPrint(
+  #    {
+  #       if(!identical(seurat_object, NULL))
+  #       {
+  #         summary(metaD$my_seurat@meta.data$percent.mt)
+  #       }
+  #    }
+  # )
   
   output$hvgScatter <- renderPlotly(
     {

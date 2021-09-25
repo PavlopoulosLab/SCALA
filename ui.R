@@ -107,7 +107,12 @@ ui <- dashboardPage(
               fluidRow(
                 box(
                   width = 3, status = "info", solidHeader = TRUE,
-                  title = "Filter out low quality cells",
+                  title = "Quality control",
+                  tags$h3("1. Display quality control plots"),
+                  actionButton(inputId = "qcDisplay", label = "OK"),
+                  tags$hr(),
+                  tags$h3("2. Filter out low quality cells"),
+                  tags$hr(),
                   textInput(inputId = "minUniqueGenes", label = "Filter out cells that have unique feature counts less than :", value = "500"),
                   textInput(inputId = "maxUniqueGenes", label = "Filter out cells that have unique feature counts over than :", value = "6000"),
                   textInput(inputId = "maxMtReads", label = "Filter out cells with mitochondrial counts % over :", value = "10"),
@@ -122,11 +127,9 @@ ui <- dashboardPage(
                   column(plotlyOutput(outputId = "nFeatureViolin", height = "100%"), width = 4),
                   column(plotlyOutput(outputId = "totalCountsViolin", height = "100%"), width = 4),
                   column(plotlyOutput(outputId = "mitoViolin", height = "100%"), width = 4),
-                  column(verbatimTextOutput(outputId = "nFeatureStats"), width = 4),
-                  column(verbatimTextOutput(outputId = "totalCountsStats"), width = 4),
-                  column(verbatimTextOutput(outputId = "mitoStats"), width = 4),
                   column(plotlyOutput(outputId = "genesCounts", height= "100%"), width = 6),
                   column(plotlyOutput(outputId = "mtCounts", height= "100%"), width = 6),
+                  column(verbatimTextOutput(outputId = "cellStats"), width = 4),
                 ),  
               )
       ),
