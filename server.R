@@ -284,7 +284,7 @@ server <- function(input, output, session) {
       session$sendCustomMessage("handler_log", "Finished centering and scaling data matrix.")
       session$sendCustomMessage("handler_startLoader", c("normalize_loader", 75))
       
-      seurat_object <<- RunPCA(seurat_object, features = VariableFeatures(object = seurat_object)) # TODO move RunPCA to its own tab
+      #seurat_object <<- RunPCA(seurat_object, features = VariableFeatures(object = seurat_object)) # TODO move RunPCA to its own tab
       metaD$my_seurat <- seurat_object # TODO possibly remove metaD$my_seurat across script
     }, warning = function(w) {
       print(paste("Warning:  ", w))
@@ -301,9 +301,75 @@ server <- function(input, output, session) {
   })
   
   #------------------PCA tab------------------------------------------
+  observeEvent(input$PCrunPCA, {
+    seurat_object <<- RunPCA(seurat_object, features = VariableFeatures(object = seurat_object)) # TODO move RunPCA to its own tab
+    
+    output$elbowPlotPCA <- renderPlotly(
+      {
+        plot1 <- ElbowPlot(seurat_object, ndims = 50)
+        plot1_data <- plot1$data
+        colnames(plot1_data)[1] <- "PC"
+        colnames(plot1_data)[2] <- "SD"
+        
+        p <- ggplot(plot1_data, aes(x=PC, y=SD))+
+          geom_point() +
+          theme_bw() +
+          labs(x="PC", y="Standard Deviation")
+        
+        gp <- plotly::ggplotly(p, tooltip = c("x", "y"))
+        print(gp)
+      }
+    )
+    
+    output$PCAscatter <- renderPlotly(
+      {
+        plot1 <- DimPlot(seurat_object, reduction = "pca")
+        plot1_data <- plot1$data
+        
+        p <- ggplot(plot1_data, aes(x=PC_1, y=PC_2, color=ident))+
+          geom_point() +
+          theme_bw() +
+          labs(x="PC1", y="PC2")+
+          theme(legend.position = "none")
+        
+        gp <- plotly::ggplotly(p, tooltip = c("x", "y"))
+        print(gp)
+      }
+    )
+  })
+    
   observeEvent(input$PCconfirm, {
-    metaD$my_activePC <- as.numeric(input$PCin)
-    updateSelInpColor()
+    #metaD$my_activePC <- as.numeric(input$PCin)
+    activePC <- as.numeric(input$PCin)
+    
+    output$PCAloadings <- renderPlotly(
+      {
+        plot1 <- VizDimLoadings(seurat_object, dims = activePC, reduction = "pca", balanced = TRUE)
+        plot1_data <- plot1$data
+        plot1_data$orig.ident <- unique(seurat_object@meta.data$orig.ident)
+        colnames(plot1_data)[1] <- "PC"
+        activePC <- paste0("PC", "_", activePC)
+        
+        p <- ggplot(plot1_data, aes(x=PC, y=feature, color=orig.ident))+
+          geom_point() +
+          theme_bw() +
+          scale_color_manual(values="blue")+
+          theme(legend.position = "none")+
+          labs(x=activePC, y="")
+        
+        gp <- plotly::ggplotly(p, tooltip = c("x", "y"))
+        print(gp)
+      }
+    )
+    
+    output$PCAheatmap <- renderPlotly(
+      {
+        p <- DimHeatmap(seurat_object, dims = activePC, cells = 500, balanced = TRUE, fast = F)
+        p
+        plotly::ggplotly(p) 
+      }
+    )
+    #updateSelInpColor()
   })
   #------------------Clustering tab------------------------------------------
   observeEvent(input$snnConfirm, {
@@ -786,66 +852,66 @@ server <- function(input, output, session) {
     }
   )
   
-  output$elbowPlotPCA <- renderPlotly(
-    {
-      plot1 <- ElbowPlot(metaD$my_seurat, ndims = 50)
-      plot1_data <- plot1$data
-      colnames(plot1_data)[1] <- "PC"
-      colnames(plot1_data)[2] <- "SD"
-      
-      p <- ggplot(plot1_data, aes(x=PC, y=SD))+
-        geom_point() +
-        theme_bw() +
-        labs(x="PC", y="Standard Deviation")
-      
-      gp <- plotly::ggplotly(p, tooltip = c("x", "y"))
-      print(gp)
-    }
-  )
+  # output$elbowPlotPCA <- renderPlotly(
+  #   {
+  #     plot1 <- ElbowPlot(metaD$my_seurat, ndims = 50)
+  #     plot1_data <- plot1$data
+  #     colnames(plot1_data)[1] <- "PC"
+  #     colnames(plot1_data)[2] <- "SD"
+  #     
+  #     p <- ggplot(plot1_data, aes(x=PC, y=SD))+
+  #       geom_point() +
+  #       theme_bw() +
+  #       labs(x="PC", y="Standard Deviation")
+  #     
+  #     gp <- plotly::ggplotly(p, tooltip = c("x", "y"))
+  #     print(gp)
+  #   }
+  # )
+  # 
+  # output$PCAscatter <- renderPlotly(
+  #   {
+  #     plot1 <- DimPlot(metaD$my_seurat, reduction = "pca")
+  #     plot1_data <- plot1$data
+  #     
+  #     p <- ggplot(plot1_data, aes(x=PC_1, y=PC_2, color=ident))+
+  #       geom_point() +
+  #       theme_bw() +
+  #       labs(x="PC1", y="PC2")+
+  #       theme(legend.position = "none")
+  #     
+  #     gp <- plotly::ggplotly(p, tooltip = c("x", "y"))
+  #     print(gp)
+  #   }
+  # )
   
-  output$PCAscatter <- renderPlotly(
-    {
-      plot1 <- DimPlot(metaD$my_seurat, reduction = "pca")
-      plot1_data <- plot1$data
-      
-      p <- ggplot(plot1_data, aes(x=PC_1, y=PC_2, color=ident))+
-        geom_point() +
-        theme_bw() +
-        labs(x="PC1", y="PC2")+
-        theme(legend.position = "none")
-      
-      gp <- plotly::ggplotly(p, tooltip = c("x", "y"))
-      print(gp)
-    }
-  )
-  
-  output$PCAloadings <- renderPlotly(
-    {
-      plot1 <- VizDimLoadings(metaD$my_seurat, dims = metaD$my_activePC, reduction = "pca", balanced = TRUE)
-      plot1_data <- plot1$data
-      plot1_data$orig.ident <- unique(metaD$my_seurat@meta.data$orig.ident)
-      colnames(plot1_data)[1] <- "PC"
-      activePC <- paste0("PC", "_", metaD$my_activePC)
-      
-      p <- ggplot(plot1_data, aes(x=PC, y=feature, color=orig.ident))+
-        geom_point() +
-        theme_bw() +
-        scale_color_manual(values="blue")+
-        theme(legend.position = "none")+
-        labs(x=activePC, y="")
-      
-      gp <- plotly::ggplotly(p, tooltip = c("x", "y"))
-      print(gp)
-    }
-  )
-  
-  output$PCAheatmap <- renderPlotly(
-    {
-      p <- DimHeatmap(metaD$my_seurat, dims = metaD$my_activePC, cells = 500, balanced = TRUE, fast = F)
-      p
-      plotly::ggplotly(p) 
-    }
-  )
+  # output$PCAloadings <- renderPlotly(
+  #   {
+  #     plot1 <- VizDimLoadings(metaD$my_seurat, dims = metaD$my_activePC, reduction = "pca", balanced = TRUE)
+  #     plot1_data <- plot1$data
+  #     plot1_data$orig.ident <- unique(metaD$my_seurat@meta.data$orig.ident)
+  #     colnames(plot1_data)[1] <- "PC"
+  #     activePC <- paste0("PC", "_", metaD$my_activePC)
+  #     
+  #     p <- ggplot(plot1_data, aes(x=PC, y=feature, color=orig.ident))+
+  #       geom_point() +
+  #       theme_bw() +
+  #       scale_color_manual(values="blue")+
+  #       theme(legend.position = "none")+
+  #       labs(x=activePC, y="")
+  #     
+  #     gp <- plotly::ggplotly(p, tooltip = c("x", "y"))
+  #     print(gp)
+  #   }
+  # )
+  # 
+  # output$PCAheatmap <- renderPlotly(
+  #   {
+  #     p <- DimHeatmap(metaD$my_seurat, dims = metaD$my_activePC, cells = 500, balanced = TRUE, fast = F)
+  #     p
+  #     plotly::ggplotly(p) 
+  #   }
+  # )
   
   output$cellCyclePCA <- renderPlotly(
   {

@@ -190,7 +190,8 @@ ui <- dashboardPage(
               fluidRow(
                 box(
                   width = 12, status = "info", solidHeader = TRUE,
-                  title = "PCA results", height = "850px",
+                  title = "PCA results", height = "990px",
+                  column(actionButton(inputId = "PCrunPCA", label = "Run PCA"), width = 12),
                   column(plotlyOutput(outputId = "elbowPlotPCA", height = "790px"), width = 6),
                   column(plotlyOutput(outputId = "PCAscatter", height = "790px"), width = 6),
                 ),
