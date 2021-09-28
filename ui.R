@@ -65,7 +65,7 @@ ui <- dashboardPage(
       ),
       
       #Upload tab
-      tabItem(tabName = "upload", 
+      tabItem(tabName = "upload", #TODO 3 tabs
               # two boxes inside upload tab
               fluidRow(
                 box(
@@ -108,7 +108,7 @@ ui <- dashboardPage(
                 box(
                   width = 3, status = "info", solidHeader = TRUE,
                   title = "Quality control",
-                  tags$h3("1. Display quality control plots"),
+                  tags$h3("1. Display unfiltered quality control plots"),
                   actionButton(inputId = "qcDisplay", label = "OK"),
                   tags$hr(),
                   tags$h3("2. Filter out low quality cells"),
@@ -140,14 +140,8 @@ ui <- dashboardPage(
                 box(
                   width = 4, status = "info", solidHeader = TRUE,
                   title = "Normalize and scale the data",
-                  tags$h3("1. Normalization"),
+                  tags$h3("1. Log-normalization"),
                   tags$hr(),
-                  radioButtons("radioNormalize", label = h3("Select one of the following methods : "),
-                               choices = list("Log normalization method" = "LogNormalize", 
-                                              
-                                              "Relative counts method" = "RC"
-                                              ), 
-                               selected = "LogNormalize"),
                   textInput(inputId = "normScaleFactor", label = "Scale factor :", value = "10000"),
                   
                   tags$h3("2. Identification of highly variable features"),
@@ -168,11 +162,7 @@ ui <- dashboardPage(
                   tags$li("Shifts the expression of each gene, so that the mean expression across cells is 0"),
                   tags$li("Scales the expression of each gene, so that the variance across cells is 1(this step gives equal weight in downstream analyses, so that highly-expressed genes do not dominate)"),
                   tags$br(),
-                  radioButtons("radioScaling", label = h3("'Regress out' heterogeneity associated with mitochondrial contamination?"),
-                               choices = list("Yes" = "Y", 
-                                              "No" = "N"
-                               ), 
-                               selected = "Y"),
+                  selectInput("normalizeRegressColumns", "Select variables to regress out", list(), selected = NULL, multiple = TRUE, selectize = TRUE, width = NULL, size = NULL),
                   
                   actionButton(inputId = "normalizeConfirm", label = "OK"),
                 ),

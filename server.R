@@ -16,7 +16,7 @@ server <- function(input, output, session) {
       organism <<- input$radioSpecies
       objectInputType <<- input$inputType
       #  userId <- "User1_"
-      #  user_dir <- paste0("D:\\BSRC_Fleming\\aaa_PhD_template\\", userId, metaD$my_project_name)
+      #  user_dir <- paste0("D:\\BSRC_Fleming\\aaa_PhD_template\\", userId, metaD$my_project_name) #TODO remove 2 random barcodes, does it crash?
       #  dir.create(user_dir)
       #  file.copy(from = input$matrix$datapath, to = paste0(user_dir, "\\", input$matrix$name), overwrite = TRUE)
       #  file.copy(from = input$barcodes$datapath, to = paste0(user_dir, "\\", input$barcodes$name), overwrite = TRUE)
@@ -148,7 +148,7 @@ server <- function(input, output, session) {
     )
     output$cellStats <- renderPrint(
       {
-        print(paste0("Total number of cells: ", nrow(seurat_object@meta.data)))
+        cat(paste0("Total number of cells: ", nrow(init_seurat_object@meta.data)))
       }
     )
     
@@ -240,10 +240,11 @@ server <- function(input, output, session) {
        )
        output$cellStats <- renderPrint(
          {
-           print(paste0("Total number of cells: ", nrow(seurat_object@meta.data)))
+           cat(paste0("Total number of cells before filtering: ", nrow(init_seurat_object@meta.data)))
+           cat(paste0("\nTotal number of cells after filtering: ", nrow(seurat_object@meta.data)))
          }
        )
-       
+       updateRegressOut()
        #metaD$my_seurat <- seurat_object
        #output$metadataTable <- renderDataTable(metaD$my_seurat@meta.data, options = list(pageLength = 20))
      }, warning = function(w) {
@@ -265,7 +266,7 @@ server <- function(input, output, session) {
     session$sendCustomMessage("handler_startLoader", c("normalize_loader", 10))
     session$sendCustomMessage("handler_disableButton", "normalizeConfirm")
     tryCatch({
-      normalize_normMethod <- input$radioNormalize
+      normalize_normMethod <- normalize_normMethod
       normalize_normScaleFactor <- input$normScaleFactor
       seurat_object <<- NormalizeData(seurat_object, normalization.method = normalize_normMethod, scale.factor = as.numeric(normalize_normScaleFactor))
       session$sendCustomMessage("handler_log", "Finished performing log-normalization.")
@@ -277,10 +278,10 @@ server <- function(input, output, session) {
       session$sendCustomMessage("handler_log", "Finished calculating gene and feature variances of standardized and clipped values.")
       session$sendCustomMessage("handler_startLoader", c("normalize_loader", 50))
       
-      normalize_scaleRegressOut <- input$radioScaling
+      normalize_scaleRegressOut <- input$normalizeRegressColumns
       # all.genes <- rownames(seurat_object) # TODO use below
-      if(normalize_scaleRegressOut == "Y") seurat_object <<- ScaleData(seurat_object, vars.to.regress = "percent.mt")
-      else seurat_object <<- ScaleData(seurat_object)
+      if(is.null(normalize_scaleRegressOut)) seurat_object <<- ScaleData(seurat_object) 
+      else seurat_object <<- ScaleData(seurat_object, vars.to.regress=normalize_scaleRegressOut)
       session$sendCustomMessage("handler_log", "Finished centering and scaling data matrix.")
       session$sendCustomMessage("handler_startLoader", c("normalize_loader", 75))
       
@@ -381,7 +382,7 @@ server <- function(input, output, session) {
     seurat_object <<- FindNeighbors(seurat_object, k.param = as.numeric(snn_k), dims = 1:as.numeric(snn_dims), reduction = "pca")
     seurat_object <<- FindClusters(seurat_object, resolution = as.numeric(cluster_res), dims = 1:as.numeric(cluster_dims))
     seurat_object <<- RunTSNE(seurat_object, dims = 1:as.numeric(cluster_dims), seed.use = 42, dim.embed = 3, reduction = "pca")
-    seurat_object <<- RunUMAP(seurat_object, dims = 1:as.numeric(cluster_dims), seed.use = 42, n.components = 3, reduction = "pca")
+    seurat_object <<- RunUMAP(seurat_object, dims = 1:as.numeric(cluster_dims), seed.use = 42, n.components = 3, reduction = "pca") #TODO add diffusion map, addition of extra dimensions UMAP, select dimensions to plot, alpha and dot size
     
     metaD$my_seurat <- seurat_object
     
@@ -395,7 +396,7 @@ server <- function(input, output, session) {
     updateInputLRclusters()
     updateInpuTrajectoryClusters()
     
-    #******cell cycle analysis
+    #******cell cycle analysis #TODO before and after regression plot
     if(organism == "mouse")
     {
       s.genes_ver2 <- readRDS("S.phase.human.mouse.conversion.rds")
@@ -421,7 +422,7 @@ server <- function(input, output, session) {
   })
   
   #------------------DEA tab-----------------------------------------------
-  observeEvent(input$findMarkersConfirm, {
+  observeEvent(input$findMarkersConfirm, { #TODO selectinput gia clustering column
     seurat_object@misc$markers <<- FindAllMarkers(seurat_object, test.use = input$findMarkersTest, min.pct = as.numeric(input$findMarkersMinPct), logfc.threshold = as.numeric(input$findMarkersLogFC), 
                                                   return.thresh = as.numeric(input$findMarkersPval), base = exp(1))
     metaD$my_seurat <- seurat_object
@@ -1276,6 +1277,12 @@ server <- function(input, output, session) {
     # print(factors)
     updateSelectInput(session, "umapColorBy", choices = factors)
     updateSelectInput(session, "qcColorBy", choices = factors)
+  }
+  
+  updateRegressOut <- function()
+  {
+    variables <- colnames(seurat_object@meta.data)
+    updateSelectInput(session, "normalizeRegressColumns", choices = variables)
   }
   
   updateGeneSearchFP <- function()

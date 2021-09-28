@@ -40,7 +40,7 @@ normalize_normMethod <- "LogNormalize"
 normalize_normScaleFactor <- 10000
 normalize_hvgMethod <- "vst"
 normalize_hvgNGenes <- 2000
-normalize_scaleRegressOut <- "Y"
+normalize_scaleRegressOut <- NULL
 
 #tab Clustering
 snn_dims <- 15
