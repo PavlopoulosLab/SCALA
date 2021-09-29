@@ -53,6 +53,7 @@ markers_test <- "wilcox"
 markers_minPct <- "0.1"
 markers_minLogfc <- "0.25"
 markers_minPval <- "0.01"
+markers_logFCBase <- "avg_logFC"
 
 #gProfiler
 #set_base_url("http://biit.cs.ut.ee/gprofiler_archive3/e102_eg49_p15")

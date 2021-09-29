@@ -257,6 +257,11 @@ ui <- dashboardPage(
                                   "MAST" = "MAST",
                                   "DESeq2" = "DESeq2"
                                   )),
+                    radioButtons("findMarkersLogBase", label = "Base used for average logFC calculation: ",
+                                 choices = list("log(e)" = "avg_logFC", 
+                                                "log(2)" = "avg_log2FC"
+                                 ), 
+                                 selected = "log(e)"),
                     textInput(inputId = "findMarkersMinPct", label = "Only test genes that are detected in a minimum fraction of cells in either of the two populations :", value = "0.1"),
                     textInput(inputId = "findMarkersLogFC", label = "Limit testing to genes which show, on average, at least X-fold difference (log-scale) between the two groups of cells :", value = "0.25"),
                     textInput(inputId = "findMarkersPval", label = "Only return markers that have a p-value < slected threshold, or a power > selected threshold (if the test is ROC) :", value = "0.01"),
@@ -345,7 +350,7 @@ ui <- dashboardPage(
                                                 "Down-regulated" = "Down"),
                                  selected = "Up"
                                  ),
-                    sliderInput("gProfilerSliderLogFC", "Absolude log2(Fold Change) :", min = 0, max = 3, value = 0.35, step = 0.05),
+                    sliderInput("gProfilerSliderLogFC", "Log FC threshold:", min = 0, max = 3, value = 0.35, step = 0.05),
                     tags$h3("2. Options for enrichment analysis"),
                     tags$hr(),
                     selectInput("gProfilerDatasources", "Select datasources", list('Gene Ontology'=list("Gene Ontology-Molecular Function (GO:MF)"="GO:MF", "Gene Ontology-Cellular Component (GO:CC)"= "GO:CC", "Gene Ontology-Biological Process (GO:BP)"="GO:BP"),

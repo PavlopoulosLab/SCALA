@@ -423,8 +423,18 @@ server <- function(input, output, session) {
   
   #------------------DEA tab-----------------------------------------------
   observeEvent(input$findMarkersConfirm, { #TODO selectinput gia clustering column
-    seurat_object@misc$markers <<- FindAllMarkers(seurat_object, test.use = input$findMarkersTest, min.pct = as.numeric(input$findMarkersMinPct), logfc.threshold = as.numeric(input$findMarkersLogFC), 
-                                                  return.thresh = as.numeric(input$findMarkersPval), base = exp(1))
+    markers_logFCBase <<- input$findMarkersLogBase
+    
+    if(markers_logFCBase == "avg_logFC")
+    {
+      seurat_object@misc$markers <<- FindAllMarkers(seurat_object, test.use = input$findMarkersTest, min.pct = as.numeric(input$findMarkersMinPct), logfc.threshold = as.numeric(input$findMarkersLogFC), 
+                                                    return.thresh = as.numeric(input$findMarkersPval), base = exp(1))
+    }
+    else
+    {
+      seurat_object@misc$markers <<- FindAllMarkers(seurat_object, test.use = input$findMarkersTest, min.pct = as.numeric(input$findMarkersMinPct), logfc.threshold = as.numeric(input$findMarkersLogFC), 
+                                                    return.thresh = as.numeric(input$findMarkersPval), base = 2)
+    }
     metaD$my_seurat <- seurat_object
     updateInputGeneList()
   })
@@ -445,13 +455,15 @@ server <- function(input, output, session) {
         if(input$gProfilerLFCRadio == "Up")#UP regulated
         {
           gene_lists[[i]] <- metaD$my_seurat@misc$markers[which(metaD$my_seurat@misc$markers$cluster == all_clusters[i] & 
-                                                                  metaD$my_seurat@misc$markers$avg_logFC >= as.numeric(input$gProfilerSliderLogFC) &
+                                                                  #metaD$my_seurat@misc$markers$avg_logFC >= as.numeric(input$gProfilerSliderLogFC) &
+                                                                  metaD$my_seurat@misc$markers[, markers_logFCBase] >= as.numeric(input$gProfilerSliderLogFC) &
                                                                   metaD$my_seurat@misc$markers[, input$gprofilerRadio] < as.numeric(input$gProfilerSliderSignificance)), 'gene']
         }
         else #down
         {
           gene_lists[[i]] <- metaD$my_seurat@misc$markers[which(metaD$my_seurat@misc$markers$cluster == all_clusters[i] & 
-                                                                  metaD$my_seurat@misc$markers$avg_logFC <= (as.numeric(input$gProfilerSliderLogFC)*(-1)) &
+                                                                  #metaD$my_seurat@misc$markers$avg_logFC <= (as.numeric(input$gProfilerSliderLogFC)*(-1)) &
+                                                                  metaD$my_seurat@misc$markers[, markers_logFCBase] <= (as.numeric(input$gProfilerSliderLogFC)*(-1)) &
                                                                   metaD$my_seurat@misc$markers[, input$gprofilerRadio] < as.numeric(input$gProfilerSliderSignificance)), 'gene']
         }
       }
@@ -490,13 +502,14 @@ server <- function(input, output, session) {
       if(input$gProfilerLFCRadio == "Up")#UP regulated
       {
         gene_lists[[1]] <- metaD$my_seurat@misc$markers[which(metaD$my_seurat@misc$markers$cluster == cluster_temp & 
-                                                                metaD$my_seurat@misc$markers$avg_logFC >= as.numeric(input$gProfilerSliderLogFC) &
+                                                                #metaD$my_seurat@misc$markers$avg_logFC >= as.numeric(input$gProfilerSliderLogFC) & 
+                                                                metaD$my_seurat@misc$markers[, markers_logFCBase] >= as.numeric(input$gProfilerSliderLogFC) &
                                                                 metaD$my_seurat@misc$markers[, input$gprofilerRadio] < as.numeric(input$gProfilerSliderSignificance)), 'gene']
       }
       else #down
       {
         gene_lists[[1]] <- metaD$my_seurat@misc$markers[which(metaD$my_seurat@misc$markers$cluster == cluster_temp & 
-                                                                metaD$my_seurat@misc$markers$avg_logFC <= (as.numeric(input$gProfilerSliderLogFC)*(-1)) &
+                                                                metaD$my_seurat@misc$markers[, markers_logFCBase] <= (as.numeric(input$gProfilerSliderLogFC)*(-1)) &
                                                                 metaD$my_seurat@misc$markers[, input$gprofilerRadio] < as.numeric(input$gProfilerSliderSignificance)), 'gene']
       }
       
@@ -1154,7 +1167,7 @@ server <- function(input, output, session) {
   
   output$findMarkersHeatmap <- renderPlotly(
     {
-      top10 <- metaD$my_seurat@misc$markers %>% group_by(cluster) %>% top_n(n = 10, wt = avg_logFC)
+      top10 <- metaD$my_seurat@misc$markers %>% group_by(cluster) %>% top_n(n = 10, wt = eval(parse(text=markers_logFCBase))) #wt = avg_logFC)
       set.seed(9)
       downsampled <- subset(metaD$my_seurat, cells = sample(Cells(metaD$my_seurat), 1500))
       
@@ -1188,7 +1201,7 @@ server <- function(input, output, session) {
   
   output$findMarkersDotplot <- renderPlotly(
     {
-      top10 <- metaD$my_seurat@misc$markers %>% group_by(cluster) %>% top_n(n = 10, wt = avg_logFC)
+      top10 <- metaD$my_seurat@misc$markers %>% group_by(cluster) %>% top_n(n = 10, wt = eval(parse(text=markers_logFCBase)))#wt = avg_logFC)
       p <- DotPlot(metaD$my_seurat, features = rev(unique(top10$gene)), dot.scale = 6, cols = c("grey", "red")) + RotatedAxis()
       plotly::ggplotly(p)
     }
@@ -1240,14 +1253,14 @@ server <- function(input, output, session) {
       cluster_degs$status <- "Down regulated"
       for(i in 1:length(cluster_degs$gene))
       {
-        if(cluster_degs$avg_logFC[i] > 0)
+        if(cluster_degs[i, markers_logFCBase] > 0) #(cluster_degs$avg_logFC[i] > 0)
         {
           cluster_degs$status[i] <- "Up regulated"
         }
       }
       cluster_degs$log10Pval <- -log10(cluster_degs$p_val)
       
-      p <- ggplot(data=cluster_degs, aes_string(x="avg_logFC", y="log10Pval", fill="status", label="gene", color="status")) +
+      p <- ggplot(data=cluster_degs, aes_string(x=markers_logFCBase, y="log10Pval", fill="status", label="gene", color="status")) + #x="avg_logFC"
         geom_point(size=1, shape=16)+
         scale_fill_manual(values = c("cyan3", "orange"))+
         scale_color_manual(values = c("cyan3", "orange"))+
@@ -1261,7 +1274,7 @@ server <- function(input, output, session) {
               legend.title = element_text(face = "bold", color = "black", size = 9),
               legend.position="right",
               title = element_text(face = "bold", color = "black", size = 25, angle = 0)) +
-        labs(x="average LogFC", y="-log10(Pvalue)", fill="Color", color="")
+        labs(x=paste0("", markers_logFCBase), y="-log10(Pvalue)", fill="Color", color="")
       plotly::ggplotly(p, tooltip = c("x", "y", "label"))
     }
   )
