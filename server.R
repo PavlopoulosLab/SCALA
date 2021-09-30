@@ -58,6 +58,8 @@ server <- function(input, output, session) {
       updateSelInpColor()
       updateInputGeneList()
       updateGeneSearchFP()
+      
+      cleanAllPlots()
       # updateInputLRclusters()
       # updateInpuTrajectoryClusters()
       # print(organism)
@@ -260,33 +262,34 @@ server <- function(input, output, session) {
      })
    })
   
-  #------------------Normalization tab--------------------------------
-  observeEvent(input$normalizeConfirm, {
-    session$sendCustomMessage("handler_log", " ### Starting normalization procedure ###")
-    session$sendCustomMessage("handler_startLoader", c("normalize_loader", 10))
-    session$sendCustomMessage("handler_disableButton", "normalizeConfirm")
-    tryCatch({
-      normalize_normMethod <- normalize_normMethod
-      normalize_normScaleFactor <- input$normScaleFactor
-      seurat_object <<- NormalizeData(seurat_object, normalization.method = normalize_normMethod, scale.factor = as.numeric(normalize_normScaleFactor))
-      session$sendCustomMessage("handler_log", "Finished performing log-normalization.")
-      session$sendCustomMessage("handler_startLoader", c("normalize_loader", 25))
-      
-      normalize_hvgMethod <<- input$radioHVG
-      normalize_hvgNGenes <<- input$nHVGs
-      seurat_object <<- FindVariableFeatures(seurat_object, selection.method = normalize_hvgMethod, nfeatures = as.numeric(normalize_hvgNGenes))
-      session$sendCustomMessage("handler_log", "Finished calculating gene and feature variances of standardized and clipped values.")
-      session$sendCustomMessage("handler_startLoader", c("normalize_loader", 50))
-      
-      normalize_scaleRegressOut <- input$normalizeRegressColumns
-      # all.genes <- rownames(seurat_object) # TODO use below
-      if(is.null(normalize_scaleRegressOut)) seurat_object <<- ScaleData(seurat_object) 
-      else seurat_object <<- ScaleData(seurat_object, vars.to.regress=normalize_scaleRegressOut)
-      session$sendCustomMessage("handler_log", "Finished centering and scaling data matrix.")
-      session$sendCustomMessage("handler_startLoader", c("normalize_loader", 75))
-      
-      metaD$my_seurat <- seurat_object # TODO possibly remove metaD$my_seurat across script
-      output$hvgScatter <- renderPlotly(
+   #------------------Normalization tab--------------------------------
+   observeEvent(input$normalizeConfirm, {
+     session$sendCustomMessage("handler_log", " ### Starting normalization procedure ###")
+     session$sendCustomMessage("handler_startLoader", c("normalize_loader", 10))
+     session$sendCustomMessage("handler_disableButton", "normalizeConfirm")
+     tryCatch({
+       normalize_normMethod <- normalize_normMethod
+       normalize_normScaleFactor <- input$normScaleFactor
+       seurat_object <<- NormalizeData(seurat_object, normalization.method = normalize_normMethod, scale.factor = as.numeric(normalize_normScaleFactor))
+       session$sendCustomMessage("handler_log", "Finished performing log-normalization.")
+       session$sendCustomMessage("handler_startLoader", c("normalize_loader", 25))
+       
+       normalize_hvgMethod <<- input$radioHVG
+       normalize_hvgNGenes <<- input$nHVGs
+       seurat_object <<- FindVariableFeatures(seurat_object, selection.method = normalize_hvgMethod, nfeatures = as.numeric(normalize_hvgNGenes))
+       session$sendCustomMessage("handler_log", "Finished calculating gene and feature variances of standardized and clipped values.")
+       session$sendCustomMessage("handler_startLoader", c("normalize_loader", 50))
+       
+       normalize_scaleRegressOut <- input$normalizeRegressColumns
+       # all.genes <- rownames(seurat_object) # TODO use below
+       if(is.null(normalize_scaleRegressOut)) seurat_object <<- ScaleData(seurat_object) 
+       else seurat_object <<- ScaleData(seurat_object, vars.to.regress=normalize_scaleRegressOut)
+       session$sendCustomMessage("handler_log", "Finished centering and scaling data matrix.")
+       session$sendCustomMessage("handler_startLoader", c("normalize_loader", 75))
+       
+       metaD$my_seurat <- seurat_object # TODO possibly remove metaD$my_seurat across script
+       
+       output$hvgScatter <- renderPlotly(
         {
           if(length(VariableFeatures(seurat_object)) != 0)
           {
@@ -325,20 +328,20 @@ server <- function(input, output, session) {
           }
         }
       )
-      
-    }, warning = function(w) {
-      print(paste("Warning:  ", w))
-    }, error = function(e) {
-      print(paste("Error :  ", e))
-      session$sendCustomMessage("handler_alert", "The selected Normalization arguments cannot produce meaningful visualizations.")
-    }, finally = {
-      session$sendCustomMessage("handler_startLoader", c("normalize_loader", 100))
-      Sys.sleep(2)
-      session$sendCustomMessage("handler_finishLoader", "normalize_loader")
-      session$sendCustomMessage("handler_enableButton", "normalizeConfirm")
-      session$sendCustomMessage("handler_log", " ### Finished normalization procedure ###")
-    })
-  })
+       
+     }, warning = function(w) {
+       print(paste("Warning:  ", w))
+     }, error = function(e) {
+       print(paste("Error :  ", e))
+       session$sendCustomMessage("handler_alert", "The selected Normalization arguments cannot produce meaningful visualizations.")
+     }, finally = {
+       session$sendCustomMessage("handler_startLoader", c("normalize_loader", 100))
+       Sys.sleep(2)
+       session$sendCustomMessage("handler_finishLoader", "normalize_loader")
+       session$sendCustomMessage("handler_enableButton", "normalizeConfirm")
+       session$sendCustomMessage("handler_log", " ### Finished normalization procedure ###")
+     })
+   })
   
   #------------------PCA tab------------------------------------------
   observeEvent(input$PCrunPCA, {
@@ -1180,6 +1183,55 @@ server <- function(input, output, session) {
     all_cluster_names <- (levels(metaD$my_seurat@meta.data[, 'seurat_clusters']))
     updateSelectInput(session, "trajectoryStart", choices = all_cluster_names)
     updateSelectInput(session, "trajectoryEnd", choices = all_cluster_names)
+  }
+  
+  # Helper Functions ####
+  
+  # This function is called after a new input file has been uploaded
+  # and is responsible for clearing all generated plots across all tabs
+  cleanAllPlots <- function(){
+    # renderPlotly
+    output$nFeatureViolin <- NULL
+    output$totalCountsViolin <- NULL
+    output$mitoViolin <- NULL
+    output$mtCounts <- NULL
+    output$genesCounts <- NULL
+    output$elbowPlotPCA <- NULL
+    output$PCAscatter <- NULL
+    output$PCAloadings <- NULL
+    output$PCAheatmap <- NULL
+    output$gProfilerManhatan <- NULL
+    output$annotateClustersCIPRDotplot <- NULL
+    output$ligandReceptorFullHeatmap <- NULL
+    output$ligandReceptorCuratedHeatmap <- NULL
+    output$hvgScatter <- NULL
+    output$cellCyclePCA <- NULL
+    output$cellCycleBarplot <- NULL
+    output$clusterBarplot <- NULL
+    output$umapPlot <- NULL
+    output$findMarkersHeatmap <- NULL
+    output$findMarkersDotplot <- NULL
+    output$findMarkersFeaturePlot <- NULL
+    output$findMarkersViolinPlot <- NULL
+    output$findMarkersVolcanoPlot <- NULL
+    
+    # renderPlot
+    output$trajectoryPlot <- NULL
+    output$trajectoryPseudotimePlot <- NULL
+    
+    # renderDataTable
+    output$clusterTable <- NULL
+    output$gProfilerTable <- NULL
+    output$annotateClustersCIPRTable <- NULL
+    output$findMarkersTable <- NULL
+    
+    # renderPrint
+    output$cellStats <- NULL
+    output$trajectoryText <- NULL
+    
+    # dittoDimPlot
+    plot_D <- NULL
+    plot_P <- NULL
   }
 }
 
