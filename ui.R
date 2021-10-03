@@ -76,7 +76,7 @@ ui <- dashboardPage(
                                               "10x Input files" = "Input10x"
                                ), 
                                selected = "Input10x"),
-                  textInput(inputId = "projectID", label = "Project name : ", value = "Type the name of the project"),
+                  textInput(inputId = "projectID", label = "Project name : ", value = "Project1"),
                   fileInput(inputId = "barcodes", label = "1. Choose barcodes.csv.gz file", accept = ".gz"),
                   fileInput(inputId = "genes", label = "2. Choose features.csv.gz file", accept = ".gz"),
                   fileInput(inputId = "matrix", label = "3. Choose matrix.mtx.gz file", accept = ".gz"),
@@ -214,11 +214,14 @@ ui <- dashboardPage(
                   actionButton(inputId = "snnConfirm", label = "OK"),
                 ),
                 box(
-                  width = 8, status = "info", solidHeader = TRUE, title = "k-NN graph & clusters", height = "1300px",
+                  width = 8, status = "info", solidHeader = TRUE, title = "k-NN graph & clusters", height = "1500px",
                   tabsetPanel(type = "tabs",
-                              tabPanel("Clustering results", dataTableOutput(outputId="clusterTable", height = "500px"), 
-                                       plotlyOutput(outputId = "clusterBarplot", height = "500px")),
-                              tabPanel("Shared Nearest Neighbour Graph", visNetworkOutput(outputId="snnSNN", height = "1100px"))
+                              tabPanel("Clustering results", dataTableOutput(outputId="clusterTable", height = "500px"),
+                                       selectInput("clusterGroupBy", "Grouping variable:",
+                                                   c("orig.ident" = "orig.ident")),
+                                       actionButton(inputId = "clusterBarplotConfirm", label = "Display barchart"),
+                                       plotlyOutput(outputId = "clusterBarplot", height = "700px")),
+                              tabPanel("Shared Nearest Neighbour Graph", visNetworkOutput(outputId="snnSNN", height = "1300px"))
                   ),
                 ),
               )
@@ -229,7 +232,8 @@ ui <- dashboardPage(
               fluidRow(
                 box(width = 3, status = "info", solidHeader = TRUE,
                     title = "Cell visualization options",
-                    textInput(inputId = "umapPCs", label = "Number of principal components to use :", value = "15"),
+                    textInput(inputId = "umapPCs", label = "Number of principal components to use:", value = "15"),
+                    textInput(inputId = "umapOutComponents", label = "Number of principal components to fit output:", value = "3"),
                     actionButton(inputId = "umapRunUmap", label = "Run UMAP"),
                     actionButton(inputId = "umapRunTsne", label = "Run tSNE"),
                     actionButton(inputId = "umapRunDFM", label = "Run Diffusion Map"),
@@ -283,7 +287,9 @@ ui <- dashboardPage(
                               tabPanel("Dotplot", plotlyOutput(outputId = "findMarkersDotplot", height = "1100px")),
                               tabPanel("Feature plot", fluidRow(
                                 box(width = 3, status = "info", solidHeader = TRUE, title = "Options",
-                                    #textInput(inputId = "findMarkersGeneSelect", label = "Search for gene:", value = "Actb"),
+                                    selectInput("findMarkersReductionType", "Plot type:",
+                                                c("UMAP" = "umap",
+                                                  "tSNE" = "tsne")),
                                     selectizeInput(inputId = 'findMarkersGeneSelect',
                                                    label = 'Search for gene:',
                                                    choices = NULL,

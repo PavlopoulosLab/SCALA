@@ -433,34 +433,6 @@ server <- function(input, output, session) {
     
     output$clusterTable <- renderDataTable(cluster_df, options = list(pageLength = 10), rownames = F)
     
-    output$clusterBarplot <- renderPlotly(
-      {
-        #barplot for cell distribution per cluster
-        clusterTable <- as.data.frame(table(Idents(seurat_object)))
-        totalCells <- sum(clusterTable$Freq)
-        
-        clusterTable$Perc <- (clusterTable$Freq*100)/totalCells
-        colnames(clusterTable)[1] <- "Cluster"
-        colnames(clusterTable)[2] <-  "Cells"
-        colnames(clusterTable)[3] <- "Percentage"
-        
-        cols = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(clusterTable$Cluster)))
-        
-        p <- ggplot(clusterTable) + theme_bw() +
-          geom_bar( mapping = aes(x = Cluster, y = Percentage, fill=Cluster), stat = "identity" ) +
-          scale_fill_manual(values = cols ) +
-          theme(axis.text.x = element_text(face = "bold", color = "black", size = 12, angle = 0),
-                axis.text.y = element_text(face = "bold", color = "black", size = 12, angle = 0),
-                axis.title.y = element_text(face = "bold", color = "black", size = 12),
-                axis.title.x = element_text(face = "bold", color = "black", size = 12),
-                panel.background = element_blank(),
-                axis.line = element_line(colour = "black")) +
-          labs(x="", y="Percentage % of cells", fill="Clusters")
-        gp <- plotly::ggplotly(p, tooltip = c("x", "y"))
-        print(gp)
-      }
-    )
-    
     output$snnSNN <- renderVisNetwork(
       {
         if(!is.null(seurat_object@graphs$RNA_snn))
@@ -493,13 +465,60 @@ server <- function(input, output, session) {
     updateInpuTrajectoryClusters()
   })
   
+  observeEvent(input$clusterBarplotConfirm, { 
+    if(input$clusterGroupBy == "seurat_clusters")
+    {
+          #barplot for cell distribution per cluster
+          clusterTable <- as.data.frame(table(Idents(seurat_object)))
+          totalCells <- sum(clusterTable$Freq)
+          
+          #clusterTable$Perc <- (clusterTable$Freq*100)/totalCells
+          clusterTable$Perc <- (clusterTable$Freq)/totalCells
+          colnames(clusterTable)[1] <- "Cluster"
+          colnames(clusterTable)[2] <-  "Cells"
+          colnames(clusterTable)[3] <- "Percentage"
+          
+          cols = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(clusterTable$Cluster)))
+          
+          p <- ggplot(clusterTable) + theme_bw() +
+            geom_bar( mapping = aes(x = Cluster, y = Percentage, fill=Cluster), stat = "identity" ) +
+            scale_fill_manual(values = cols ) +
+            theme(axis.text.x = element_text(face = "bold", color = "black", size = 12, angle = 0),
+                  axis.text.y = element_text(face = "bold", color = "black", size = 12, angle = 0),
+                  axis.title.y = element_text(face = "bold", color = "black", size = 12),
+                  axis.title.x = element_text(face = "bold", color = "black", size = 12),
+                  panel.background = element_blank(),
+                  axis.line = element_line(colour = "black")) +
+            labs(x="", y="Percent of cells", fill="Clusters")
+          gp <- plotly::ggplotly(p, tooltip = c("x", "y"))
+          
+          output$clusterBarplot <- renderPlotly({print(gp)})
+    }
+    else
+    {
+        cols = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(seurat_object$seurat_clusters)))
+        p <- dittoBarPlot(seurat_object, var = "seurat_clusters",group.by = input$clusterGroupBy, scale = "percent") + theme_bw() +
+        scale_fill_manual(values = cols ) +
+        theme(axis.text.x = element_text(face = "bold", color = "black", size = 12, angle = 0),
+              axis.text.y = element_text(face = "bold", color = "black", size = 12, angle = 0),
+              axis.title.y = element_text(face = "bold", color = "black", size = 12),
+              axis.title.x = element_text(face = "bold", color = "black", size = 12),
+              panel.background = element_blank(),
+              axis.line = element_line(colour = "black")) #+
+        #labs(x="", y="Percentage % of cells", fill="Clusters")
+        gp <- plotly::ggplotly(p, tooltip = c("x", "y"))
+        
+        output$clusterBarplot <- renderPlotly({print(gp)})
+    }
+  })
+  
   #------------------Umap/tSNE/DFM tab---------------------------------------
   observeEvent(input$umapRunUmap, {
-    seurat_object <<- RunUMAP(seurat_object, dims = 1:as.numeric(input$umapPCs), seed.use = 42, n.components = 3, reduction = "pca") #TODO add diffusion map, addition of extra dimensions UMAP, select dimensions to plot, alpha and dot size
+    seurat_object <<- RunUMAP(seurat_object, dims = 1:as.numeric(input$umapPCs), seed.use = 42, n.components = as.numeric(input$umapOutComponents), reduction = "pca") #TODO add diffusion map, addition of extra dimensions UMAP, select dimensions to plot, alpha and dot size
   })
   
   observeEvent(input$umapRunTsne, {
-    seurat_object <<- RunTSNE(seurat_object, dims = 1:as.numeric(input$umapPCs), seed.use = 42, dim.embed = 3, reduction = "pca")
+    seurat_object <<- RunTSNE(seurat_object, dims = 1:as.numeric(input$umapPCs), seed.use = 42, dim.embed = 3, reduction = "pca", verbose = T)
   })
   
   observeEvent(input$umapRunDFM, {
@@ -717,6 +736,120 @@ server <- function(input, output, session) {
       }
     )
     
+    #DEA output rendering
+    output$findMarkersHeatmap <- renderPlotly(
+      {
+        top10 <- metaD$my_seurat@misc$markers %>% group_by(cluster) %>% top_n(n = 10, wt = eval(parse(text=markers_logFCBase))) #wt = avg_logFC)
+        set.seed(9)
+        downsampled <- subset(metaD$my_seurat, cells = sample(Cells(metaD$my_seurat), 1500))
+        
+        scaled_tabe <- as.data.frame(downsampled@assays$RNA@scale.data)
+        scaled_tabe$gene <- rownames(scaled_tabe)
+        scaled_tabe_order <- as.data.frame(top10$gene)
+        colnames(scaled_tabe_order)[1] <- "gene"
+        scaled_tabe_final <- left_join(scaled_tabe_order, scaled_tabe)
+        scaled_tabe_final <- na.omit(scaled_tabe_final)
+        
+        tableCl <- downsampled@meta.data[, ]
+        tableCl$Cell_id <- rownames(tableCl)
+        tableCl <- tableCl[, c('Cell_id', 'seurat_clusters')]
+        tableCl <- tableCl[order(tableCl$seurat_clusters), ]
+        
+        clip<-function(x, min=-2, max=2) {
+          x[x<min]<-min; 
+          x[x>max]<-max; 
+          x
+        }
+        
+        final_mat <- scaled_tabe_final[, -1]
+        final_mat <- final_mat[, tableCl$Cell_id]
+        
+        cols <- colorRampPalette(brewer.pal(12, "Paired"))(length(unique(tableCl$seurat_clusters)))
+        names(cols) <- unique(tableCl$seurat_clusters)
+        heatmaply(clip(final_mat), Rowv = F, Colv = F, colors = rev(RdBu(256)), showticklabels = c(F, T), labRow  = scaled_tabe_final$gene, 
+                  col_side_colors = tableCl$seurat_clusters, col_side_palette =  cols)
+      }
+    )
+    
+    output$findMarkersDotplot <- renderPlotly(
+      {
+        top10 <- metaD$my_seurat@misc$markers %>% group_by(cluster) %>% top_n(n = 10, wt = eval(parse(text=markers_logFCBase)))#wt = avg_logFC)
+        p <- DotPlot(metaD$my_seurat, features = rev(unique(top10$gene)), dot.scale = 6, cols = c("grey", "red")) + RotatedAxis()
+        plotly::ggplotly(p)
+      }
+    )
+    
+    output$findMarkersFeaturePlot <- renderPlotly(
+      {
+        geneS <- input$findMarkersGeneSelect
+        plot <- FeaturePlot(seurat_object, features = geneS, pt.size = 1.5, label = T, label.size = 5, cols = c("lightgrey", "red"), order = T, reduction = input$findMarkersReductionType) +
+          theme_bw() +
+          theme(axis.text.x = element_text(face = "bold", color = "black", size = 25, angle = 0),
+                axis.text.y = element_text(face = "bold", color = "black", size = 25, angle = 0),
+                axis.title.y = element_text(face = "bold", color = "black", size = 25),
+                axis.title.x = element_text(face = "bold", color = "black", size = 25),
+                legend.text = element_text(face = "bold", color = "black", size = 9),
+                legend.title = element_text(face = "bold", color = "black", size = 9),
+                legend.position="right",
+                title = element_text(face = "bold", color = "black", size = 25, angle = 0)) +
+          labs(x="UMAP 1", y="UMAP 2", title = geneS, color="Normalized\nexpression")
+        gp <- plotly::ggplotly(plot, tooltip = c("x", "y", geneS))
+        gp
+      }
+    )
+    
+    output$findMarkersViolinPlot <- renderPlotly(
+      {
+        geneS <- input$findMarkersGeneSelect2
+        plot <- VlnPlot(metaD$my_seurat, features = geneS, pt.size = 0, 
+                        cols = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(metaD$my_seurat@meta.data[, 'seurat_clusters'])))) + 
+          theme_bw() +
+          theme(axis.text.x = element_text(face = "bold", color = "black", size = 25, angle = 0),
+                axis.text.y = element_text(face = "bold", color = "black", size = 25, angle = 0),
+                axis.title.y = element_text(face = "bold", color = "black", size = 25),
+                axis.title.x = element_text(face = "bold", color = "black", size = 25),
+                legend.text = element_text(face = "bold", color = "black", size = 9),
+                legend.title = element_text(face = "bold", color = "black", size = 9),
+                #legend.position="right",
+                title = element_text(face = "bold", color = "black", size = 25, angle = 0)) +
+          labs(x="Cluster", y="Expression", title = geneS, fill="Cluster")
+        gp <- plotly::ggplotly(plot, tooltip = c("x", "y", geneS))
+        gp
+      }
+    )
+    
+    output$findMarkersVolcanoPlot <- renderPlotly(
+      {
+        diff_exp_genes <- metaD$my_seurat@misc$markers
+        cluster_degs <- diff_exp_genes[which(diff_exp_genes$cluster == input$findMarkersClusterSelect), ]
+        cluster_degs$status <- "Down regulated"
+        for(i in 1:length(cluster_degs$gene))
+        {
+          if(cluster_degs[i, markers_logFCBase] > 0) #(cluster_degs$avg_logFC[i] > 0)
+          {
+            cluster_degs$status[i] <- "Up regulated"
+          }
+        }
+        cluster_degs$log10Pval <- -log10(cluster_degs$p_val)
+        
+        p <- ggplot(data=cluster_degs, aes_string(x=markers_logFCBase, y="log10Pval", fill="status", label="gene", color="status")) + #x="avg_logFC"
+          geom_point(size=1, shape=16)+
+          scale_fill_manual(values = c("cyan3", "orange"))+
+          scale_color_manual(values = c("cyan3", "orange"))+
+          scale_size()+
+          theme_bw() +
+          theme(axis.text.x = element_text(face = "bold", color = "black", size = 25, angle = 0),
+                axis.text.y = element_text(face = "bold", color = "black", size = 25, angle = 0),
+                axis.title.y = element_text(face = "bold", color = "black", size = 25),
+                axis.title.x = element_text(face = "bold", color = "black", size = 25),
+                legend.text = element_text(face = "bold", color = "black", size = 9),
+                legend.title = element_text(face = "bold", color = "black", size = 9),
+                legend.position="right",
+                title = element_text(face = "bold", color = "black", size = 25, angle = 0)) +
+          labs(x=paste0("", markers_logFCBase), y="-log10(Pvalue)", fill="Color", color="")
+        plotly::ggplotly(p, tooltip = c("x", "y", "label"))
+      }
+    )
   })
   
   #------------------gProfiler tab-----------------------------------------------
@@ -1018,132 +1151,133 @@ server <- function(input, output, session) {
   
   #------------------------------------------------------------------Output rendering
   
-  #DEA output rendering
-  output$findMarkersHeatmap <- renderPlotly(
-    {
-      top10 <- metaD$my_seurat@misc$markers %>% group_by(cluster) %>% top_n(n = 10, wt = eval(parse(text=markers_logFCBase))) #wt = avg_logFC)
-      set.seed(9)
-      downsampled <- subset(metaD$my_seurat, cells = sample(Cells(metaD$my_seurat), 1500))
-      
-      scaled_tabe <- as.data.frame(downsampled@assays$RNA@scale.data)
-      scaled_tabe$gene <- rownames(scaled_tabe)
-      scaled_tabe_order <- as.data.frame(top10$gene)
-      colnames(scaled_tabe_order)[1] <- "gene"
-      scaled_tabe_final <- left_join(scaled_tabe_order, scaled_tabe)
-      scaled_tabe_final <- na.omit(scaled_tabe_final)
-      
-      tableCl <- downsampled@meta.data[, ]
-      tableCl$Cell_id <- rownames(tableCl)
-      tableCl <- tableCl[, c('Cell_id', 'seurat_clusters')]
-      tableCl <- tableCl[order(tableCl$seurat_clusters), ]
-      
-      clip<-function(x, min=-2, max=2) {
-        x[x<min]<-min; 
-        x[x>max]<-max; 
-        x
-      }
-      
-      final_mat <- scaled_tabe_final[, -1]
-      final_mat <- final_mat[, tableCl$Cell_id]
-      
-      cols <- colorRampPalette(brewer.pal(12, "Paired"))(length(unique(tableCl$seurat_clusters)))
-      names(cols) <- unique(tableCl$seurat_clusters)
-      heatmaply(clip(final_mat), Rowv = F, Colv = F, colors = rev(RdBu(256)), showticklabels = c(F, T), labRow  = scaled_tabe_final$gene, 
-                col_side_colors = tableCl$seurat_clusters, col_side_palette =  cols)
-    }
-  )
-  
-  output$findMarkersDotplot <- renderPlotly(
-    {
-      top10 <- metaD$my_seurat@misc$markers %>% group_by(cluster) %>% top_n(n = 10, wt = eval(parse(text=markers_logFCBase)))#wt = avg_logFC)
-      p <- DotPlot(metaD$my_seurat, features = rev(unique(top10$gene)), dot.scale = 6, cols = c("grey", "red")) + RotatedAxis()
-      plotly::ggplotly(p)
-    }
-  )
-  
-  output$findMarkersFeaturePlot <- renderPlotly(
-    {
-      geneS <- input$findMarkersGeneSelect
-      plot <- FeaturePlot(seurat_object, features = geneS, pt.size = 1.5, label = T, label.size = 5, cols = c("lightgrey", "red"), order = T, reduction = "umap") +
-        theme_bw() +
-        theme(axis.text.x = element_text(face = "bold", color = "black", size = 25, angle = 0),
-              axis.text.y = element_text(face = "bold", color = "black", size = 25, angle = 0),
-              axis.title.y = element_text(face = "bold", color = "black", size = 25),
-              axis.title.x = element_text(face = "bold", color = "black", size = 25),
-              legend.text = element_text(face = "bold", color = "black", size = 9),
-              legend.title = element_text(face = "bold", color = "black", size = 9),
-              #legend.position="right",
-              title = element_text(face = "bold", color = "black", size = 25, angle = 0)) +
-        labs(x="UMAP 1", y="UMAP 2", title = geneS, fill="Expression")
-      gp <- plotly::ggplotly(plot, tooltip = c("x", "y", geneS))
-      gp
-    }
-  )
-  
-  output$findMarkersViolinPlot <- renderPlotly(
-    {
-      geneS <- input$findMarkersGeneSelect2
-      plot <- VlnPlot(metaD$my_seurat, features = geneS, pt.size = 0, 
-                      cols = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(metaD$my_seurat@meta.data[, 'seurat_clusters'])))) + 
-        theme_bw() +
-        theme(axis.text.x = element_text(face = "bold", color = "black", size = 25, angle = 0),
-              axis.text.y = element_text(face = "bold", color = "black", size = 25, angle = 0),
-              axis.title.y = element_text(face = "bold", color = "black", size = 25),
-              axis.title.x = element_text(face = "bold", color = "black", size = 25),
-              legend.text = element_text(face = "bold", color = "black", size = 9),
-              legend.title = element_text(face = "bold", color = "black", size = 9),
-              #legend.position="right",
-              title = element_text(face = "bold", color = "black", size = 25, angle = 0)) +
-        labs(x="Cluster", y="Expression", title = geneS, fill="Cluster")
-      gp <- plotly::ggplotly(plot, tooltip = c("x", "y", geneS))
-      gp
-    }
-  )
-  
-  output$findMarkersVolcanoPlot <- renderPlotly(
-    {
-      diff_exp_genes <- metaD$my_seurat@misc$markers
-      cluster_degs <- diff_exp_genes[which(diff_exp_genes$cluster == input$findMarkersClusterSelect), ]
-      cluster_degs$status <- "Down regulated"
-      for(i in 1:length(cluster_degs$gene))
-      {
-        if(cluster_degs[i, markers_logFCBase] > 0) #(cluster_degs$avg_logFC[i] > 0)
-        {
-          cluster_degs$status[i] <- "Up regulated"
-        }
-      }
-      cluster_degs$log10Pval <- -log10(cluster_degs$p_val)
-      
-      p <- ggplot(data=cluster_degs, aes_string(x=markers_logFCBase, y="log10Pval", fill="status", label="gene", color="status")) + #x="avg_logFC"
-        geom_point(size=1, shape=16)+
-        scale_fill_manual(values = c("cyan3", "orange"))+
-        scale_color_manual(values = c("cyan3", "orange"))+
-        scale_size()+
-        theme_bw() +
-        theme(axis.text.x = element_text(face = "bold", color = "black", size = 25, angle = 0),
-              axis.text.y = element_text(face = "bold", color = "black", size = 25, angle = 0),
-              axis.title.y = element_text(face = "bold", color = "black", size = 25),
-              axis.title.x = element_text(face = "bold", color = "black", size = 25),
-              legend.text = element_text(face = "bold", color = "black", size = 9),
-              legend.title = element_text(face = "bold", color = "black", size = 9),
-              legend.position="right",
-              title = element_text(face = "bold", color = "black", size = 25, angle = 0)) +
-        labs(x=paste0("", markers_logFCBase), y="-log10(Pvalue)", fill="Color", color="")
-      plotly::ggplotly(p, tooltip = c("x", "y", "label"))
-    }
-  )
+  # #DEA output rendering
+  # output$findMarkersHeatmap <- renderPlotly(
+  #   {
+  #     top10 <- metaD$my_seurat@misc$markers %>% group_by(cluster) %>% top_n(n = 10, wt = eval(parse(text=markers_logFCBase))) #wt = avg_logFC)
+  #     set.seed(9)
+  #     downsampled <- subset(metaD$my_seurat, cells = sample(Cells(metaD$my_seurat), 1500))
+  #     
+  #     scaled_tabe <- as.data.frame(downsampled@assays$RNA@scale.data)
+  #     scaled_tabe$gene <- rownames(scaled_tabe)
+  #     scaled_tabe_order <- as.data.frame(top10$gene)
+  #     colnames(scaled_tabe_order)[1] <- "gene"
+  #     scaled_tabe_final <- left_join(scaled_tabe_order, scaled_tabe)
+  #     scaled_tabe_final <- na.omit(scaled_tabe_final)
+  #     
+  #     tableCl <- downsampled@meta.data[, ]
+  #     tableCl$Cell_id <- rownames(tableCl)
+  #     tableCl <- tableCl[, c('Cell_id', 'seurat_clusters')]
+  #     tableCl <- tableCl[order(tableCl$seurat_clusters), ]
+  #     
+  #     clip<-function(x, min=-2, max=2) {
+  #       x[x<min]<-min; 
+  #       x[x>max]<-max; 
+  #       x
+  #     }
+  #     
+  #     final_mat <- scaled_tabe_final[, -1]
+  #     final_mat <- final_mat[, tableCl$Cell_id]
+  #     
+  #     cols <- colorRampPalette(brewer.pal(12, "Paired"))(length(unique(tableCl$seurat_clusters)))
+  #     names(cols) <- unique(tableCl$seurat_clusters)
+  #     heatmaply(clip(final_mat), Rowv = F, Colv = F, colors = rev(RdBu(256)), showticklabels = c(F, T), labRow  = scaled_tabe_final$gene, 
+  #               col_side_colors = tableCl$seurat_clusters, col_side_palette =  cols)
+  #   }
+  # )
+  # 
+  # output$findMarkersDotplot <- renderPlotly(
+  #   {
+  #     top10 <- metaD$my_seurat@misc$markers %>% group_by(cluster) %>% top_n(n = 10, wt = eval(parse(text=markers_logFCBase)))#wt = avg_logFC)
+  #     p <- DotPlot(metaD$my_seurat, features = rev(unique(top10$gene)), dot.scale = 6, cols = c("grey", "red")) + RotatedAxis()
+  #     plotly::ggplotly(p)
+  #   }
+  # )
+  # 
+  # output$findMarkersFeaturePlot <- renderPlotly(
+  #   {
+  #     geneS <- input$findMarkersGeneSelect
+  #     plot <- FeaturePlot(seurat_object, features = geneS, pt.size = 1.5, label = T, label.size = 5, cols = c("lightgrey", "red"), order = T, reduction = "umap") +
+  #       theme_bw() +
+  #       theme(axis.text.x = element_text(face = "bold", color = "black", size = 25, angle = 0),
+  #             axis.text.y = element_text(face = "bold", color = "black", size = 25, angle = 0),
+  #             axis.title.y = element_text(face = "bold", color = "black", size = 25),
+  #             axis.title.x = element_text(face = "bold", color = "black", size = 25),
+  #             legend.text = element_text(face = "bold", color = "black", size = 9),
+  #             legend.title = element_text(face = "bold", color = "black", size = 9),
+  #             #legend.position="right",
+  #             title = element_text(face = "bold", color = "black", size = 25, angle = 0)) +
+  #       labs(x="UMAP 1", y="UMAP 2", title = geneS, fill="Expression")
+  #     gp <- plotly::ggplotly(plot, tooltip = c("x", "y", geneS))
+  #     gp
+  #   }
+  # )
+  # 
+  # output$findMarkersViolinPlot <- renderPlotly(
+  #   {
+  #     geneS <- input$findMarkersGeneSelect2
+  #     plot <- VlnPlot(metaD$my_seurat, features = geneS, pt.size = 0, 
+  #                     cols = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(metaD$my_seurat@meta.data[, 'seurat_clusters'])))) + 
+  #       theme_bw() +
+  #       theme(axis.text.x = element_text(face = "bold", color = "black", size = 25, angle = 0),
+  #             axis.text.y = element_text(face = "bold", color = "black", size = 25, angle = 0),
+  #             axis.title.y = element_text(face = "bold", color = "black", size = 25),
+  #             axis.title.x = element_text(face = "bold", color = "black", size = 25),
+  #             legend.text = element_text(face = "bold", color = "black", size = 9),
+  #             legend.title = element_text(face = "bold", color = "black", size = 9),
+  #             #legend.position="right",
+  #             title = element_text(face = "bold", color = "black", size = 25, angle = 0)) +
+  #       labs(x="Cluster", y="Expression", title = geneS, fill="Cluster")
+  #     gp <- plotly::ggplotly(plot, tooltip = c("x", "y", geneS))
+  #     gp
+  #   }
+  # )
+  # 
+  # output$findMarkersVolcanoPlot <- renderPlotly(
+  #   {
+  #     diff_exp_genes <- metaD$my_seurat@misc$markers
+  #     cluster_degs <- diff_exp_genes[which(diff_exp_genes$cluster == input$findMarkersClusterSelect), ]
+  #     cluster_degs$status <- "Down regulated"
+  #     for(i in 1:length(cluster_degs$gene))
+  #     {
+  #       if(cluster_degs[i, markers_logFCBase] > 0) #(cluster_degs$avg_logFC[i] > 0)
+  #       {
+  #         cluster_degs$status[i] <- "Up regulated"
+  #       }
+  #     }
+  #     cluster_degs$log10Pval <- -log10(cluster_degs$p_val)
+  #     
+  #     p <- ggplot(data=cluster_degs, aes_string(x=markers_logFCBase, y="log10Pval", fill="status", label="gene", color="status")) + #x="avg_logFC"
+  #       geom_point(size=1, shape=16)+
+  #       scale_fill_manual(values = c("cyan3", "orange"))+
+  #       scale_color_manual(values = c("cyan3", "orange"))+
+  #       scale_size()+
+  #       theme_bw() +
+  #       theme(axis.text.x = element_text(face = "bold", color = "black", size = 25, angle = 0),
+  #             axis.text.y = element_text(face = "bold", color = "black", size = 25, angle = 0),
+  #             axis.title.y = element_text(face = "bold", color = "black", size = 25),
+  #             axis.title.x = element_text(face = "bold", color = "black", size = 25),
+  #             legend.text = element_text(face = "bold", color = "black", size = 9),
+  #             legend.title = element_text(face = "bold", color = "black", size = 9),
+  #             legend.position="right",
+  #             title = element_text(face = "bold", color = "black", size = 25, angle = 0)) +
+  #       labs(x=paste0("", markers_logFCBase), y="-log10(Pvalue)", fill="Color", color="")
+  #     plotly::ggplotly(p, tooltip = c("x", "y", "label"))
+  #   }
+  # )
   
   
   #function update selectInput
   updateSelInpColor <- function()
   {
-    colnames(metaD$my_seurat@meta.data)
-    tableMeta <- metaD$my_seurat@meta.data
+    colnames(seurat_object@meta.data)
+    tableMeta <- seurat_object@meta.data
     f <- sapply(tableMeta, is.factor)
     factors <- colnames(tableMeta[, f])
     # print(factors)
     updateSelectInput(session, "umapColorBy", choices = factors)
     updateSelectInput(session, "qcColorBy", choices = factors)
+    updateSelectInput(session, "clusterGroupBy", choices = factors)
   }
   
   updateRegressOut <- function()
@@ -1154,14 +1288,14 @@ server <- function(input, output, session) {
   
   updateGeneSearchFP <- function()
   {
-    total_genes <- rownames(metaD$my_seurat@assays$RNA@counts)
+    total_genes <- rownames(seurat_object@assays$RNA@counts)
     updateSelectizeInput(session, 'findMarkersGeneSelect', choices = total_genes, server = TRUE) # server-side selectize drastically improves performance
     updateSelectizeInput(session, 'findMarkersGeneSelect2', choices = total_genes, server = TRUE)
   }
   
   updateInputGeneList <- function()
   {
-    all_cluster_names <- as.character(unique(metaD$my_seurat@misc$markers$cluster))
+    all_cluster_names <- as.character(unique(seurat_object@misc$markers$cluster))
     gene_list_choises <- c(all_cluster_names, "all_clusters")
     updateSelectInput(session, "gProfilerList", choices = gene_list_choises)
   }
@@ -1173,14 +1307,14 @@ server <- function(input, output, session) {
   
   updateInputLRclusters <- function()
   {
-    all_cluster_names <- (levels(metaD$my_seurat@meta.data[, 'seurat_clusters']))
+    all_cluster_names <- (levels(seurat_object@meta.data[, 'seurat_clusters']))
     updateSelectInput(session, "ligandReceptorSender", choices = all_cluster_names)
     updateSelectInput(session, "ligandReceptorReciever", choices = all_cluster_names)
   }
   
   updateInpuTrajectoryClusters <- function()
   {
-    all_cluster_names <- (levels(metaD$my_seurat@meta.data[, 'seurat_clusters']))
+    all_cluster_names <- (levels(seurat_object@meta.data[, 'seurat_clusters']))
     updateSelectInput(session, "trajectoryStart", choices = all_cluster_names)
     updateSelectInput(session, "trajectoryEnd", choices = all_cluster_names)
   }
