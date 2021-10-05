@@ -56,9 +56,20 @@ function finishLoader(m){
   return true;
 }
 
+// This function calculates the height of a given div
+// @param m[0]: inner div id
+// @param m[1]: #plots for Manhatan
+function fixHeight(m){
+  var height_unit = 400,
+      div = document.getElementById(m[0]).parentElement.parentElement.parentElement.parentElement.parentElement;
+  div.style.height = String(height_unit * m[1]).concat("px");
+  return true;
+}
+
 Shiny.addCustomMessageHandler("handler_alert", shinyAlert);
 Shiny.addCustomMessageHandler("handler_log", shinyLog);
 Shiny.addCustomMessageHandler("handler_disableButton", disableButton);
 Shiny.addCustomMessageHandler("handler_enableButton", enableButton);
 Shiny.addCustomMessageHandler("handler_startLoader", startLoader);
 Shiny.addCustomMessageHandler("handler_finishLoader", finishLoader);
+Shiny.addCustomMessageHandler("handler_fixHeight", fixHeight);
