@@ -85,6 +85,7 @@ server <- function(input, output, session) {
         p <- VlnPlot(seurat_object, features = c("nFeature_RNA"), pt.size = 0.5, group.by = input$qcColorBy,
                      cols = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(seurat_object@meta.data[, input$qcColorBy])))) + 
           theme_bw() + 
+          geom_hline(yintercept=c(as.numeric(input$minUniqueGenes), as.numeric(input$maxUniqueGenes)), linetype="dashed", color = "red", size=1) + 
           theme(
             plot.title = element_blank(),
             axis.title.x = element_blank(),
@@ -113,6 +114,7 @@ server <- function(input, output, session) {
         p <- VlnPlot(seurat_object, features = c("percent.mt"), pt.size = 0.5, group.by = input$qcColorBy,
                      cols = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(seurat_object@meta.data[, input$qcColorBy])))) + 
           theme_bw() + 
+          geom_hline(yintercept= as.numeric(input$maxMtReads), linetype="dashed", color = "red", size=1) +
           theme(
             plot.title = element_blank(),
             axis.title.x = element_blank(),
@@ -247,6 +249,7 @@ server <- function(input, output, session) {
          }
        )
        updateRegressOut()
+       updateSelInpColor()
        #metaD$my_seurat <- seurat_object
        #output$metadataTable <- renderDataTable(metaD$my_seurat@meta.data, options = list(pageLength = 20))
      }, warning = function(w) {
@@ -345,7 +348,7 @@ server <- function(input, output, session) {
   
   #------------------PCA tab------------------------------------------
   observeEvent(input$PCrunPCA, {
-    seurat_object <<- RunPCA(seurat_object, features = VariableFeatures(object = seurat_object)) # TODO move RunPCA to its own tab
+    seurat_object <<- RunPCA(seurat_object, features = VariableFeatures(object = seurat_object))
     
     output$elbowPlotPCA <- renderPlotly(
       {
@@ -364,19 +367,38 @@ server <- function(input, output, session) {
       }
     )
     
-    output$PCAscatter <- renderPlotly(
+    output$PCAscatter <- renderPlotly( #TODO fix error
       {
-        plot1 <- DimPlot(seurat_object, reduction = "pca")
-        plot1_data <- plot1$data
+        #prepare metadata
+        meta <- seurat_object@meta.data
+        meta$Cell_id <- rownames(meta)
+        meta <- meta[, ]#meta[, c('Cell_id', 'seurat_clusters', 'orig.ident')]
+        reduc_data <- data.frame()
         
-        p <- ggplot(plot1_data, aes(x=PC_1, y=PC_2, color=ident))+
-          geom_point() +
+        #prepare colors
+        cols = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(meta[, input$pcaColorBy])))
+        
+        #umap data frame
+        seurat_object_reduc <- as.data.frame(seurat_object@reductions$pca@cell.embeddings)
+        seurat_object_reduc <- seurat_object_reduc[, c(1:ncol(seurat_object_reduc))]
+        seurat_object_reduc$Cell_id <- rownames(seurat_object_reduc)
+        reduc_data <- left_join(seurat_object_reduc, meta)
+        
+        p <- ggplot(data=reduc_data, aes_string(x="PC_1", y="PC_2", fill=input$pcaColorBy)) +
+          geom_point(size=4, shape=19)+
+          scale_fill_manual(values = cols)+
+          scale_size()+
           theme_bw() +
-          labs(x="PC1", y="PC2")+
-          theme(legend.position = "none")
-        
-        gp <- plotly::ggplotly(p, tooltip = c("x", "y"))
-        print(gp)
+          theme(axis.text.x = element_text(face = "bold", color = "black", size = 25, angle = 0),
+                axis.text.y = element_text(face = "bold", color = "black", size = 25, angle = 0),
+                axis.title.y = element_text(face = "bold", color = "black", size = 25),
+                axis.title.x = element_text(face = "bold", color = "black", size = 25),
+                legend.text = element_text(face = "bold", color = "black", size = 9),
+                legend.title = element_text(face = "bold", color = "black", size = 9),
+                legend.position="right",
+                title = element_text(face = "bold", color = "black", size = 25, angle = 0)) +
+          labs(x="PC 1", y="PC 2", color="Cell type", title = "", fill="Color")
+        print(plotly::ggplotly(p))
       }
     )
   })
@@ -526,8 +548,6 @@ server <- function(input, output, session) {
   })
   
   observeEvent(input$umapConfirm, {
-    output$umapPlot <- renderPlotly(
-      {
         #get input
         dims <- as.numeric(input$umapDimensions)
         type <- input$umapType
@@ -542,7 +562,7 @@ server <- function(input, output, session) {
         cols = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(meta[, input$umapColorBy])))
         
         #umap data frame
-        seurat_object_reduc <- as.data.frame(seurat_object@reductions$umap@cell.embeddings)
+        seurat_object_reduc <- as.data.frame(seurat_object@reductions$umap@cell.embeddings) #TODO error when one reduction has not been executed
         seurat_object_reduc <- seurat_object_reduc[, c(1:ncol(seurat_object_reduc))]
         seurat_object_reduc$Cell_id <- rownames(seurat_object_reduc)
         reduc_data <- left_join(seurat_object_reduc, meta)
@@ -569,15 +589,16 @@ server <- function(input, output, session) {
                   legend.position="right",
                   title = element_text(face = "bold", color = "black", size = 25, angle = 0)) +
             labs(x="UMAP 1", y="UMAP 2", color="Cell type", title = "", fill="Color")
-          plotly::ggplotly(p)  
+          output$umapPlot <- renderPlotly({plotly::ggplotly(p)})
         }
         else if(type == "umap" & dims == 3)
         {
-          plot_ly(reduc_data, x=~UMAP_1, y=~UMAP_2, z=~UMAP_3, type="scatter3d", alpha = 1, mode="markers", color=as.formula(paste0('~', input$umapColorBy)),
+          p <- plot_ly(reduc_data, x=~UMAP_1, y=~UMAP_2, z=~UMAP_3, type="scatter3d", alpha = 1, mode="markers", color=as.formula(paste0('~', input$umapColorBy)),
                   marker = list(size = 6, 
                                 line = list(color = 'black', width = 1)
                   ),
-                  colors = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(meta[, input$umapColorBy]))) ) 
+                  colors = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(meta[, input$umapColorBy]))) )
+          output$umapPlot <- renderPlotly({print(p)})
         }
         else if(type == "tsne" & dims == 2)
         {
@@ -595,18 +616,17 @@ server <- function(input, output, session) {
                   legend.position="right",
                   title = element_text(face = "bold", color = "black", size = 25, angle = 0)) +
             labs(x="tSNE 1", y="tSNE 2", color="Cell type", title = "", fill="Color")
-          plotly::ggplotly(p)  
+          output$umapPlot <- renderPlotly({plotly::ggplotly(p)})  
         }
         else if(type == "tsne" & dims == 3)
         {
-          plot_ly(reduc_data2, x=~tSNE_1, y=~tSNE_2, z=~tSNE_3, type="scatter3d", mode="markers", alpha = 1, size = 40, color=as.formula(paste0('~', input$umapColorBy)), 
+          p <- plot_ly(reduc_data2, x=~tSNE_1, y=~tSNE_2, z=~tSNE_3, type="scatter3d", mode="markers", alpha = 1, size = 40, color=as.formula(paste0('~', input$umapColorBy)), 
                   marker = list(size = 6, 
                                 line = list(color = 'black', width = 1)
                   ),
                   colors = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(meta[, input$umapColorBy]))) ) 
+          output$umapPlot <- renderPlotly({print(p)})
         }
-      }
-    )
   })
   
   #------------------Cell cycle tab------------------------------------------
@@ -1280,6 +1300,7 @@ server <- function(input, output, session) {
     # print(factors)
     updateSelectInput(session, "umapColorBy", choices = factors)
     updateSelectInput(session, "qcColorBy", choices = factors)
+    updateSelectInput(session, "pcaColorBy", choices = factors)
     updateSelectInput(session, "clusterGroupBy", choices = factors)
   }
   

@@ -184,6 +184,7 @@ ui <- dashboardPage(
                   width = 12, status = "info", solidHeader = TRUE,
                   title = "PCA results", height = "990px",
                   column(actionButton(inputId = "PCrunPCA", label = "Run PCA"), width = 12),
+                  column(selectInput("pcaColorBy", "Color by:", c("orig.ident" = "orig.ident")), width = 12),
                   column(plotlyOutput(outputId = "elbowPlotPCA", height = "790px"), width = 6),
                   column(plotlyOutput(outputId = "PCAscatter", height = "790px"), width = 6),
                 ),
@@ -348,7 +349,7 @@ ui <- dashboardPage(
       #Enrichment analysis -gProfiler
       tabItem(tabName = "gProfiler", 
               fluidRow(
-                box(width = 3, status = "info", solidHeader = TRUE,
+                box(width = 2, status = "info", solidHeader = TRUE,
                     title = "gProfiler options",
                     tags$h3("1. Options for input list"),
                     tags$hr(),
@@ -386,7 +387,7 @@ ui <- dashboardPage(
                     actionButton(inputId = "gProfilerConfirm", label = "OK")
                 ),
                 box(
-                  width = 9, status = "info", solidHeader = TRUE, title = "gProfiler results",
+                  width = 10, status = "info", solidHeader = TRUE, title = "gProfiler results",
                   tabsetPanel(type = "tabs",
                               tabPanel("Table of functional terms", dataTableOutput(outputId="gProfilerTable")),
                               tabPanel("Manhatan plot", plotlyOutput(outputId = "gProfilerManhatan"))
