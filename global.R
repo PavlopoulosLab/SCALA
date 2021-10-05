@@ -23,7 +23,7 @@ library(tidyverse)
 
 #tab Upload
 objectInputType <- "Input10x"
-seurat_object <- NULL
+seurat_object <- readRDS("seurat_processed.RDS") #NULL
 init_seurat_object <- NULL
 #my_metadata <- NULL
 minimum_cells <- 3
