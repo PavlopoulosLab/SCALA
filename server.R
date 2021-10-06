@@ -2,7 +2,7 @@ server <- function(input, output, session) {
   options(shiny.maxRequestSize=30*1024^2) #increase upload limit
   source("global.R", local=TRUE)
   
-  metaD <- reactiveValues(my_project_name="-", my_seurat="-", my_activePC=1, all_lin="0")
+  metaD <- reactiveValues(my_project_name="-", my_activePC=1, all_lin="0")
   
   #------------------Upload tab--------------------------------
   observeEvent(input$uploadConfirm, {
@@ -52,8 +52,8 @@ server <- function(input, output, session) {
       
       session$sendCustomMessage("handler_startLoader", c("input_loader", 50))
       #seurat_object <<- readRDS("Large_Pooled_example.RDS")#("pbmc.RDS")#("Tg4_degs.RDS") #../ALEX_Project/Fibroblast_Only_Analysis/imcs.combined_res0.5.RDS
-      metaD$my_seurat <- seurat_object
-      output$metadataTable <- renderDataTable(metaD$my_seurat@meta.data, options = list(pageLength = 20))
+      
+      output$metadataTable <- renderDataTable(seurat_object@meta.data, options = list(pageLength = 20))
       session$sendCustomMessage("handler_startLoader", c("input_loader", 75))
       updateSelInpColor()
       updateInputGeneList()
@@ -250,8 +250,6 @@ server <- function(input, output, session) {
        )
        updateRegressOut()
        updateSelInpColor()
-       #metaD$my_seurat <- seurat_object
-       #output$metadataTable <- renderDataTable(metaD$my_seurat@meta.data, options = list(pageLength = 20))
      }, warning = function(w) {
        print(paste("Warning:  ", w))
      }, error = function(e) {
@@ -289,8 +287,6 @@ server <- function(input, output, session) {
        else seurat_object <<- ScaleData(seurat_object, vars.to.regress=normalize_scaleRegressOut)
        session$sendCustomMessage("handler_log", "Finished centering and scaling data matrix.")
        session$sendCustomMessage("handler_startLoader", c("normalize_loader", 75))
-       
-       metaD$my_seurat <- seurat_object # TODO possibly remove metaD$my_seurat across script
        
        output$hvgScatter <- renderPlotly(
         {
@@ -404,7 +400,6 @@ server <- function(input, output, session) {
   })
     
   observeEvent(input$PCconfirm, {
-    #metaD$my_activePC <- as.numeric(input$PCin)
     activePC <- as.numeric(input$PCin)
     
     output$PCAloadings <- renderPlotly(
@@ -445,8 +440,6 @@ server <- function(input, output, session) {
     
     seurat_object <<- FindNeighbors(seurat_object, k.param = as.numeric(snn_k), dims = 1:as.numeric(snn_dims), reduction = "pca")
     seurat_object <<- FindClusters(seurat_object, resolution = as.numeric(cluster_res), dims = 1:as.numeric(cluster_dims))
-    
-    metaD$my_seurat <- seurat_object
     
     cluster_df <- as.data.frame(table(Idents(seurat_object)))
     colnames(cluster_df)[1] <- "Cluster"
@@ -651,7 +644,6 @@ server <- function(input, output, session) {
     seurat_object <<- CellCycleScoring(seurat_object, s.features = s.genes, g2m.features = g2m.genes, set.ident = F)
     seurat_object@meta.data$CC.Difference <<- seurat_object$S.Score - seurat_object$G2M.Score
     seurat_object@meta.data$Phase <<- factor(seurat_object@meta.data$Phase, levels = c("G1", "S", "G2M"))
-    metaD$my_seurat <- seurat_object
     
     output$cellCyclePCA <- renderPlotly(
       {
@@ -744,7 +736,6 @@ server <- function(input, output, session) {
       seurat_object@misc$markers <<- FindAllMarkers(seurat_object, test.use = input$findMarkersTest, min.pct = as.numeric(input$findMarkersMinPct), logfc.threshold = as.numeric(input$findMarkersLogFC), 
                                                     return.thresh = as.numeric(input$findMarkersPval), base = 2)
     }
-    metaD$my_seurat <- seurat_object
     updateInputGeneList()
     
     output$findMarkersTable <- renderDataTable(
@@ -759,9 +750,9 @@ server <- function(input, output, session) {
     #DEA output rendering
     output$findMarkersHeatmap <- renderPlotly(
       {
-        top10 <- metaD$my_seurat@misc$markers %>% group_by(cluster) %>% top_n(n = 10, wt = eval(parse(text=markers_logFCBase))) #wt = avg_logFC)
+        top10 <- seurat_object@misc$markers %>% group_by(cluster) %>% top_n(n = 10, wt = eval(parse(text=markers_logFCBase))) #wt = avg_logFC)
         set.seed(9)
-        downsampled <- subset(metaD$my_seurat, cells = sample(Cells(metaD$my_seurat), 1500))
+        downsampled <- subset(seurat_object, cells = sample(Cells(seurat_object), 1500))
         
         scaled_tabe <- as.data.frame(downsampled@assays$RNA@scale.data)
         scaled_tabe$gene <- rownames(scaled_tabe)
@@ -793,8 +784,8 @@ server <- function(input, output, session) {
     
     output$findMarkersDotplot <- renderPlotly(
       {
-        top10 <- metaD$my_seurat@misc$markers %>% group_by(cluster) %>% top_n(n = 10, wt = eval(parse(text=markers_logFCBase)))#wt = avg_logFC)
-        p <- DotPlot(metaD$my_seurat, features = rev(unique(top10$gene)), dot.scale = 6, cols = c("grey", "red")) + RotatedAxis()
+        top10 <- seurat_object@misc$markers %>% group_by(cluster) %>% top_n(n = 10, wt = eval(parse(text=markers_logFCBase)))#wt = avg_logFC)
+        p <- DotPlot(seurat_object, features = rev(unique(top10$gene)), dot.scale = 6, cols = c("grey", "red")) + RotatedAxis()
         plotly::ggplotly(p)
       }
     )
@@ -821,8 +812,8 @@ server <- function(input, output, session) {
     output$findMarkersViolinPlot <- renderPlotly(
       {
         geneS <- input$findMarkersGeneSelect2
-        plot <- VlnPlot(metaD$my_seurat, features = geneS, pt.size = 0, 
-                        cols = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(metaD$my_seurat@meta.data[, 'seurat_clusters'])))) + 
+        plot <- VlnPlot(seurat_object, features = geneS, pt.size = 0, 
+                        cols = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(seurat_object@meta.data[, 'seurat_clusters'])))) + 
           theme_bw() +
           theme(axis.text.x = element_text(face = "bold", color = "black", size = 25, angle = 0),
                 axis.text.y = element_text(face = "bold", color = "black", size = 25, angle = 0),
@@ -840,7 +831,7 @@ server <- function(input, output, session) {
     
     output$findMarkersVolcanoPlot <- renderPlotly(
       {
-        diff_exp_genes <- metaD$my_seurat@misc$markers
+        diff_exp_genes <- seurat_object@misc$markers
         cluster_degs <- diff_exp_genes[which(diff_exp_genes$cluster == input$findMarkersClusterSelect), ]
         cluster_degs$status <- "Down regulated"
         for(i in 1:length(cluster_degs$gene))
@@ -879,25 +870,22 @@ server <- function(input, output, session) {
     if(cluster_temp == "all_clusters")
     {
       #all clusters used
-      all_clusters <- as.character(unique(metaD$my_seurat@misc$markers$cluster))
+      all_clusters <- as.character(unique(seurat_object@misc$markers$cluster))
       
       gene_lists <- list()
       for(i in 1:length(all_clusters))
       {
-        #gene_lists[[i]] <- metaD$my_seurat@misc$markers[which(metaD$my_seurat@misc$markers$cluster == all_clusters[i] & metaD$my_seurat@misc$markers$avg_logFC > 0.25), 'gene']
         if(input$gProfilerLFCRadio == "Up")#UP regulated
         {
-          gene_lists[[i]] <- metaD$my_seurat@misc$markers[which(metaD$my_seurat@misc$markers$cluster == all_clusters[i] & 
-                                                                  #metaD$my_seurat@misc$markers$avg_logFC >= as.numeric(input$gProfilerSliderLogFC) &
-                                                                  metaD$my_seurat@misc$markers[, markers_logFCBase] >= as.numeric(input$gProfilerSliderLogFC) &
-                                                                  metaD$my_seurat@misc$markers[, input$gprofilerRadio] < as.numeric(input$gProfilerSliderSignificance)), 'gene']
+          gene_lists[[i]] <- seurat_object@misc$markers[which(seurat_object@misc$markers$cluster == all_clusters[i] & 
+                                                                  seurat_object@misc$markers[, markers_logFCBase] >= as.numeric(input$gProfilerSliderLogFC) &
+                                                                  seurat_object@misc$markers[, input$gprofilerRadio] < as.numeric(input$gProfilerSliderSignificance)), 'gene']
         }
         else #down
         {
-          gene_lists[[i]] <- metaD$my_seurat@misc$markers[which(metaD$my_seurat@misc$markers$cluster == all_clusters[i] & 
-                                                                  #metaD$my_seurat@misc$markers$avg_logFC <= (as.numeric(input$gProfilerSliderLogFC)*(-1)) &
-                                                                  metaD$my_seurat@misc$markers[, markers_logFCBase] <= (as.numeric(input$gProfilerSliderLogFC)*(-1)) &
-                                                                  metaD$my_seurat@misc$markers[, input$gprofilerRadio] < as.numeric(input$gProfilerSliderSignificance)), 'gene']
+          gene_lists[[i]] <- seurat_object@misc$markers[which(seurat_object@misc$markers$cluster == all_clusters[i] & 
+                                                                  seurat_object@misc$markers[, markers_logFCBase] <= (as.numeric(input$gProfilerSliderLogFC)*(-1)) &
+                                                                  seurat_object@misc$markers[, input$gprofilerRadio] < as.numeric(input$gProfilerSliderSignificance)), 'gene']
         }
       }
       
@@ -937,16 +925,16 @@ server <- function(input, output, session) {
       
       if(input$gProfilerLFCRadio == "Up")#UP regulated
       {
-        gene_lists[[1]] <- metaD$my_seurat@misc$markers[which(metaD$my_seurat@misc$markers$cluster == cluster_temp & 
-                                                                #metaD$my_seurat@misc$markers$avg_logFC >= as.numeric(input$gProfilerSliderLogFC) & 
-                                                                metaD$my_seurat@misc$markers[, markers_logFCBase] >= as.numeric(input$gProfilerSliderLogFC) &
-                                                                metaD$my_seurat@misc$markers[, input$gprofilerRadio] < as.numeric(input$gProfilerSliderSignificance)), 'gene']
+        gene_lists[[1]] <- seurat_object@misc$markers[which(seurat_object@misc$markers$cluster == cluster_temp & 
+                                                                #seurat_object@misc$markers$avg_logFC >= as.numeric(input$gProfilerSliderLogFC) & 
+                                                                seurat_object@misc$markers[, markers_logFCBase] >= as.numeric(input$gProfilerSliderLogFC) &
+                                                                seurat_object@misc$markers[, input$gprofilerRadio] < as.numeric(input$gProfilerSliderSignificance)), 'gene']
       }
       else #down
       {
-        gene_lists[[1]] <- metaD$my_seurat@misc$markers[which(metaD$my_seurat@misc$markers$cluster == cluster_temp & 
-                                                                metaD$my_seurat@misc$markers[, markers_logFCBase] <= (as.numeric(input$gProfilerSliderLogFC)*(-1)) &
-                                                                metaD$my_seurat@misc$markers[, input$gprofilerRadio] < as.numeric(input$gProfilerSliderSignificance)), 'gene']
+        gene_lists[[1]] <- seurat_object@misc$markers[which(seurat_object@misc$markers$cluster == cluster_temp & 
+                                                                seurat_object@misc$markers[, markers_logFCBase] <= (as.numeric(input$gProfilerSliderLogFC)*(-1)) &
+                                                                seurat_object@misc$markers[, input$gprofilerRadio] < as.numeric(input$gProfilerSliderSignificance)), 'gene']
       }
       
       names(gene_lists) <- cluster_temp
@@ -968,9 +956,9 @@ server <- function(input, output, session) {
   })
   #------------------CIPR tab-----------------------------------------------
   observeEvent(input$annotateClustersConfirm, {
-    marker_genes <- metaD$my_seurat@misc$markers
+    marker_genes <- seurat_object@misc$markers
     
-    avgexp <- AverageExpression(metaD$my_seurat)
+    avgexp <- AverageExpression(seurat_object)
     avgexp <- as.data.frame(avgexp$RNA)
     avgexp$gene <- rownames(avgexp)
     input_CIPR <- marker_genes
@@ -989,7 +977,7 @@ server <- function(input, output, session) {
          plot_top = F)
     
     CIPR_top_results$index <- as.character(CIPR_top_results$index)
-    CIPR_top_results$index <- factor(CIPR_top_results$index, levels = as.character(seq(1:length(metaD$my_seurat$seurat_clusters))))#1:45
+    CIPR_top_results$index <- factor(CIPR_top_results$index, levels = as.character(seq(1:length(seurat_object$seurat_clusters))))#1:45
     cols = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(CIPR_top_results$cluster)))
     
     p <- ggplot(CIPR_top_results, aes(x=index, y=identity_score, fill = cluster, size=7)) +
@@ -1010,15 +998,15 @@ server <- function(input, output, session) {
   observeEvent(input$trajectoryConfirm, {
     
     #delete previous lineages columns
-    for_delete <- grep("Lineage", colnames(metaD$my_seurat@meta.data))
+    for_delete <- grep("Lineage", colnames(seurat_object@meta.data))
     if(length(for_delete) != 0)
     {
-      metaD$my_seurat@meta.data <- metaD$my_seurat@meta.data[, -for_delete]
+      seurat_object@meta.data <- seurat_object@meta.data[, -for_delete]
     }
     
-    reduction <- Embeddings(metaD$my_seurat, input$trajectoryReduction)
+    reduction <- Embeddings(seurat_object, input$trajectoryReduction)
     
-    sds <- slingshot(reduction[, 1:as.numeric(input$trajectorySliderDimensions)], clusterLabels = metaD$my_seurat$seurat_clusters, 
+    sds <- slingshot(reduction[, 1:as.numeric(input$trajectorySliderDimensions)], clusterLabels = seurat_object$seurat_clusters, 
                      start.clus = as.numeric(input$trajectoryStart), end.clus = as.numeric(input$trajectoryEnd), stretch = 0)
     
     metaD$all_lin <- slingLineages(sds)
@@ -1027,8 +1015,8 @@ server <- function(input, output, session) {
     for(i in 1:ncol(pt))
     {
       temp_lin <- pt[, i]
-      metaD$my_seurat <- AddMetaData(
-        object = metaD$my_seurat,
+      seurat_object <<- AddMetaData(
+        object = seurat_object,
         metadata = temp_lin,
         col.name = paste0("Lineage", i)
       )
@@ -1038,18 +1026,18 @@ server <- function(input, output, session) {
     
     #print(paste0("after update:", names(metaD$all_lin)))
     
-    plot_D <- dittoDimPlot(metaD$my_seurat, "seurat_clusters",
+    plot_D <- dittoDimPlot(seurat_object, "seurat_clusters",
                            do.label = TRUE,
                            labels.repel = TRUE, 
                            reduction.use = "umap",
                            add.trajectory.lineages = slingLineages(sds),
                            trajectory.cluster.meta = "seurat_clusters",
-                           color.panel = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(metaD$my_seurat@meta.data[, 'seurat_clusters']))),
+                           color.panel = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(seurat_object@meta.data[, 'seurat_clusters']))),
                            data.out = F)
     
     output$trajectoryPlot <- renderPlot({ print(plot_D)})
     #***delete lineage columns before second run
-    plot_P <- dittoDimPlot(metaD$my_seurat, var = "Lineage1",  
+    plot_P <- dittoDimPlot(seurat_object, var = "Lineage1",  
                            do.label = F,
                            labels.repel = F, 
                            reduction.use = "umap",
@@ -1064,7 +1052,7 @@ server <- function(input, output, session) {
   
   observeEvent(input$trajectoryConfirmLineage, {
     #Lineage view
-    plot_P <- dittoDimPlot(metaD$my_seurat, var = input$trajectoryLineageSelect,
+    plot_P <- dittoDimPlot(seurat_object, var = input$trajectoryLineageSelect,
                            do.label = F,
                            labels.repel = F,
                            reduction.use = "umap",
@@ -1098,11 +1086,11 @@ server <- function(input, output, session) {
     #expressed genes
     ## receiver
     receiver = input$ligandReceptorSender
-    expressed_genes_receiver = get_expressed_genes(receiver, metaD$my_seurat, pct = 0.10, assay_oi = "RNA")
+    expressed_genes_receiver = get_expressed_genes(receiver, seurat_object, pct = 0.10, assay_oi = "RNA")
     
     ## sender
     sender = input$ligandReceptorSender
-    expressed_genes_sender = get_expressed_genes(sender, metaD$my_seurat, pct = 0.10, assay_oi = "RNA")
+    expressed_genes_sender = get_expressed_genes(sender, seurat_object, pct = 0.10, assay_oi = "RNA")
     
     #active ligands-receptors
     ligands = lr_network %>% pull(from) %>% unique()
@@ -1171,123 +1159,6 @@ server <- function(input, output, session) {
     
     output$ligandReceptorCuratedHeatmap <- renderPlotly({ plotly::ggplotly(p_ligand_receptor_network_strict) })
   })
-  
-  #------------------------------------------------------------------Output rendering
-  
-  # #DEA output rendering
-  # output$findMarkersHeatmap <- renderPlotly(
-  #   {
-  #     top10 <- metaD$my_seurat@misc$markers %>% group_by(cluster) %>% top_n(n = 10, wt = eval(parse(text=markers_logFCBase))) #wt = avg_logFC)
-  #     set.seed(9)
-  #     downsampled <- subset(metaD$my_seurat, cells = sample(Cells(metaD$my_seurat), 1500))
-  #     
-  #     scaled_tabe <- as.data.frame(downsampled@assays$RNA@scale.data)
-  #     scaled_tabe$gene <- rownames(scaled_tabe)
-  #     scaled_tabe_order <- as.data.frame(top10$gene)
-  #     colnames(scaled_tabe_order)[1] <- "gene"
-  #     scaled_tabe_final <- left_join(scaled_tabe_order, scaled_tabe)
-  #     scaled_tabe_final <- na.omit(scaled_tabe_final)
-  #     
-  #     tableCl <- downsampled@meta.data[, ]
-  #     tableCl$Cell_id <- rownames(tableCl)
-  #     tableCl <- tableCl[, c('Cell_id', 'seurat_clusters')]
-  #     tableCl <- tableCl[order(tableCl$seurat_clusters), ]
-  #     
-  #     clip<-function(x, min=-2, max=2) {
-  #       x[x<min]<-min; 
-  #       x[x>max]<-max; 
-  #       x
-  #     }
-  #     
-  #     final_mat <- scaled_tabe_final[, -1]
-  #     final_mat <- final_mat[, tableCl$Cell_id]
-  #     
-  #     cols <- colorRampPalette(brewer.pal(12, "Paired"))(length(unique(tableCl$seurat_clusters)))
-  #     names(cols) <- unique(tableCl$seurat_clusters)
-  #     heatmaply(clip(final_mat), Rowv = F, Colv = F, colors = rev(RdBu(256)), showticklabels = c(F, T), labRow  = scaled_tabe_final$gene, 
-  #               col_side_colors = tableCl$seurat_clusters, col_side_palette =  cols)
-  #   }
-  # )
-  # 
-  # output$findMarkersDotplot <- renderPlotly(
-  #   {
-  #     top10 <- metaD$my_seurat@misc$markers %>% group_by(cluster) %>% top_n(n = 10, wt = eval(parse(text=markers_logFCBase)))#wt = avg_logFC)
-  #     p <- DotPlot(metaD$my_seurat, features = rev(unique(top10$gene)), dot.scale = 6, cols = c("grey", "red")) + RotatedAxis()
-  #     plotly::ggplotly(p)
-  #   }
-  # )
-  # 
-  # output$findMarkersFeaturePlot <- renderPlotly(
-  #   {
-  #     geneS <- input$findMarkersGeneSelect
-  #     plot <- FeaturePlot(seurat_object, features = geneS, pt.size = 1.5, label = T, label.size = 5, cols = c("lightgrey", "red"), order = T, reduction = "umap") +
-  #       theme_bw() +
-  #       theme(axis.text.x = element_text(face = "bold", color = "black", size = 25, angle = 0),
-  #             axis.text.y = element_text(face = "bold", color = "black", size = 25, angle = 0),
-  #             axis.title.y = element_text(face = "bold", color = "black", size = 25),
-  #             axis.title.x = element_text(face = "bold", color = "black", size = 25),
-  #             legend.text = element_text(face = "bold", color = "black", size = 9),
-  #             legend.title = element_text(face = "bold", color = "black", size = 9),
-  #             #legend.position="right",
-  #             title = element_text(face = "bold", color = "black", size = 25, angle = 0)) +
-  #       labs(x="UMAP 1", y="UMAP 2", title = geneS, fill="Expression")
-  #     gp <- plotly::ggplotly(plot, tooltip = c("x", "y", geneS))
-  #     gp
-  #   }
-  # )
-  # 
-  # output$findMarkersViolinPlot <- renderPlotly(
-  #   {
-  #     geneS <- input$findMarkersGeneSelect2
-  #     plot <- VlnPlot(metaD$my_seurat, features = geneS, pt.size = 0, 
-  #                     cols = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(metaD$my_seurat@meta.data[, 'seurat_clusters'])))) + 
-  #       theme_bw() +
-  #       theme(axis.text.x = element_text(face = "bold", color = "black", size = 25, angle = 0),
-  #             axis.text.y = element_text(face = "bold", color = "black", size = 25, angle = 0),
-  #             axis.title.y = element_text(face = "bold", color = "black", size = 25),
-  #             axis.title.x = element_text(face = "bold", color = "black", size = 25),
-  #             legend.text = element_text(face = "bold", color = "black", size = 9),
-  #             legend.title = element_text(face = "bold", color = "black", size = 9),
-  #             #legend.position="right",
-  #             title = element_text(face = "bold", color = "black", size = 25, angle = 0)) +
-  #       labs(x="Cluster", y="Expression", title = geneS, fill="Cluster")
-  #     gp <- plotly::ggplotly(plot, tooltip = c("x", "y", geneS))
-  #     gp
-  #   }
-  # )
-  # 
-  # output$findMarkersVolcanoPlot <- renderPlotly(
-  #   {
-  #     diff_exp_genes <- metaD$my_seurat@misc$markers
-  #     cluster_degs <- diff_exp_genes[which(diff_exp_genes$cluster == input$findMarkersClusterSelect), ]
-  #     cluster_degs$status <- "Down regulated"
-  #     for(i in 1:length(cluster_degs$gene))
-  #     {
-  #       if(cluster_degs[i, markers_logFCBase] > 0) #(cluster_degs$avg_logFC[i] > 0)
-  #       {
-  #         cluster_degs$status[i] <- "Up regulated"
-  #       }
-  #     }
-  #     cluster_degs$log10Pval <- -log10(cluster_degs$p_val)
-  #     
-  #     p <- ggplot(data=cluster_degs, aes_string(x=markers_logFCBase, y="log10Pval", fill="status", label="gene", color="status")) + #x="avg_logFC"
-  #       geom_point(size=1, shape=16)+
-  #       scale_fill_manual(values = c("cyan3", "orange"))+
-  #       scale_color_manual(values = c("cyan3", "orange"))+
-  #       scale_size()+
-  #       theme_bw() +
-  #       theme(axis.text.x = element_text(face = "bold", color = "black", size = 25, angle = 0),
-  #             axis.text.y = element_text(face = "bold", color = "black", size = 25, angle = 0),
-  #             axis.title.y = element_text(face = "bold", color = "black", size = 25),
-  #             axis.title.x = element_text(face = "bold", color = "black", size = 25),
-  #             legend.text = element_text(face = "bold", color = "black", size = 9),
-  #             legend.title = element_text(face = "bold", color = "black", size = 9),
-  #             legend.position="right",
-  #             title = element_text(face = "bold", color = "black", size = 25, angle = 0)) +
-  #       labs(x=paste0("", markers_logFCBase), y="-log10(Pvalue)", fill="Color", color="")
-  #     plotly::ggplotly(p, tooltip = c("x", "y", "label"))
-  #   }
-  # )
   
   
   #function update selectInput
