@@ -922,9 +922,12 @@ server <- function(input, output, session) {
       
       temp_df <- gostres$result
       
-      output$gProfilerManhatan <- renderPlotly({ gostplot(gostres, capped = T, interactive = T) %>% 
-      layout(width=1500, height=length(all_clusters)*400) })
-      #output$gProfilerManhatan <- renderPlotly({ print(gostplot(gostres, capped = TRUE, interactive = TRUE)) })
+      # output$gProfilerManhatan <- renderPlotly({ gostplot(gostres, capped = T, interactive = T) %>% 
+      # layout(width=1500, height=length(all_clusters)*400) })
+      if (!is.na(all_clusters)){ # TODO check if null or sth else
+        session$sendCustomMessage("handler_fixHeight", c("gProfilerManhatan", length(all_clusters)))
+        output$gProfilerManhatan <- renderPlotly({ print(gostplot(gostres, capped = TRUE, interactive = TRUE)) })
+      } else session$sendCustomMessage("handler_alert", "Please, first calculate clusters") # TODO desicde sentence
       #output$gProfilerManhatan <- renderPlotly({ plotly::ggplotly(gostplot(gostres, capped = TRUE, interactive = TRUE)) })
       #output$gProfilerManhatan <- renderPlot({gostplot(gostres, capped = TRUE, interactive = FALSE)}, height = 4000)
     }
