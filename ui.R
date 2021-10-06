@@ -124,13 +124,15 @@ ui <- dashboardPage(
                   width = 9, status = "info", solidHeader = TRUE,
                   title = "Quality control plots",
                   div(class="ldBar", id="qc_loader", "data-preset"="circle"),
-                  column(plotlyOutput(outputId = "nFeatureViolin", height = "100%"), width = 4),
-                  column(plotlyOutput(outputId = "totalCountsViolin", height = "100%"), width = 4),
-                  column(plotlyOutput(outputId = "mitoViolin", height = "100%"), width = 4),
-                  column(plotlyOutput(outputId = "genesCounts", height= "100%"), width = 6),
-                  column(plotlyOutput(outputId = "mtCounts", height= "100%"), width = 6),
-                  column(verbatimTextOutput(outputId = "cellStats"), width = 4),
-                ),  
+                  div(
+                    column(plotlyOutput(outputId = "nFeatureViolin", height = "100%"), width = 4),
+                    column(plotlyOutput(outputId = "totalCountsViolin", height = "100%"), width = 4),
+                    column(plotlyOutput(outputId = "mitoViolin", height = "100%"), width = 4),
+                    column(plotlyOutput(outputId = "genesCounts", height= "100%"), width = 6),
+                    column(plotlyOutput(outputId = "mtCounts", height= "100%"), width = 6),
+                    column(verbatimTextOutput(outputId = "cellStats"), width = 4)
+                  )
+                )
               )
       ),
       
