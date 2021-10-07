@@ -349,4 +349,3 @@ markers_logFCBase <- "avg_logFC"
 # Weights + edges of k-NN
 # clusters + cells belonging there
 # input color file by user
-# update Power slider sto 0.5
