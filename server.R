@@ -709,7 +709,21 @@ server <- function(input, output, session) {
       # else if (!"pca" %in% names(seurat_object)) session$sendCustomMessage("handler_alert", "Please, first execute PRINCIPAL COMPONENT ANALYSIS.") # TODO, probably uncomment this condition
       else {
         session$sendCustomMessage("handler_startLoader", c("dim_red1_loader", 25))
-        # seurat_object <<- RunTSNE(seurat_object, dims = 1:as.numeric(input$umapPCs), seed.use = 42, dim.embed = 3, reduction = "pca", verbose = T)
+        #prepare input
+        dfm_in <- as.data.frame(seurat_object@reductions[['pca']]@cell.embeddings)
+        dfm_in$Cell_id <- rownames(dfm_in)
+        dfm_in <- dfm_in[, c(51, 1:as.numeric(input$umapPCs))]
+        print(head(dfm_in))
+    
+        #run DFM default
+        dfm <- DiffusionMap(dfm_in, n_eigs = as.numeric(input$umapOutComponents))
+        dfm_out <- dfm@eigenvectors
+        colnames(dfm_out) <- gsub("DC", "DC_", colnames(dfm_out))
+        print(head(dfm_out))
+    
+        #add new reduction in seurat_object
+        seurat_object[["dfm"]] <<- CreateDimReducObject(embeddings = dfm_out, key = "DC_", assay = DefaultAssay(seurat_object), global = T)
+        print("finished DFM")
       }
     }, warning = function(w) {
       print(paste("Warning:  ", w))
@@ -746,23 +760,30 @@ server <- function(input, output, session) {
         #prepare colors
         cols = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(meta[, input$umapColorBy])))
         
-        #umap data frame
-        seurat_object_reduc <- as.data.frame(seurat_object@reductions$umap@cell.embeddings) #TODO error when one reduction has not been executed
+        # #umap data frame
+        # seurat_object_reduc <- as.data.frame(seurat_object@reductions$umap@cell.embeddings) #TODO error when one reduction has not been executed
+        # seurat_object_reduc <- seurat_object_reduc[, c(1:ncol(seurat_object_reduc))]
+        # seurat_object_reduc$Cell_id <- rownames(seurat_object_reduc)
+        # reduc_data <- left_join(seurat_object_reduc, meta)
+        # 
+        # #tsne data frame
+        # seurat_object_reduc2 <- as.data.frame(seurat_object@reductions$tsne@cell.embeddings)
+        # seurat_object_reduc2 <- seurat_object_reduc2[, c(1:ncol(seurat_object_reduc2))]
+        # seurat_object_reduc2$Cell_id <- rownames(seurat_object_reduc2)
+        # reduc_data2 <- left_join(seurat_object_reduc2, meta)
+        
+        #general
+        seurat_object_reduc <- as.data.frame(seurat_object@reductions[[input$umapType]]@cell.embeddings)
         seurat_object_reduc <- seurat_object_reduc[, c(1:ncol(seurat_object_reduc))]
         seurat_object_reduc$Cell_id <- rownames(seurat_object_reduc)
         reduc_data <- left_join(seurat_object_reduc, meta)
         
-        #tsne data frame
-        seurat_object_reduc2 <- as.data.frame(seurat_object@reductions$tsne@cell.embeddings)
-        seurat_object_reduc2 <- seurat_object_reduc2[, c(1:ncol(seurat_object_reduc2))]
-        seurat_object_reduc2$Cell_id <- rownames(seurat_object_reduc2)
-        reduc_data2 <- left_join(seurat_object_reduc2, meta)
-        
         session$sendCustomMessage("handler_startLoader", c("dim_red2_loader", 50))
+        
         if(type == "umap" & dims == 2)
         {
           p <- ggplot(data=reduc_data, aes_string(x="UMAP_1", y="UMAP_2", fill=input$umapColorBy)) +
-            geom_point(size=4, shape=21)+
+            geom_point(size= as.numeric(input$umapDotSize), shape=21, alpha= as.numeric(input$umapDotOpacity), stroke=as.numeric(input$umapDotBorder))+
             scale_fill_manual(values = cols)+
             scale_size()+
             theme_bw() +
@@ -779,17 +800,18 @@ server <- function(input, output, session) {
         }
         else if(type == "umap" & dims == 3)
         {
-          p <- plot_ly(reduc_data, x=~UMAP_1, y=~UMAP_2, z=~UMAP_3, type="scatter3d", alpha = 1, mode="markers", color=as.formula(paste0('~', input$umapColorBy)),
-                       marker = list(size = 6, 
-                                     line = list(color = 'black', width = 1)
-                       ),
-                       colors = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(meta[, input$umapColorBy]))) )
+          p <- plot_ly(reduc_data, x=~UMAP_1, y=~UMAP_2, z=~UMAP_3, type="scatter3d", alpha = as.numeric(input$umapDotOpacity), mode="markers", color=as.formula(paste0('~', input$umapColorBy)),
+                  marker = list(size = as.numeric(input$umapDotSize), 
+                                line = list(color = 'black', width = as.numeric(input$umapDotBorder))
+                  ),
+                  colors = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(meta[, input$umapColorBy]))) )
+
           output$umapPlot <- renderPlotly({print(p)})
         }
         else if(type == "tsne" & dims == 2)
         {
-          p <- ggplot(data=reduc_data2, aes_string(x="tSNE_1", y="tSNE_2", fill=input$umapColorBy)) +
-            geom_point(size=4, shape=21)+
+          p <- ggplot(data=reduc_data, aes_string(x="tSNE_1", y="tSNE_2", fill=input$umapColorBy)) +
+            geom_point(size= as.numeric(input$umapDotSize), shape=21, alpha= as.numeric(input$umapDotOpacity), stroke=as.numeric(input$umapDotBorder)) +
             scale_fill_manual(values = cols)+
             scale_size()+
             theme_bw() +
@@ -806,9 +828,36 @@ server <- function(input, output, session) {
         }
         else if(type == "tsne" & dims == 3)
         {
-          p <- plot_ly(reduc_data2, x=~tSNE_1, y=~tSNE_2, z=~tSNE_3, type="scatter3d", mode="markers", alpha = 1, size = 40, color=as.formula(paste0('~', input$umapColorBy)), 
-                       marker = list(size = 6, 
-                                     line = list(color = 'black', width = 1)
+          p <- plot_ly(reduc_data, x=~tSNE_1, y=~tSNE_2, z=~tSNE_3, type="scatter3d", mode="markers", alpha = as.numeric(input$umapDotOpacity), color=as.formula(paste0('~', input$umapColorBy)), 
+                  marker = list(size = as.numeric(input$umapDotSize), 
+                                line = list(color = 'black', width = as.numeric(input$umapDotBorder))
+                  ),
+                  colors = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(meta[, input$umapColorBy]))) ) 
+          output$umapPlot <- renderPlotly({print(p)})
+        }
+        else if(type == "dfm" & dims == 2)
+        {
+          p <- ggplot(data=reduc_data, aes_string(x="DC_1", y="DC_2", fill=input$umapColorBy)) +
+            geom_point(size= as.numeric(input$umapDotSize), shape=21, alpha= as.numeric(input$umapDotOpacity), stroke=as.numeric(input$umapDotBorder)) +
+            scale_fill_manual(values = cols)+
+            scale_size()+
+            theme_bw() +
+            theme(axis.text.x = element_text(face = "bold", color = "black", size = 25, angle = 0),
+                  axis.text.y = element_text(face = "bold", color = "black", size = 25, angle = 0),
+                  axis.title.y = element_text(face = "bold", color = "black", size = 25),
+                  axis.title.x = element_text(face = "bold", color = "black", size = 25),
+                  legend.text = element_text(face = "bold", color = "black", size = 9),
+                  legend.title = element_text(face = "bold", color = "black", size = 9),
+                  legend.position="right",
+                  title = element_text(face = "bold", color = "black", size = 25, angle = 0)) +
+            labs(x="DC 1", y="DC 2", color="Cell type", title = "", fill="Color")
+          output$umapPlot <- renderPlotly({plotly::ggplotly(p)})  
+        }
+        else if(type == "dfm" & dims == 3)
+        {
+          p <- plot_ly(reduc_data, x=~DC_1, y=~DC_2, z=~DC_3, type="scatter3d", mode="markers", alpha = as.numeric(input$umapDotOpacity), color=as.formula(paste0('~', input$umapColorBy)), 
+                       marker = list(size = as.numeric(input$umapDotSize), 
+                                     line = list(color = 'black', width = as.numeric(input$umapDotBorder))
                        ),
                        colors = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(meta[, input$umapColorBy]))) ) 
           output$umapPlot <- renderPlotly({print(p)})
@@ -1316,6 +1365,7 @@ server <- function(input, output, session) {
   
   #--------------------trajectory tab----------------------------------------
   observeEvent(input$trajectoryConfirm, {
+
     session$sendCustomMessage("handler_startLoader", c("traj1_loader", 10))
     session$sendCustomMessage("handler_startLoader", c("traj2_loader", 10))
     session$sendCustomMessage("handler_disableButton", "trajectoryConfirm")
@@ -1328,7 +1378,7 @@ server <- function(input, output, session) {
         for_delete <- grep("Lineage", colnames(seurat_object@meta.data))
         if(length(for_delete) != 0)
         {
-          seurat_object@meta.data <- seurat_object@meta.data[, -for_delete]
+          seurat_object@meta.data <<- seurat_object@meta.data[, -for_delete]
         }
         
         reduction <- Embeddings(seurat_object, input$trajectoryReduction)

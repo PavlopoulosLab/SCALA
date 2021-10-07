@@ -18,14 +18,13 @@ library(dittoSeq) # BiocManager::install("dittoSeq")
 library(slingshot) # BiocManager::install("slingshot")
 library(nichenetr) # devtools::install_github("saeyslab/nichenetr") # BiocManager::install("limma")
 library(tidyverse)
+library(destiny) # BiocManager::install("destiny")
 
 #Global variables
 
 #tab Upload
 objectInputType <- "Input10x"
-
-seurat_object <- NULL # readRDS("seurat_processed.RDS") # NULL
-
+seurat_object <- NULL #readRDS("seurat_processed.RDS")#NULL
 init_seurat_object <- NULL
 #my_metadata <- NULL
 minimum_cells <- 3
@@ -350,4 +349,3 @@ markers_logFCBase <- "avg_logFC"
 # Weights + edges of k-NN
 # clusters + cells belonging there
 # input color file by user
-# update Power slider sto 0.5

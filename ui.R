@@ -254,14 +254,20 @@ ui <- dashboardPage(
                     div(class="ldBar", id="dim_red1_loader", "data-preset"="circle"),
                     selectInput("umapType", "Plot type:", # TODO observe this event instead of umapConfirm button
                                 c("UMAP" = "umap",
-                                  "tSNE" = "tsne")),
+                                  "tSNE" = "tsne",
+                                  "Diffusion Map" = "dfm")),
                     selectInput("umapDimensions", "Dimensions:",
                                 c("2D" = "2",
                                   "3D" = "3")),
                     selectInput("umapColorBy", "Color by:",
                                 c("Cluster" = "seurat_clusters")),
-                    actionButton(inputId = "umapConfirm", label = "Display plot") # TODO remove button
-                ),
+
+                    sliderInput("umapDotSize", "Size:", min = 1, max = 20, value = 5, step = 0.5),
+                    sliderInput("umapDotOpacity", "Opacity:", min = 0, max = 1, value = 1, step = 0.1),
+                    sliderInput("umapDotBorder", "Border width:", min = 0, max = 10, value = 1, step = 0.5),
+                    actionButton(inputId = "umapConfirm", label = "Display plot"),
+                    ),
+
                 box(width = 9, status = "info", solidHeader = TRUE, title = "Plot", height = "1200px",
                     div(class="ldBar", id="dim_red2_loader", "data-preset"="circle"),
                     plotlyOutput(outputId = "umapPlot", height = "1100px")
@@ -479,7 +485,7 @@ ui <- dashboardPage(
                 box(
                   width = 3, status = "info", solidHeader = TRUE,
                   title = "Trajectory parameters",
-                  selectInput("trajectoryReduction", "Dimensionality reduction method:", choices=c("PCA"="pca","UMAP"="umap", "tSNE"="tsne"), selected = "PCA",
+                  selectInput("trajectoryReduction", "Dimensionality reduction method:", choices=c("PCA"="pca","UMAP"="umap", "tSNE"="tsne", "Diffusion Map"="dfm"), selected = "PCA",
                               multiple = FALSE,selectize = TRUE, width = NULL, size = NULL),
                   sliderInput("trajectorySliderDimensions", "Number of dimensions to use :", min = 0, max = 50, value = 10, step = 1),
                   selectInput("trajectoryStart", "Initial state:", choices=c("0"="0"), selected = "0", multiple = F, selectize = F),
