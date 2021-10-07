@@ -185,17 +185,23 @@ ui <- dashboardPage(
                   title = "PCA results", height = "990px",
                   column(actionButton(inputId = "PCrunPCA", label = "Run PCA"), width = 12),
                   column(selectInput("pcaColorBy", "Color by:", c("orig.ident" = "orig.ident")), width = 12),
-                  column(plotlyOutput(outputId = "elbowPlotPCA", height = "790px"), width = 6),
-                  column(plotlyOutput(outputId = "PCAscatter", height = "790px"), width = 6),
+                  div(class="ldBar", id="PCA1_loader", "data-preset"="circle"),
+                  div(
+                    column(plotlyOutput(outputId = "elbowPlotPCA", height = "790px"), width = 6),
+                    column(plotlyOutput(outputId = "PCAscatter", height = "790px"), width = 6)
+                  )
                 ),
                 box(
                   width = 12, status = "info", solidHeader = TRUE,
                   title = "Explore particular principal components", height = "990px",
                   column(textInput(inputId = "PCin", label = "Select a principal component :", value = "1"), width = 6),
                   column(actionButton(inputId = "PCconfirm", label = "OK"), width = 12),
-                  column(plotlyOutput(outputId = "PCAloadings", height = "790px"), width = 6),
-                  column(plotlyOutput(outputId = "PCAheatmap", height = "790px"), width = 6),
-                ),
+                  div(class="ldBar", id="PCA2_loader", "data-preset"="circle"),
+                  div(
+                    column(plotlyOutput(outputId = "PCAloadings", height = "790px"), width = 6),
+                    column(plotlyOutput(outputId = "PCAheatmap", height = "790px"), width = 6)
+                  )
+                )
               )
       ),
       
@@ -219,10 +225,13 @@ ui <- dashboardPage(
                 box(
                   width = 8, status = "info", solidHeader = TRUE, title = "k-NN graph & clusters", height = "1500px",
                   tabsetPanel(type = "tabs",
-                              tabPanel("Clustering results", dataTableOutput(outputId="clusterTable", height = "500px"),
+                              tabPanel("Clustering results", 
+                                       div(class="ldBar", id="clust1_loader", "data-preset"="circle"),
+                                       dataTableOutput(outputId="clusterTable", height = "500px"),
                                        selectInput("clusterGroupBy", "Grouping variable:",
                                                    c("orig.ident" = "orig.ident")),
                                        actionButton(inputId = "clusterBarplotConfirm", label = "Display barchart"),
+                                       div(class="ldBar", id="clust2_loader", "data-preset"="circle"),
                                        plotlyOutput(outputId = "clusterBarplot", height = "700px")),
                               tabPanel("Shared Nearest Neighbour Graph", visNetworkOutput(outputId="snnSNN", height = "1300px"))
                   ),
@@ -242,7 +251,8 @@ ui <- dashboardPage(
                     actionButton(inputId = "umapRunDFM", label = "Run Diffusion Map"),
                     tags$h3("Display settings"),
                     tags$hr(),
-                    selectInput("umapType", "Plot type:",
+                    div(class="ldBar", id="dim_red1_loader", "data-preset"="circle"),
+                    selectInput("umapType", "Plot type:", # TODO observe this event instead of umapConfirm button
                                 c("UMAP" = "umap",
                                   "tSNE" = "tsne")),
                     selectInput("umapDimensions", "Dimensions:",
@@ -250,11 +260,12 @@ ui <- dashboardPage(
                                   "3D" = "3")),
                     selectInput("umapColorBy", "Color by:",
                                 c("Cluster" = "seurat_clusters")),
-                    actionButton(inputId = "umapConfirm", label = "Display plot"),
-                    ),
+                    actionButton(inputId = "umapConfirm", label = "Display plot") # TODO remove button
+                ),
                 box(width = 9, status = "info", solidHeader = TRUE, title = "Plot", height = "1200px",
+                    div(class="ldBar", id="dim_red2_loader", "data-preset"="circle"),
                     plotlyOutput(outputId = "umapPlot", height = "1100px")
-                    ),
+                )
               )
       ),
       
@@ -285,9 +296,17 @@ ui <- dashboardPage(
                 box(
                   width = 9, status = "info", solidHeader = TRUE, title = "DEA results", height = "1300px",
                   tabsetPanel(type = "tabs",
-                              tabPanel("Marker genes", dataTableOutput(outputId="findMarkersTable", height = "1100px")),
-                              tabPanel("Heatmap", plotlyOutput(outputId = "findMarkersHeatmap", height = "1100px")), 
-                              tabPanel("Dotplot", plotlyOutput(outputId = "findMarkersDotplot", height = "1100px")),
+                              tabPanel("Marker genes", 
+                                       div(class="ldBar", id="DEA1_loader", "data-preset"="circle"),
+                                       dataTableOutput(outputId="findMarkersTable", height = "1100px")),
+                              tabPanel("Heatmap", 
+                                       div(class="ldBar", id="DEA2_loader", "data-preset"="circle"),
+                                       plotlyOutput(outputId = "findMarkersHeatmap", height = "1100px")),
+                              
+                              tabPanel("Dotplot", 
+                                       div(class="ldBar", id="DEA3_loader", "data-preset"="circle"),
+                                       plotlyOutput(outputId = "findMarkersDotplot", height = "1100px")),
+                              
                               tabPanel("Feature plot", fluidRow(
                                 box(width = 3, status = "info", solidHeader = TRUE, title = "Options",
                                     selectInput("findMarkersReductionType", "Plot type:",
@@ -300,6 +319,7 @@ ui <- dashboardPage(
                                                    multiple = FALSE) # allow for multiple inputs
                                     ),
                                 box(width = 9, status = "info", solidHeader = TRUE, title = "Plot",
+                                    div(class="ldBar", id="DEA4_loader", "data-preset"="circle"),
                                     plotlyOutput(outputId = "findMarkersFeaturePlot", height = "1100px")
                                     )
                               )),
@@ -313,6 +333,7 @@ ui <- dashboardPage(
                                                 multiple = FALSE) # allow for multiple inputs
                                 ),
                                 box(width = 9, status = "info", solidHeader = TRUE, title = "Plot",
+                                    div(class="ldBar", id="DEA5_loader", "data-preset"="circle"),
                                     plotlyOutput(outputId = "findMarkersViolinPlot", height = "1100px")
                                 )
                               )),
@@ -320,6 +341,7 @@ ui <- dashboardPage(
                                 box(width = 3, status = "info", solidHeader = TRUE, title = "Cluster selection",
                                     textInput(inputId = "findMarkersClusterSelect", label = "Cluster:", value = "0")),
                                 box(width = 9, status = "info", solidHeader = TRUE, title = "Volcano plot",
+                                    div(class="ldBar", id="DEA6_loader", "data-preset"="circle"),
                                     plotlyOutput(outputId = "findMarkersVolcanoPlot", height = "1100px"))
                               ))
                       )
@@ -335,13 +357,16 @@ ui <- dashboardPage(
                   title = "Cell cycle phase analysis",
                   tabsetPanel(type = "tabs",
                               tabPanel("PCA plot", 
-                                       actionButton(inputId = "cellCycleRun", label = "Run cell cycle analysis"),
-                                       selectInput("cellCycleReduction", "Plot type:",
+                                       actionButton(inputId = "cellCycleRun", label = "Run cell cycle analysis"), # TODO remove this button
+                                       selectInput("cellCycleReduction", "Plot type:", # TODO observe this selectbox instead, default value "-" -> do nothing
                                                    c("PCA" = "pca",
                                                      "UMAP" = "umap",
                                                      "tSNE" = "tsne"), selected ="pca"),
+                                       div(class="ldBar", id="CC1_loader", "data-preset"="circle"),
                                        plotlyOutput(outputId = "cellCyclePCA", height = "1100px")),
-                              tabPanel("Barplot", plotlyOutput(outputId = "cellCycleBarplot", height = "1100px")))
+                              tabPanel("Barplot", # TODO this should appear together with cellCyclePCA output, by observed event cellCycleReduction
+                                       div(class="ldBar", id="CC2_loader", "data-preset"="circle"),
+                                       plotlyOutput(outputId = "cellCycleBarplot", height = "1100px")))
                 )
               )
       ),
@@ -374,7 +399,9 @@ ui <- dashboardPage(
                                                                           'Biological Pathways'= list("KEGG PATHWAY"="KEGG", "Reactome"="REAC", "WikiPathways"="WP"),
                                                                           'Regulatory motifs in DNA'= list("TRANSFAC"= "TF","miRTarBase"= "MIRNA"),
                                                                           'Protein Databases'=list("CORUM"= "CORUM", "Human Protein Atlas (HPA)"="HPA"),
-                                                                          'Human Phenotype Ontology' =list("Human Phenotype Ontology"= "HP")), selected = NULL, multiple = TRUE, selectize = TRUE, width = NULL, size = NULL),
+                                                                          'Human Phenotype Ontology' =list("Human Phenotype Ontology"= "HP")),
+                                selected = list("GO:MF", "GO:CC", "GO:BP", "KEGG"),
+                                multiple = TRUE, selectize = TRUE, width = NULL, size = NULL),
                     selectInput("gProfilerOrganism", "Select organism", choices=c("Homo sapiens (Human)"="hsapiens","Mus musculus (Mouse)"="mmusculus"), selected = NULL, multiple = FALSE,selectize = TRUE, width = NULL, size = NULL),
                     radioButtons("gprofilerRadioCorrection", label = "Correction method for multiple testing : ",
                                  choices = list("Analytical(g:SCS)" = "gSCS", 
@@ -389,8 +416,12 @@ ui <- dashboardPage(
                 box(
                   width = 10, status = "info", solidHeader = TRUE, title = "gProfiler results",
                   tabsetPanel(type = "tabs",
-                              tabPanel("Table of functional terms", dataTableOutput(outputId="gProfilerTable")),
-                              tabPanel("Manhatan plot", plotlyOutput(outputId = "gProfilerManhatan"))
+                              tabPanel("Table of functional terms", 
+                                       div(class="ldBar", id="gprof1_loader", "data-preset"="circle"),
+                                       dataTableOutput(outputId = "gProfilerTable")),
+                              tabPanel("Manhatan plot", 
+                                       div(class="ldBar", id="gprof2_loader", "data-preset"="circle"),
+                                       plotlyOutput(outputId = "gProfilerManhatan"))
                   )
                 )
               )
@@ -431,10 +462,14 @@ ui <- dashboardPage(
                 box(
                   width = 9, status = "info", solidHeader = TRUE, title = "Cell type annotation",
                   tabsetPanel(type = "tabs",
-                              tabPanel("Top-5 hits table", dataTableOutput(outputId="annotateClustersCIPRTable")),
-                              tabPanel("Top-5 hits dotplot", plotlyOutput(outputId="annotateClustersCIPRDotplot", height = "1100px"))
-                  ),
-                ),
+                              tabPanel("Top-5 hits table", 
+                                       div(class="ldBar", id="annot1_loader", "data-preset"="circle"),
+                                       dataTableOutput(outputId="annotateClustersCIPRTable")),
+                              tabPanel("Top-5 hits dotplot", 
+                                       div(class="ldBar", id="annot2_loader", "data-preset"="circle"),
+                                       plotlyOutput(outputId="annotateClustersCIPRDotplot", height = "1100px"))
+                  )
+                )
               )
       ),
       
@@ -454,18 +489,21 @@ ui <- dashboardPage(
                 box(
                   width = 9, status = "info", solidHeader = TRUE, title = "Trajectory analysis results",
                   tabsetPanel(type = "tabs",
-                              tabPanel("Structure overview", plotOutput(outputId="trajectoryPlot", height = "1100px"),
+                              tabPanel("Structure overview", 
+                                       div(class="ldBar", id="traj1_loader", "data-preset"="circle"),
+                                       plotOutput(outputId="trajectoryPlot", height = "1100px"),
                                        verbatimTextOutput(outputId="trajectoryText")),
                               tabPanel("Lineage-Pseudotime view", fluidRow(
                                 box(width = 3, status = "info", solidHeader = TRUE, title = "Options",
-                                    selectInput(inputId = 'trajectoryLineageSelect',
+                                    selectInput(inputId = 'trajectoryLineageSelect', # TODO observe this instead of action button below, default = "-" and handle it
                                                 label = 'Select lineage:',
                                                 choices = c("Lineage1"),
                                                 selected = "Lineage1",
                                                 multiple = FALSE),
-                                    actionButton(inputId = "trajectoryConfirmLineage", label = "ok")
+                                    actionButton(inputId = "trajectoryConfirmLineage", label = "ok") # TODO remove this and observe selectbox above
                                 ),
                                 box(width = 9, status = "info", solidHeader = TRUE, title = "Pseudotime plot",
+                                    div(class="ldBar", id="traj2_loader", "data-preset"="circle"),
                                     plotOutput(outputId = "trajectoryPseudotimePlot", height = "1100px"))
                               ))
                   ),
@@ -485,12 +523,15 @@ ui <- dashboardPage(
                  ),
                  box(
                    width = 9, status = "info", solidHeader = TRUE, title = "L-R analysis results",
-                   tags$h3("All interactions"),
-                   tags$hr(),
-                   plotlyOutput(outputId="ligandReceptorFullHeatmap", height = "1100px"),
-                   tags$h3("Curated interactions (documented in literature and publicly available databases)"),
-                   tags$hr(),
-                   plotlyOutput(outputId="ligandReceptorCuratedHeatmap", height = "1100px")
+                   div(class="ldBar", id="lr_loader", "data-preset"="circle"),
+                   div(
+                     tags$h3("All interactions"),
+                     tags$hr(),
+                     plotlyOutput(outputId="ligandReceptorFullHeatmap", height = "1100px"),
+                     tags$h3("Curated interactions (documented in literature and publicly available databases)"),
+                     tags$hr(),
+                     plotlyOutput(outputId="ligandReceptorCuratedHeatmap", height = "1100px")
+                   )
                  )
                )
       ),
