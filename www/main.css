@@ -91,3 +91,11 @@ td{ /* for tags */
 {
   display: inline-block;
 }
+
+#clust1_loader{
+  margin-top: -250px;
+}
+
+#clust2_loader{
+  margin-top: 450px;
+}
