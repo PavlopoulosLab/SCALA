@@ -2,10 +2,12 @@ server <- function(input, output, session) {
   options(shiny.maxRequestSize=30*1024^2) #increase upload limit
   source("global.R", local=TRUE)
   
+  session$sendCustomMessage("handler_disableTabs", "sidebarMenu") # disable all tab panels (except Data Input) until files are uploaded
   metaD <- reactiveValues(my_project_name="-", my_activePC=1, all_lin="0")
   
   #------------------Upload tab--------------------------------
   observeEvent(input$uploadConfirm, {
+    session$sendCustomMessage("handler_disableTabs", "sidebarMenu") # disable all tab panels (except Data Input) until files are uploaded
     session$sendCustomMessage("handler_startLoader", c("input_loader", 10))
     session$sendCustomMessage("handler_disableButton", "uploadConfirm")
     tryCatch({
@@ -58,14 +60,14 @@ server <- function(input, output, session) {
       updateSelInpColor()
       updateInputGeneList()
       updateGeneSearchFP()
-      
-      cleanAllPlots()
+      cleanAllPlots(T) # fromDataInput -> TRUE
       # updateInputLRclusters()
       # updateInpuTrajectoryClusters()
       # print(organism)
       # saveRDS(seurat_object, "seurat_object.RDS")
-    }, warning = function(w) {
-      print(paste("Warning:  ", w))
+      session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " QUALITY CONTROL", " DATA NORMALIZATION\n& SCALING"))
+    # }, warning = function(w) {
+    #   print(paste("Warning:  ", w))
     }, error = function(e) {
       print(paste("Error :  ", e))
       session$sendCustomMessage("handler_alert", "Data Input error. Please, refer to the help pages for input format.")
@@ -170,8 +172,8 @@ server <- function(input, output, session) {
           }
         )
       }
-    }, warning = function(w) {
-      print(paste("Warning:  ", w))
+    # }, warning = function(w) {
+    #   print(paste("Warning:  ", w))
     }, error = function(e) {
       print(paste("Error :  ", e))
       session$sendCustomMessage("handler_alert", "The selected Quality Control arguments cannot produce meaningful visualizations.")
@@ -274,9 +276,12 @@ server <- function(input, output, session) {
         )
         updateRegressOut()
         updateSelInpColor()
+        session$sendCustomMessage("handler_disableTabs", "sidebarMenu")
+        cleanAllPlots(F) # fromDataInput -> FALSE
+        session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " QUALITY CONTROL", " DATA NORMALIZATION\n& SCALING"))
       }
-    }, warning = function(w) {
-      print(paste("Warning:  ", w))
+    # }, warning = function(w) {
+    #   print(paste("Warning:  ", w))
     }, error = function(e) {
       print(paste("Error :  ", e))
       session$sendCustomMessage("handler_alert", "The selected Quality Control arguments cannot produce meaningful visualizations.")
@@ -354,9 +359,10 @@ server <- function(input, output, session) {
             }
           }
         )
+        session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " PRINCIPAL COMPONENT\nANALYSIS"))
       }
-    }, warning = function(w) {
-      print(paste("Warning:  ", w))
+    # }, warning = function(w) {
+    #   print(paste("Warning:  ", w))
     }, error = function(e) {
       print(paste("Error :  ", e))
       session$sendCustomMessage("handler_alert", "The selected Normalization arguments cannot produce meaningful visualizations.")
@@ -432,9 +438,10 @@ server <- function(input, output, session) {
             print(plotly::ggplotly(p))
           }
         )
+        session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " CLUSTERING", " CELL CYCLE PHASE ANALYSIS"))
       }
-    }, warning = function(w) {
-      print(paste("Warning:  ", w))
+    # }, warning = function(w) {
+    #   print(paste("Warning:  ", w))
     }, error = function(e) {
       print(paste("Error :  ", e))
       session$sendCustomMessage("handler_alert", "There was an error with the PCA analysis.")
@@ -487,8 +494,8 @@ server <- function(input, output, session) {
         )
         #updateSelInpColor()
       }
-    }, warning = function(w) {
-      print(paste("Warning:  ", w))
+    # }, warning = function(w) {
+    #   print(paste("Warning:  ", w))
     }, error = function(e) {
       print(paste("Error :  ", e))
       session$sendCustomMessage("handler_alert", "There was an error with the PCA analysis.")
@@ -553,11 +560,12 @@ server <- function(input, output, session) {
             }
           }
         )
-        
         session$sendCustomMessage("handler_startLoader", c("clust1_loader", 80))
         updateSelInpColor()
         updateInputLRclusters()
         updateInpuTrajectoryClusters()
+        session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " NON LINEAR DIMENSIONALITY\nREDUCTION (tSNE & UMAPS)",
+                                                          " MARKERS' IDENTIFICATION", " LIGAND - RECEPTOR\nANALYSIS"))
       }
       # }, warning = function(w) { # if this is not commented, the table does not render
       #   print(paste("Warning:  ", w))
@@ -631,8 +639,8 @@ server <- function(input, output, session) {
           session$sendCustomMessage("handler_startLoader", c("clust2_loader", 75))
         }
       }
-    }, warning = function(w) {
-      print(paste("Warning:  ", w))
+    # }, warning = function(w) {
+    #   print(paste("Warning:  ", w))
     }, error = function(e) {
       print(paste("Error :  ", e))
       session$sendCustomMessage("handler_alert", "There was an error with the Clustering procedure.")
@@ -656,9 +664,10 @@ server <- function(input, output, session) {
       else {
         session$sendCustomMessage("handler_startLoader", c("dim_red1_loader", 25))
         seurat_object <<- RunUMAP(seurat_object, dims = 1:as.numeric(input$umapPCs), seed.use = 42, n.components = as.numeric(input$umapOutComponents), reduction = "pca") #TODO add diffusion map, addition of extra dimensions UMAP, select dimensions to plot, alpha and dot size
+        session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " TRAJECTORY ANALYSIS"))
       }
-    }, warning = function(w) {
-      print(paste("Warning:  ", w))
+    # }, warning = function(w) {
+    #   print(paste("Warning:  ", w))
     }, error = function(e) {
       print(paste("Error :  ", e))
       session$sendCustomMessage("handler_alert", "There was an error with the UMAP procedure.")
@@ -683,9 +692,10 @@ server <- function(input, output, session) {
       else {
         session$sendCustomMessage("handler_startLoader", c("dim_red1_loader", 25))
         seurat_object <<- RunTSNE(seurat_object, dims = 1:as.numeric(input$umapPCs), seed.use = 42, dim.embed = 3, reduction = "pca", verbose = T)
+        session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " TRAJECTORY ANALYSIS"))
       }
-    }, warning = function(w) {
-      print(paste("Warning:  ", w))
+    # }, warning = function(w) {
+    #   print(paste("Warning:  ", w))
     }, error = function(e) {
       print(paste("Error :  ", e))
       session$sendCustomMessage("handler_alert", "There was an error with the tSNE procedure.")
@@ -705,8 +715,8 @@ server <- function(input, output, session) {
     session$sendCustomMessage("handler_disableButton", "umapRunTsne")
     session$sendCustomMessage("handler_disableButton", "umapRunDFM")
     tryCatch({
-      if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.") # TODO Extra if conditions (as above) after merging
-      # else if (!"pca" %in% names(seurat_object)) session$sendCustomMessage("handler_alert", "Please, first execute PRINCIPAL COMPONENT ANALYSIS.") # TODO, probably uncomment this condition
+      if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
+      else if (!"pca" %in% names(seurat_object)) session$sendCustomMessage("handler_alert", "Please, first execute PRINCIPAL COMPONENT ANALYSIS.")
       else {
         session$sendCustomMessage("handler_startLoader", c("dim_red1_loader", 25))
         #prepare input
@@ -723,10 +733,11 @@ server <- function(input, output, session) {
     
         #add new reduction in seurat_object
         seurat_object[["dfm"]] <<- CreateDimReducObject(embeddings = dfm_out, key = "DC_", assay = DefaultAssay(seurat_object), global = T)
-        print("finished DFM")
+        # print("finished DFM")
+        session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " TRAJECTORY ANALYSIS"))
       }
-    }, warning = function(w) {
-      print(paste("Warning:  ", w))
+    # }, warning = function(w) {
+    #   print(paste("Warning:  ", w))
     }, error = function(e) {
       print(paste("Error :  ", e))
       session$sendCustomMessage("handler_alert", "There was an error with the Diffusion Map procedure.")
@@ -863,8 +874,8 @@ server <- function(input, output, session) {
           output$umapPlot <- renderPlotly({print(p)})
         }
       }
-    }, warning = function(w) {
-      print(paste("Warning:  ", w))
+    # }, warning = function(w) {
+    #   print(paste("Warning:  ", w))
     }, error = function(e) {
       print(paste("Error :  ", e))
       session$sendCustomMessage("handler_alert", "There was an error with drawing the resutls.")
@@ -1032,6 +1043,7 @@ server <- function(input, output, session) {
           }
         )
         session$sendCustomMessage("handler_startLoader", c("DEA6_loader", 75))
+        session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " FUNCTIONAL ENRICHMENT\nANALYSIS", " CLUSTERS' ANNOTATION"))
       }
       # }, warning = function(w) {
       #   print(paste("Warning:  ", w))
@@ -1164,8 +1176,8 @@ server <- function(input, output, session) {
         )
         session$sendCustomMessage("handler_startLoader", c("CC2_loader", 80))
       }
-    }, warning = function(w) {
-      print(paste("Warning:  ", w))
+    # }, warning = function(w) {
+    #   print(paste("Warning:  ", w))
     }, error = function(e) {
       print(paste("Error :  ", e))
       session$sendCustomMessage("handler_alert", "There was an error with drawing the resutls.")
@@ -1430,8 +1442,8 @@ server <- function(input, output, session) {
         output$trajectoryPseudotimePlot <- renderPlot({ print(plot_P) })
         output$trajectoryText <- renderPrint({print(metaD$all_lin)})
       }
-    }, warning = function(w) {
-      print(paste("Warning:  ", w))
+    # }, warning = function(w) {
+    #   print(paste("Warning:  ", w))
     }, error = function(e) {
       print(paste("Error :  ", e))
       session$sendCustomMessage("handler_alert", "There was an error with Trajectory Analysis.")
@@ -1466,8 +1478,8 @@ server <- function(input, output, session) {
         
         output$trajectoryPseudotimePlot <- renderPlot({ print(plot_P) })
       }
-    }, warning = function(w) {
-      print(paste("Warning:  ", w))
+    # }, warning = function(w) {
+    #   print(paste("Warning:  ", w))
     }, error = function(e) {
       print(paste("Error :  ", e))
       session$sendCustomMessage("handler_alert", "There was an error with viewing Trajectory Lineage.")
@@ -1583,8 +1595,8 @@ server <- function(input, output, session) {
         
         output$ligandReceptorCuratedHeatmap <- renderPlotly({ plotly::ggplotly(p_ligand_receptor_network_strict) })
       }
-    }, warning = function(w) {
-      print(paste("Warning:  ", w))
+    # }, warning = function(w) {
+    #   print(paste("Warning:  ", w))
     }, error = function(e) {
       print(paste("Error :  ", e))
       session$sendCustomMessage("handler_alert", "There was an error with Ligand-Receptor Analysis.")
@@ -1654,13 +1666,16 @@ server <- function(input, output, session) {
   
   # This function is called after a new input file has been uploaded
   # and is responsible for clearing all generated plots across all tabs
-  cleanAllPlots <- function(){
+  # @param fromDataInput: If TRUE, clears all, including QC, else skips clearing QC
+  cleanAllPlots <- function(fromDataInput){
     # renderPlotly
-    output$nFeatureViolin <- NULL
-    output$totalCountsViolin <- NULL
-    output$mitoViolin <- NULL
-    output$mtCounts <- NULL
-    output$genesCounts <- NULL
+    if (fromDataInput){
+      output$nFeatureViolin <- NULL
+      output$totalCountsViolin <- NULL
+      output$mitoViolin <- NULL
+      output$mtCounts <- NULL
+      output$genesCounts <- NULL
+    }
     output$elbowPlotPCA <- NULL
     output$PCAscatter <- NULL
     output$PCAloadings <- NULL
@@ -1691,7 +1706,7 @@ server <- function(input, output, session) {
     output$findMarkersTable <- NULL
     
     # renderPrint
-    output$cellStats <- NULL
+    if (fromDataInput) output$cellStats <- NULL
     output$trajectoryText <- NULL
     
     # dittoDimPlot
