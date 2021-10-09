@@ -66,6 +66,39 @@ function fixHeight(m){
   return true;
 }
 
+// This function is called on program start, every time a new file is uploaded or after quality control filter
+// @param tabPanel: tab panel id whose tabs are getting disabled
+function disableTabs(tabPanel){
+  var i,
+      navbar_li_children = document.getElementById(tabPanel).parentElement.getElementsByTagName("li");
+  for (i = 2; i < (navbar_li_children.length - 2); i++){ //all except Home, Data Input, Help and About
+    navbar_li_children[i].style.pointerEvents = "none";
+    navbar_li_children[i].style.opacity = 0.5;
+  }
+  return true;
+}
+
+// This functions enables the list of given tab ids
+// @param tab_ids[0]: tab panel id whose tabs are getting enabled
+// @param tab_ids[!0]: list of tab panel IDs to be enabled
+function enableTabs(tab_ids){
+  var tab_id, element, i, j,
+      navbar_li_children = document.getElementById(tab_ids[0]).parentElement.getElementsByTagName("li");;
+  for (i = 1; i < tab_ids.length; i++){ // skipping panelSet id
+    console.log(tab_ids[i]);
+    for (j = 2; j < (navbar_li_children.length - 2); j++){ // skipping Home, Data Input, Help and About pages
+      console.log(navbar_li_children[j].innerText);
+      if (tab_ids[i] == navbar_li_children[j].innerText){
+        console.log("ENTERED")
+        navbar_li_children[j].style.pointerEvents = "all";
+        navbar_li_children[j].style.opacity = 1;
+        continue;
+      }
+    }
+  }
+  return true;
+}
+
 Shiny.addCustomMessageHandler("handler_alert", shinyAlert);
 Shiny.addCustomMessageHandler("handler_log", shinyLog);
 Shiny.addCustomMessageHandler("handler_disableButton", disableButton);
@@ -73,3 +106,5 @@ Shiny.addCustomMessageHandler("handler_enableButton", enableButton);
 Shiny.addCustomMessageHandler("handler_startLoader", startLoader);
 Shiny.addCustomMessageHandler("handler_finishLoader", finishLoader);
 Shiny.addCustomMessageHandler("handler_fixHeight", fixHeight);
+Shiny.addCustomMessageHandler("handler_disableTabs", disableTabs);
+Shiny.addCustomMessageHandler("handler_enableTabs", enableTabs);

@@ -14,7 +14,7 @@ ui <- dashboardPage(
   dashboardSidebar(
     width = "280px",
     
-    sidebarMenu(
+    sidebarMenu(id = "sidebarMenu",
       menuItem(text = "HOME", tabName = "home", icon = icon("home")),
       tags$hr(),
       menuItem(text = "DATA INPUT", tabName = "upload", icon = icon("upload")),
