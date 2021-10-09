@@ -252,10 +252,10 @@ ui <- dashboardPage(
                     tags$h3("Display settings"),
                     tags$hr(),
                     div(class="ldBar", id="dim_red1_loader", "data-preset"="circle"),
-                    selectInput("umapType", "Plot type:", # TODO observe this event instead of umapConfirm button
-                                c("UMAP" = "umap",
+                    selectInput("umapType", "Plot type:",
+                                c("", "UMAP" = "umap",
                                   "tSNE" = "tsne",
-                                  "Diffusion Map" = "dfm")),
+                                  "Diffusion Map" = "dfm"),),
                     selectInput("umapDimensions", "Dimensions:",
                                 c("2D" = "2",
                                   "3D" = "3")),
@@ -265,7 +265,7 @@ ui <- dashboardPage(
                     sliderInput("umapDotSize", "Size:", min = 1, max = 20, value = 5, step = 0.5),
                     sliderInput("umapDotOpacity", "Opacity:", min = 0, max = 1, value = 1, step = 0.1),
                     sliderInput("umapDotBorder", "Border width:", min = 0, max = 10, value = 1, step = 0.5),
-                    actionButton(inputId = "umapConfirm", label = "Display plot"),
+                    #actionButton(inputId = "umapConfirm", label = "Display plot"),
                     ),
 
                 box(width = 9, status = "info", solidHeader = TRUE, title = "Plot", height = "1200px",

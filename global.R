@@ -18,7 +18,7 @@ library(dittoSeq) # BiocManager::install("dittoSeq")
 library(slingshot) # BiocManager::install("slingshot")
 library(nichenetr) # devtools::install_github("saeyslab/nichenetr") # BiocManager::install("limma")
 library(tidyverse)
-library(destiny) # BiocManager::install("destiny")
+library(destiny) #remotes::install_github("theislab/destiny")
 
 #Global variables
 
