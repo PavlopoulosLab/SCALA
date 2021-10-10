@@ -6,17 +6,16 @@ server <- function(input, output, session) {
   metaD <- reactiveValues(my_project_name="-", my_activePC=1, all_lin="0")
   
   #------------------Upload tab--------------------------------
-  observeEvent(input$uploadConfirm, {
+  observeEvent(input$uploadCountMatrixConfirm, {
     session$sendCustomMessage("handler_disableTabs", "sidebarMenu") # disable all tab panels (except Data Input) until files are uploaded
     session$sendCustomMessage("handler_startLoader", c("input_loader", 10))
-    session$sendCustomMessage("handler_disableButton", "uploadConfirm")
+    session$sendCustomMessage("handler_disableButton", "uploadCountMatrixConfirm")
     tryCatch({
       # Create the user directory for the input and output of the analysis
-      metaD$my_project_name <- input$projectID
-      minimum_cells <<- input$minCells
-      minimum_features <<- input$minFeatures
-      organism <<- input$radioSpecies
-      objectInputType <<- input$inputType
+      metaD$my_project_name <- input$uploadCountMatrixprojectID
+      minimum_cells <<- input$uploadCountMatrixminCells
+      minimum_features <<- input$uploadCountMatrixminFeatures
+      organism <<- input$uploadCountMatrixRadioSpecies
       #  userId <- "User1_"
       #  user_dir <- paste0("D:\\BSRC_Fleming\\aaa_PhD_template\\", userId, metaD$my_project_name) #TODO remove 2 random barcodes, does it crash?
       #  dir.create(user_dir)
@@ -25,20 +24,12 @@ server <- function(input, output, session) {
       #  file.copy(from = input$genes$datapath, to = paste0(user_dir, "\\", input$genes$name), overwrite = TRUE)
       #
       #   seurat_data <- Read10X(user_dir)
-      if(objectInputType == "Input10x")
-      {
-        seurat_data <- Read10X("User1_Tg4w/")#"hg19/"
-        seurat_object <<- CreateSeuratObject(counts = seurat_data, project = metaD$my_project_name, min.cells = as.numeric(minimum_cells), min.features = as.numeric(minimum_features))
+      
+      testMatrix <- read.table("testMatrix.txt")
+      seurat_object <<- CreateSeuratObject(counts = testMatrix, project = metaD$my_project_name, min.cells = as.numeric(minimum_cells), min.features = as.numeric(minimum_features))
         
-        init_seurat_object <<- CreateSeuratObject(counts = seurat_data, project = metaD$my_project_name, min.cells = as.numeric(minimum_cells), min.features = as.numeric(minimum_features))
-      }
-      else
-      {
-        testMatrix <- read.table("testMatrix.txt")
-        seurat_object <<- CreateSeuratObject(counts = testMatrix, project = metaD$my_project_name, min.cells = as.numeric(minimum_cells), min.features = as.numeric(minimum_features))
-        
-        init_seurat_object <<- CreateSeuratObject(counts = testMatrix, project = metaD$my_project_name, min.cells = as.numeric(minimum_cells), min.features = as.numeric(minimum_features))
-      }
+      init_seurat_object <<- CreateSeuratObject(counts = testMatrix, project = metaD$my_project_name, min.cells = as.numeric(minimum_cells), min.features = as.numeric(minimum_features))
+      
       
       session$sendCustomMessage("handler_startLoader", c("input_loader", 25))
       if(organism == "mouse")
@@ -53,7 +44,6 @@ server <- function(input, output, session) {
       }
       
       session$sendCustomMessage("handler_startLoader", c("input_loader", 50))
-      #seurat_object <<- readRDS("Large_Pooled_example.RDS")#("pbmc.RDS")#("Tg4_degs.RDS") #../ALEX_Project/Fibroblast_Only_Analysis/imcs.combined_res0.5.RDS
       
       output$metadataTable <- renderDataTable(seurat_object@meta.data, options = list(pageLength = 20))
       session$sendCustomMessage("handler_startLoader", c("input_loader", 75))
@@ -75,7 +65,69 @@ server <- function(input, output, session) {
       session$sendCustomMessage("handler_startLoader", c("input_loader", 100))
       Sys.sleep(1) # giving some time for renderer for smoother transition
       session$sendCustomMessage("handler_finishLoader", "input_loader")
-      session$sendCustomMessage("handler_enableButton", "uploadConfirm")
+      session$sendCustomMessage("handler_enableButton", "uploadCountMatrixConfirm")
+    })
+  })
+  
+  observeEvent(input$upload10xRNAConfirm, {
+    session$sendCustomMessage("handler_disableTabs", "sidebarMenu") # disable all tab panels (except Data Input) until files are uploaded
+    session$sendCustomMessage("handler_startLoader", c("input_loader", 10))
+    session$sendCustomMessage("handler_disableButton", "upload10xRNAConfirm")
+    tryCatch({
+      # Create the user directory for the input and output of the analysis
+      metaD$my_project_name <- input$upload10xRNAprojectID
+      minimum_cells <<- input$upload10xRNAminCells
+      minimum_features <<- input$upload10xRNAminFeatures
+      organism <<- input$upload10xRNARadioSpecies
+      #  userId <- "User1_"
+      #  user_dir <- paste0("D:\\BSRC_Fleming\\aaa_PhD_template\\", userId, metaD$my_project_name) #TODO remove 2 random barcodes, does it crash?
+      #  dir.create(user_dir)
+      #  file.copy(from = input$matrix$datapath, to = paste0(user_dir, "\\", input$matrix$name), overwrite = TRUE)
+      #  file.copy(from = input$barcodes$datapath, to = paste0(user_dir, "\\", input$barcodes$name), overwrite = TRUE)
+      #  file.copy(from = input$genes$datapath, to = paste0(user_dir, "\\", input$genes$name), overwrite = TRUE)
+      #
+      #   seurat_data <- Read10X(user_dir)
+      seurat_data <- Read10X("User1_Tg4w/")#"hg19/"
+      seurat_object <<- CreateSeuratObject(counts = seurat_data, project = metaD$my_project_name, min.cells = as.numeric(minimum_cells), min.features = as.numeric(minimum_features))
+        
+      init_seurat_object <<- CreateSeuratObject(counts = seurat_data, project = metaD$my_project_name, min.cells = as.numeric(minimum_cells), min.features = as.numeric(minimum_features))
+      
+      
+      session$sendCustomMessage("handler_startLoader", c("input_loader", 25))
+      if(organism == "mouse")
+      {
+        seurat_object[["percent.mt"]] <<- PercentageFeatureSet(seurat_object, pattern = "^mt-")
+        init_seurat_object[["percent.mt"]] <<- PercentageFeatureSet(init_seurat_object, pattern = "^mt-")
+      }
+      else
+      {
+        seurat_object[["percent.mt"]] <<- PercentageFeatureSet(seurat_object, pattern = "^MT-")
+        init_seurat_object[["percent.mt"]] <<- PercentageFeatureSet(init_seurat_object, pattern = "^MT-")
+      }
+      
+      session$sendCustomMessage("handler_startLoader", c("input_loader", 50))
+      
+      output$metadataTable <- renderDataTable(seurat_object@meta.data, options = list(pageLength = 20))
+      session$sendCustomMessage("handler_startLoader", c("input_loader", 75))
+      updateSelInpColor()
+      updateInputGeneList()
+      updateGeneSearchFP()
+      cleanAllPlots(T) # fromDataInput -> TRUE
+      # updateInputLRclusters()
+      # updateInpuTrajectoryClusters()
+      # print(organism)
+      # saveRDS(seurat_object, "seurat_object.RDS")
+      session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " QUALITY CONTROL", " DATA NORMALIZATION\n& SCALING"))
+      # }, warning = function(w) {
+      #   print(paste("Warning:  ", w))
+    }, error = function(e) {
+      print(paste("Error :  ", e))
+      session$sendCustomMessage("handler_alert", "Data Input error. Please, refer to the help pages for input format.")
+    }, finally = { # with or without error
+      session$sendCustomMessage("handler_startLoader", c("input_loader", 100))
+      Sys.sleep(1) # giving some time for renderer for smoother transition
+      session$sendCustomMessage("handler_finishLoader", "input_loader")
+      session$sendCustomMessage("handler_enableButton", "upload10xRNAConfirm")
     })
   })
   
@@ -665,6 +717,7 @@ server <- function(input, output, session) {
         session$sendCustomMessage("handler_startLoader", c("dim_red1_loader", 25))
         seurat_object <<- RunUMAP(seurat_object, dims = 1:as.numeric(input$umapPCs), seed.use = 42, n.components = as.numeric(input$umapOutComponents), reduction = "pca") #TODO add diffusion map, addition of extra dimensions UMAP, select dimensions to plot, alpha and dot size
         session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " TRAJECTORY ANALYSIS"))
+        updateUmapTypeChoices()
       }
     # }, warning = function(w) {
     #   print(paste("Warning:  ", w))
@@ -693,6 +746,7 @@ server <- function(input, output, session) {
         session$sendCustomMessage("handler_startLoader", c("dim_red1_loader", 25))
         seurat_object <<- RunTSNE(seurat_object, dims = 1:as.numeric(input$umapPCs), seed.use = 42, dim.embed = 3, reduction = "pca", verbose = T)
         session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " TRAJECTORY ANALYSIS"))
+        updateUmapTypeChoices()
       }
     # }, warning = function(w) {
     #   print(paste("Warning:  ", w))
@@ -723,18 +777,19 @@ server <- function(input, output, session) {
         dfm_in <- as.data.frame(seurat_object@reductions[['pca']]@cell.embeddings)
         dfm_in$Cell_id <- rownames(dfm_in)
         dfm_in <- dfm_in[, c(51, 1:as.numeric(input$umapPCs))]
-        print(head(dfm_in))
+        #print(head(dfm_in))
     
         #run DFM default
         dfm <- DiffusionMap(dfm_in, n_eigs = as.numeric(input$umapOutComponents))
         dfm_out <- dfm@eigenvectors
         colnames(dfm_out) <- gsub("DC", "DC_", colnames(dfm_out))
-        print(head(dfm_out))
+        #print(head(dfm_out))
     
         #add new reduction in seurat_object
         seurat_object[["dfm"]] <<- CreateDimReducObject(embeddings = dfm_out, key = "DC_", assay = DefaultAssay(seurat_object), global = T)
         # print("finished DFM")
         session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " TRAJECTORY ANALYSIS"))
+        updateUmapTypeChoices()
       }
     # }, warning = function(w) {
     #   print(paste("Warning:  ", w))
@@ -751,27 +806,33 @@ server <- function(input, output, session) {
     })
   })
   
-  observeEvent(input$umapType, { 
-    updateReduction()
+  observeEvent(input$umapType, {
+    if(input$umapType != "-")
+      updateReduction()
   })
   
   observeEvent(input$umapColorBy, { 
+    if(input$umapType != "-")
     updateReduction()
   })
   
   observeEvent(input$umapDimensions, { 
+    if(input$umapType != "-")
     updateReduction()
   })
   
   observeEvent(input$umapDotSize, { 
+    if(input$umapType != "-")
     updateReduction()
   })
   
   observeEvent(input$umapDotOpacity, { 
+    if(input$umapType != "-")
     updateReduction()
   })
   
   observeEvent(input$umapDotBorder, { 
+    if(input$umapType != "-")
     updateReduction()
   })
   
@@ -1620,6 +1681,39 @@ server <- function(input, output, session) {
       session$sendCustomMessage("handler_finishLoader", "dim_red2_loader")
       session$sendCustomMessage("handler_enableButton", "umapConfirm")
     })
+  }
+  
+  updateUmapTypeChoices <- function()
+  {
+    # if(!is.null(seurat_object@reductions[['umap']]@cell.embeddings) & !is.null(seurat_object@reductions[['tsne']]@cell.embeddings) & !is.null(seurat_object@reductions[['dfm']]@cell.embeddings))
+    # {
+    #   updateSelectInput(session, "umapType", choices = c("umap", "tsne", "dfm"))
+    # }
+    # else if(!is.null(seurat_object@reductions[['umap']]@cell.embeddings) & !is.null(seurat_object@reductions[['tsne']]@cell.embeddings) & is.null(seurat_object@reductions[['dfm']]@cell.embeddings))
+    # {
+    #   updateSelectInput(session, "umapType", choices = c("umap", "tsne"))
+    # }
+    # else if(!is.null(seurat_object@reductions[['umap']]@cell.embeddings) & is.null(seurat_object@reductions[['tsne']]@cell.embeddings) & !is.null(seurat_object@reductions[['dfm']]@cell.embeddings))
+    # {
+    #   updateSelectInput(session, "umapType", choices = c("umap", "dfm"))
+    # }
+    # else if(is.null(seurat_object@reductions[['umap']]@cell.embeddings) & !is.null(seurat_object@reductions[['tsne']]@cell.embeddings) & !is.null(seurat_object@reductions[['dfm']]@cell.embeddings))
+    # {
+    #   updateSelectInput(session, "umapType", choices = c("tsne", "dfm"))
+    # }
+    # else if(!is.null(seurat_object@reductions[['umap']]@cell.embeddings) & is.null(seurat_object@reductions[['tsne']]@cell.embeddings) & is.null(seurat_object@reductions[['dfm']]@cell.embeddings))
+    # {
+    #   updateSelectInput(session, "umapType", choices = c("umap"))
+    # }
+    # else if(is.null(seurat_object@reductions[['umap']]@cell.embeddings) & !is.null(seurat_object@reductions[['tsne']]@cell.embeddings) & is.null(seurat_object@reductions[['dfm']]@cell.embeddings))
+    # {
+    #   updateSelectInput(session, "umapType", choices = c("tsne"))
+    # }
+    # else if(is.null(seurat_object@reductions[['umap']]@cell.embeddings) & is.null(seurat_object@reductions[['tsne']]@cell.embeddings) & !is.null(seurat_object@reductions[['dfm']]@cell.embeddings))
+    # {
+    #   updateSelectInput(session, "umapType", choices = c("dfm"))
+    # }
+    updateSelectInput(session, "umapType", choices = c("umap", "tsne", "dfm"))
   }
   
   #function update selectInput

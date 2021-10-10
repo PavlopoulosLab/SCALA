@@ -65,32 +65,80 @@ ui <- dashboardPage(
       ),
       
       #Upload tab
+      # tabItem(tabName = "upload", #TODO 3 tabs
+      #         # two boxes inside upload tab
+      #         fluidRow(
+      #           box(
+      #             width = 4, status = "info", solidHeader = TRUE,
+      #             title = "Select input files",
+      #             radioButtons("inputType", label = h3("Select type of input : "),
+      #                          choices = list("Counts matrix" = "countsTable", 
+      #                                         "10x Input files" = "Input10x"
+      #                          ), 
+      #                          selected = "Input10x"),
+      #             textInput(inputId = "projectID", label = "Project name : ", value = "Project1"),
+      #             fileInput(inputId = "barcodes", label = "1. Choose barcodes.csv.gz file", accept = ".gz"),
+      #             fileInput(inputId = "genes", label = "2. Choose features.csv.gz file", accept = ".gz"),
+      #             fileInput(inputId = "matrix", label = "3. Choose matrix.mtx.gz file", accept = ".gz"),
+      #             tags$hr(),
+      #             fileInput(inputId = "countMatrix", label = "1. Genes-Cells count matrix", accept = ".txt"),
+      #             tags$hr(),
+      #             textInput(inputId = "minCells", label = "Include features detected in at least this many cells :", value = "3"),
+      #             textInput(inputId = "minFeatures", label = "Include cells where at least this many features are detected :", value = "200"),
+      #             radioButtons("radioSpecies", label = h3("Select organism : "),
+      #                          choices = list("Mus musculus (Mouse)" = "mouse", 
+      #                                         "Homo sapiens (Human)" = "human"
+      #                          ), 
+      #                          selected = "mouse"),
+      #             actionButton(inputId = "uploadConfirm", label = "OK"),
+      #           ),
+      #           box(
+      #             width = 8, solidHeader = TRUE, status = "info",
+      #             title = "Metadata table",
+      #             div(class="ldBar", id="input_loader", "data-preset"="circle"),
+      #             dataTableOutput("metadataTable")
+      #           )
+      #         ),
+      # ),
+      
+      #Upload tab
       tabItem(tabName = "upload", #TODO 3 tabs
               # two boxes inside upload tab
               fluidRow(
                 box(
                   width = 4, status = "info", solidHeader = TRUE,
                   title = "Select input files",
-                  radioButtons("inputType", label = h3("Select type of input : "),
-                               choices = list("Counts matrix" = "countsTable", 
-                                              "10x Input files" = "Input10x"
-                               ), 
-                               selected = "Input10x"),
-                  textInput(inputId = "projectID", label = "Project name : ", value = "Project1"),
-                  fileInput(inputId = "barcodes", label = "1. Choose barcodes.csv.gz file", accept = ".gz"),
-                  fileInput(inputId = "genes", label = "2. Choose features.csv.gz file", accept = ".gz"),
-                  fileInput(inputId = "matrix", label = "3. Choose matrix.mtx.gz file", accept = ".gz"),
-                  tags$hr(),
-                  fileInput(inputId = "countMatrix", label = "1. Genes-Cells count matrix", accept = ".txt"),
-                  tags$hr(),
-                  textInput(inputId = "minCells", label = "Include features detected in at least this many cells :", value = "3"),
-                  textInput(inputId = "minFeatures", label = "Include cells where at least this many features are detected :", value = "200"),
-                  radioButtons("radioSpecies", label = h3("Select organism : "),
-                               choices = list("Mus musculus (Mouse)" = "mouse", 
-                                              "Homo sapiens (Human)" = "human"
-                               ), 
-                               selected = "mouse"),
-                  actionButton(inputId = "uploadConfirm", label = "OK"),
+                  tabsetPanel(type = "tabs",
+                              tabPanel("Gene-count matrix (scRNA-seq)",
+                                       textInput(inputId = "uploadCountMatrixprojectID", label = "Project name : ", value = "Project1"),
+                                       fileInput(inputId = "countMatrix", label = "1. Genes-Cells count matrix", accept = ".txt"),
+                                       sliderInput(inputId = "uploadCountMatrixminCells", label = "Include features detected in at least this many cells :", min = 1, max = 20, value = 3, step = 1),
+                                       sliderInput(inputId = "uploadCountMatrixminFeatures", label = "Include cells where at least this many features are detected :", min = 1, max = 200, value = 200, step = 1),
+                                       radioButtons("uploadCountMatrixRadioSpecies", label = h3("Select organism : "),
+                                                    choices = list("Mus musculus (Mouse)" = "mouse", 
+                                                                   "Homo sapiens (Human)" = "human"
+                                                    ), 
+                                                    selected = "mouse"),
+                                       actionButton(inputId = "uploadCountMatrixConfirm", label = "Submit")
+                                       ),
+                              tabPanel("10x input files (scRNA-seq)", 
+                                       textInput(inputId = "upload10xRNAprojectID", label = "Project name : ", value = "Project1"),
+                                       fileInput(inputId = "barcodes", label = "1. Choose barcodes.csv.gz file", accept = ".gz"),
+                                       fileInput(inputId = "genes", label = "2. Choose features.csv.gz file", accept = ".gz"),
+                                       fileInput(inputId = "matrix", label = "3. Choose matrix.mtx.gz file", accept = ".gz"),
+                                       sliderInput(inputId = "upload10xRNAminCells", label = "Include features detected in at least this many cells :", min = 1, max = 20, value = 3, step = 1),
+                                       sliderInput(inputId = "upload10xRNAminFeatures", label = "Include cells where at least this many features are detected :", min = 1, max = 200, value = 200, step = 1),
+                                                    radioButtons("upload10xRNARadioSpecies", label = h3("Select organism : "),
+                                                                 choices = list("Mus musculus (Mouse)" = "mouse", 
+                                                                                "Homo sapiens (Human)" = "human"
+                                                                 ), 
+                                                                 selected = "mouse"),
+                                       actionButton(inputId = "upload10xRNAConfirm", label = "Submit")
+                                       ),
+                              tabPanel("10x input files (scATAC-seq)", 
+                                       actionButton(inputId = "upload10xATACConfirm", label = "Submit")
+                              )
+                  )
                 ),
                 box(
                   width = 8, solidHeader = TRUE, status = "info",
@@ -253,9 +301,8 @@ ui <- dashboardPage(
                     tags$hr(),
                     div(class="ldBar", id="dim_red1_loader", "data-preset"="circle"),
                     selectInput("umapType", "Plot type:",
-                                c("", "UMAP" = "umap",
-                                  "tSNE" = "tsne",
-                                  "Diffusion Map" = "dfm"),),
+                                c("-" = "-")
+                                ,),
                     selectInput("umapDimensions", "Dimensions:",
                                 c("2D" = "2",
                                   "3D" = "3")),
