@@ -131,6 +131,50 @@ server <- function(input, output, session) {
     })
   })
   
+  observeEvent(input$upload10xExampleRNAConfirm, {
+    session$sendCustomMessage("handler_disableTabs", "sidebarMenu") # disable all tab panels (except Data Input) until files are uploaded
+    session$sendCustomMessage("handler_startLoader", c("input_loader", 10))
+    session$sendCustomMessage("handler_disableButton", "upload10xExampleRNAConfirm")
+    tryCatch({
+      # Create the user directory for the input and output of the analysis
+      seurat_data <- Read10X("hg19/")#"hg19/"
+      metaD$my_project_name <- "PBMC"
+      organism <<- "human"
+      
+      seurat_object <<- CreateSeuratObject(counts = seurat_data, project = metaD$my_project_name, min.cells = as.numeric(minimum_cells), min.features = as.numeric(minimum_features))
+      
+      init_seurat_object <<- CreateSeuratObject(counts = seurat_data, project = metaD$my_project_name, min.cells = as.numeric(minimum_cells), min.features = as.numeric(minimum_features))
+      
+      seurat_object[["percent.mt"]] <<- PercentageFeatureSet(seurat_object, pattern = "^MT-")
+      init_seurat_object[["percent.mt"]] <<- PercentageFeatureSet(init_seurat_object, pattern = "^MT-")
+      
+      
+      session$sendCustomMessage("handler_startLoader", c("input_loader", 50))
+      
+      output$metadataTable <- renderDataTable(seurat_object@meta.data, options = list(pageLength = 20))
+      session$sendCustomMessage("handler_startLoader", c("input_loader", 75))
+      updateSelInpColor()
+      updateInputGeneList()
+      updateGeneSearchFP()
+      cleanAllPlots(T) # fromDataInput -> TRUE
+      # updateInputLRclusters()
+      # updateInpuTrajectoryClusters()
+      # print(organism)
+      # saveRDS(seurat_object, "seurat_object.RDS")
+      session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " QUALITY CONTROL", " DATA NORMALIZATION\n& SCALING"))
+      # }, warning = function(w) {
+      #   print(paste("Warning:  ", w))
+    }, error = function(e) {
+      print(paste("Error :  ", e))
+      session$sendCustomMessage("handler_alert", "Data Input error. Please, refer to the help pages for input format.")
+    }, finally = { # with or without error
+      session$sendCustomMessage("handler_startLoader", c("input_loader", 100))
+      Sys.sleep(1) # giving some time for renderer for smoother transition
+      session$sendCustomMessage("handler_finishLoader", "input_loader")
+      session$sendCustomMessage("handler_enableButton", "upload10xExampleRNAConfirm")
+    })
+  })
+  
   #------------------Quality Control tab--------------------------------
   observeEvent(input$qcDisplay, {
     session$sendCustomMessage("handler_startLoader", c("qc_loader", 10))
@@ -437,6 +481,7 @@ server <- function(input, output, session) {
       else if (!"ScaleData.RNA" %in% names(seurat_object@commands)) session$sendCustomMessage("handler_alert", "Data need to be scaled first. Please, execute the previous step in DATA NORMALIZATION & SCALING.")
       else {
         seurat_object <<- RunPCA(seurat_object, features = VariableFeatures(object = seurat_object))
+        updateUmapTypeChoices("pca")
         
         output$elbowPlotPCA <- renderPlotly(
           {
@@ -616,7 +661,7 @@ server <- function(input, output, session) {
         updateSelInpColor()
         updateInputLRclusters()
         updateInpuTrajectoryClusters()
-        session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " NON LINEAR DIMENSIONALITY\nREDUCTION (tSNE & UMAPS)",
+        session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " ADDITIONAL DIMENSIONALITY\nREDUCTION METHODS", " TRAJECTORY ANALYSIS",
                                                           " MARKERS' IDENTIFICATION", " LIGAND - RECEPTOR\nANALYSIS"))
       }
       # }, warning = function(w) { # if this is not commented, the table does not render
@@ -717,7 +762,7 @@ server <- function(input, output, session) {
         session$sendCustomMessage("handler_startLoader", c("dim_red1_loader", 25))
         seurat_object <<- RunUMAP(seurat_object, dims = 1:as.numeric(input$umapPCs), seed.use = 42, n.components = as.numeric(input$umapOutComponents), reduction = "pca") #TODO add diffusion map, addition of extra dimensions UMAP, select dimensions to plot, alpha and dot size
         session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " TRAJECTORY ANALYSIS"))
-        updateUmapTypeChoices()
+        updateUmapTypeChoices("umap")
       }
     # }, warning = function(w) {
     #   print(paste("Warning:  ", w))
@@ -746,7 +791,7 @@ server <- function(input, output, session) {
         session$sendCustomMessage("handler_startLoader", c("dim_red1_loader", 25))
         seurat_object <<- RunTSNE(seurat_object, dims = 1:as.numeric(input$umapPCs), seed.use = 42, dim.embed = 3, reduction = "pca", verbose = T)
         session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " TRAJECTORY ANALYSIS"))
-        updateUmapTypeChoices()
+        updateUmapTypeChoices("tsne")
       }
     # }, warning = function(w) {
     #   print(paste("Warning:  ", w))
@@ -789,7 +834,7 @@ server <- function(input, output, session) {
         seurat_object[["dfm"]] <<- CreateDimReducObject(embeddings = dfm_out, key = "DC_", assay = DefaultAssay(seurat_object), global = T)
         # print("finished DFM")
         session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " TRAJECTORY ANALYSIS"))
-        updateUmapTypeChoices()
+        updateUmapTypeChoices("dfm")
       }
     # }, warning = function(w) {
     #   print(paste("Warning:  ", w))
@@ -912,30 +957,13 @@ server <- function(input, output, session) {
         output$findMarkersDotplot <- renderPlotly(
           {
             top10 <- seurat_object@misc$markers %>% group_by(cluster) %>% top_n(n = 10, wt = eval(parse(text=markers_logFCBase)))#wt = avg_logFC)
-            p <- DotPlot(seurat_object, features = rev(unique(top10$gene)), dot.scale = 6, cols = c("grey", "red")) + RotatedAxis()
+            p <- DotPlot(seurat_object, features = rev(unique(top10$gene)), dot.scale = 6, cols = c("grey", "red")) + RotatedAxis() + labs(fill="Average\nexpression")
             plotly::ggplotly(p)
           }
         )
+        
         session$sendCustomMessage("handler_startLoader", c("DEA3_loader", 75))
         
-        output$findMarkersFeaturePlot <- renderPlotly(
-          {
-            geneS <- input$findMarkersGeneSelect
-            plot <- FeaturePlot(seurat_object, features = geneS, pt.size = 1.5, label = T, label.size = 5, cols = c("lightgrey", "red"), order = T, reduction = input$findMarkersReductionType) +
-              theme_bw() +
-              theme(axis.text.x = element_text(face = "bold", color = "black", size = 25, angle = 0),
-                    axis.text.y = element_text(face = "bold", color = "black", size = 25, angle = 0),
-                    axis.title.y = element_text(face = "bold", color = "black", size = 25),
-                    axis.title.x = element_text(face = "bold", color = "black", size = 25),
-                    legend.text = element_text(face = "bold", color = "black", size = 9),
-                    legend.title = element_text(face = "bold", color = "black", size = 9),
-                    legend.position="right",
-                    title = element_text(face = "bold", color = "black", size = 25, angle = 0)) +
-              labs(x="UMAP 1", y="UMAP 2", title = geneS, color="Normalized\nexpression")
-            gp <- plotly::ggplotly(plot, tooltip = c("x", "y", geneS))
-            gp
-          }
-        )
         session$sendCustomMessage("handler_startLoader", c("DEA4_loader", 75))
         
         output$findMarkersViolinPlot <- renderPlotly(
@@ -1017,6 +1045,54 @@ server <- function(input, output, session) {
     })
   })
   
+observeEvent(input$findMarkersReductionType, {
+  if(input$findMarkersReductionType != "-")
+  {
+    output$findMarkersFeaturePlot <- renderPlotly(
+      {
+        geneS <- input$findMarkersGeneSelect
+        label_x <- ""
+        label_y <- ""
+        
+        if(input$findMarkersReductionType == "umap")
+        {
+          label_x <- "UMAP_1"
+          label_y <- "UMAP_2"
+        }
+        else if(input$findMarkersReductionType == "tsne")
+        {
+          label_x <- "tSNE_1"
+          label_y <- "tSNE_2"
+        }
+        else if(input$findMarkersReductionType == "dfm")
+        {
+          label_x <- "DC_1"
+          label_y <- "DC_2"
+        }
+        else if(input$findMarkersReductionType == "pca")
+        {
+          label_x <- "PC_1"
+          label_y <- "PC_2"
+        }
+        
+        plot <- FeaturePlot(seurat_object, features = geneS, pt.size = 1.5, label = T, label.size = 5, cols = c("lightgrey", "red"), order = T, reduction = input$findMarkersReductionType) +
+          theme_bw() +
+          theme(axis.text.x = element_text(face = "bold", color = "black", size = 25, angle = 0),
+                axis.text.y = element_text(face = "bold", color = "black", size = 25, angle = 0),
+                axis.title.y = element_text(face = "bold", color = "black", size = 25),
+                axis.title.x = element_text(face = "bold", color = "black", size = 25),
+                legend.text = element_text(face = "bold", color = "black", size = 9),
+                legend.title = element_text(face = "bold", color = "black", size = 9),
+                legend.position="right",
+                title = element_text(face = "bold", color = "black", size = 25, angle = 0)) +
+          labs(x=label_x, y=label_y, title = geneS, color="Normalized\nexpression")
+        gp <- plotly::ggplotly(plot, tooltip = c("x", "y", geneS))
+        gp
+      }
+    )
+  }
+})  
+  
   #------------------Cell cycle tab------------------------------------------
   observeEvent(input$cellCycleRun, { # observe selectInput cellCycleReduction instead of cellCycleRun actionButton
     session$sendCustomMessage("handler_startLoader", c("CC1_loader", 10))
@@ -1066,6 +1142,11 @@ server <- function(input, output, session) {
               {
                 label_x <- "tSNE_1"
                 label_y <- "tSNE_2"
+              }
+              else if(selected_Reduction == "dfm")
+              {
+                label_x <- "DC_1"
+                label_y <- "DC_2"
               }
               
               plot1 <- DimPlot(seurat_object, reduction = selected_Reduction)
@@ -1669,6 +1750,33 @@ server <- function(input, output, session) {
                        colors = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(meta[, input$umapColorBy]))) ) 
           output$umapPlot <- renderPlotly({print(p)})
         }
+        else if(type == "pca" & dims == 2)
+        {
+          p <- ggplot(data=reduc_data, aes_string(x="PC_1", y="PC_2", fill=input$umapColorBy)) +
+            geom_point(size= as.numeric(input$umapDotSize), shape=21, alpha= as.numeric(input$umapDotOpacity), stroke=as.numeric(input$umapDotBorder)) +
+            scale_fill_manual(values = cols)+
+            scale_size()+
+            theme_bw() +
+            theme(axis.text.x = element_text(face = "bold", color = "black", size = 25, angle = 0),
+                  axis.text.y = element_text(face = "bold", color = "black", size = 25, angle = 0),
+                  axis.title.y = element_text(face = "bold", color = "black", size = 25),
+                  axis.title.x = element_text(face = "bold", color = "black", size = 25),
+                  legend.text = element_text(face = "bold", color = "black", size = 9),
+                  legend.title = element_text(face = "bold", color = "black", size = 9),
+                  legend.position="right",
+                  title = element_text(face = "bold", color = "black", size = 25, angle = 0)) +
+            labs(x="PC 1", y="PC 2", color="Cell type", title = "", fill="Color")
+          output$umapPlot <- renderPlotly({plotly::ggplotly(p)})  
+        }
+        else if(type == "pca" & dims == 3)
+        {
+          p <- plot_ly(reduc_data, x=~PC_1, y=~PC_2, z=~PC_3, type="scatter3d", mode="markers", alpha = as.numeric(input$umapDotOpacity), color=as.formula(paste0('~', input$umapColorBy)), 
+                       marker = list(size = as.numeric(input$umapDotSize), 
+                                     line = list(color = 'black', width = as.numeric(input$umapDotBorder))
+                       ),
+                       colors = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(meta[, input$umapColorBy]))) ) 
+          output$umapPlot <- renderPlotly({print(p)})
+        }
       }
       # }, warning = function(w) {
       #   print(paste("Warning:  ", w))
@@ -1683,37 +1791,13 @@ server <- function(input, output, session) {
     })
   }
   
-  updateUmapTypeChoices <- function()
+  updateUmapTypeChoices <- function(type)
   {
-    # if(!is.null(seurat_object@reductions[['umap']]@cell.embeddings) & !is.null(seurat_object@reductions[['tsne']]@cell.embeddings) & !is.null(seurat_object@reductions[['dfm']]@cell.embeddings))
-    # {
-    #   updateSelectInput(session, "umapType", choices = c("umap", "tsne", "dfm"))
-    # }
-    # else if(!is.null(seurat_object@reductions[['umap']]@cell.embeddings) & !is.null(seurat_object@reductions[['tsne']]@cell.embeddings) & is.null(seurat_object@reductions[['dfm']]@cell.embeddings))
-    # {
-    #   updateSelectInput(session, "umapType", choices = c("umap", "tsne"))
-    # }
-    # else if(!is.null(seurat_object@reductions[['umap']]@cell.embeddings) & is.null(seurat_object@reductions[['tsne']]@cell.embeddings) & !is.null(seurat_object@reductions[['dfm']]@cell.embeddings))
-    # {
-    #   updateSelectInput(session, "umapType", choices = c("umap", "dfm"))
-    # }
-    # else if(is.null(seurat_object@reductions[['umap']]@cell.embeddings) & !is.null(seurat_object@reductions[['tsne']]@cell.embeddings) & !is.null(seurat_object@reductions[['dfm']]@cell.embeddings))
-    # {
-    #   updateSelectInput(session, "umapType", choices = c("tsne", "dfm"))
-    # }
-    # else if(!is.null(seurat_object@reductions[['umap']]@cell.embeddings) & is.null(seurat_object@reductions[['tsne']]@cell.embeddings) & is.null(seurat_object@reductions[['dfm']]@cell.embeddings))
-    # {
-    #   updateSelectInput(session, "umapType", choices = c("umap"))
-    # }
-    # else if(is.null(seurat_object@reductions[['umap']]@cell.embeddings) & !is.null(seurat_object@reductions[['tsne']]@cell.embeddings) & is.null(seurat_object@reductions[['dfm']]@cell.embeddings))
-    # {
-    #   updateSelectInput(session, "umapType", choices = c("tsne"))
-    # }
-    # else if(is.null(seurat_object@reductions[['umap']]@cell.embeddings) & is.null(seurat_object@reductions[['tsne']]@cell.embeddings) & !is.null(seurat_object@reductions[['dfm']]@cell.embeddings))
-    # {
-    #   updateSelectInput(session, "umapType", choices = c("dfm"))
-    # }
-    updateSelectInput(session, "umapType", choices = c("umap", "tsne", "dfm"))
+    reductions_choices <<- c(reductions_choices, type)
+    updateSelectInput(session, "umapType", choices = reductions_choices)  #umapType, findMarkersReductionType, cellCycleReduction, trajectoryReduction
+    updateSelectInput(session, "findMarkersReductionType", choices = reductions_choices)
+    updateSelectInput(session, "cellCycleReduction", choices = reductions_choices)
+    updateSelectInput(session, "trajectoryReduction", choices = reductions_choices)
   }
   
   #function update selectInput

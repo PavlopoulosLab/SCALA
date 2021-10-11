@@ -56,6 +56,9 @@ markers_minLogfc <- "0.25"
 markers_minPval <- "0.01"
 markers_logFCBase <- "avg_logFC"
 
+#tabs Umap/tsne, DEA, Cell cycle, Trajectory
+reductions_choices <- c("-")
+
 #gProfiler
 #set_base_url("http://biit.cs.ut.ee/gprofiler_archive3/e102_eg49_p15")
 
