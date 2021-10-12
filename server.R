@@ -1053,6 +1053,10 @@ observeEvent(input$findMarkersReductionType, {
         geneS <- input$findMarkersGeneSelect
         label_x <- ""
         label_y <- ""
+        show_label <- as.logical(input$findMarkersLabels)
+        order_exp <- as.logical(input$findMarkersOrder)
+        minq <- paste0("q", input$findMarkersMinCutoff)
+        maxq <- paste0("q", input$findMarkersMaxCutoff)
         
         if(input$findMarkersReductionType == "umap")
         {
@@ -1075,7 +1079,8 @@ observeEvent(input$findMarkersReductionType, {
           label_y <- "PC_2"
         }
         
-        plot <- FeaturePlot(seurat_object, features = geneS, pt.size = 1.5, label = T, label.size = 5, cols = c("lightgrey", "red"), order = T, reduction = input$findMarkersReductionType) +
+        plot <- FeaturePlot(seurat_object, features = geneS, pt.size = 1.5, label = show_label, label.size = 5, cols = c("lightgrey", "red"), 
+                            order = order_exp, reduction = input$findMarkersReductionType, max.cutoff = maxq, min.cutoff = minq) +
           theme_bw() +
           theme(axis.text.x = element_text(face = "bold", color = "black", size = 25, angle = 0),
                 axis.text.y = element_text(face = "bold", color = "black", size = 25, angle = 0),

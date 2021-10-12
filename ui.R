@@ -334,7 +334,17 @@ ui <- dashboardPage(
                                                    label = 'Search for gene:',
                                                    choices = NULL,
                                                    selected = NULL,
-                                                   multiple = FALSE) # allow for multiple inputs
+                                                   multiple = FALSE),
+                                    radioButtons("findMarkersLabels", label = "Show cluster labels: ",
+                                                 choices = list("Yes" = TRUE, 
+                                                                "No" = FALSE)
+                                                 ),
+                                    radioButtons("findMarkersOrder", label = "Prioritize expressing cells: ",
+                                                 choices = list("Yes" = TRUE, 
+                                                                "No" = FALSE)
+                                                ),
+                                    sliderInput("findMarkersMaxCutoff", "Set max expression value: (quantile)", min = 0, max = 100, value = 100, step = 1),
+                                    sliderInput("findMarkersMinCutoff", "Set minimum expression value: (quantile)", min = 0, max = 100, value = 0, step = 1),
                                     ),
                                 box(width = 9, status = "info", solidHeader = TRUE, title = "Plot",
                                     div(class="ldBar", id="DEA4_loader", "data-preset"="circle"),
