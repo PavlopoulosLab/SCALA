@@ -1096,7 +1096,39 @@ observeEvent(input$findMarkersReductionType, {
       }
     )
   }
-})  
+})
+
+observeEvent(input$findMarkersBlendThreshold, {
+  updateFeaturePair()
+})
+
+observeEvent(input$findMarkersFeaturePairReductionType, {
+    updateFeaturePair()
+})
+
+observeEvent(input$findMarkersFeaturePairMaxCutoff, {
+  updateFeaturePair()
+})
+
+observeEvent(input$findMarkersFeaturePairMinCutoff, {
+  updateFeaturePair()
+})
+
+observeEvent(input$findMarkersFeaturePair1, {
+  updateFeaturePair()
+})
+
+observeEvent(input$findMarkersFeaturePair2, {
+  updateFeaturePair()
+})
+
+observeEvent(input$findMarkersFeaturePairLabels, {
+  updateFeaturePair()
+})
+
+observeEvent(input$findMarkersFeaturePairOrder, {
+  updateFeaturePair()
+})
   
   #------------------Cell cycle tab------------------------------------------
   observeEvent(input$cellCycleRun, { # observe selectInput cellCycleReduction instead of cellCycleRun actionButton
@@ -1796,11 +1828,72 @@ observeEvent(input$findMarkersReductionType, {
     })
   }
   
+  updateFeaturePair <- function()
+  {
+      if (!identical(seurat_object, NULL) & input$findMarkersFeaturePairReductionType != "-" & input$findMarkersFeaturePair1 %in% rownames(seurat_object) & input$findMarkersFeaturePair2 %in% rownames(seurat_object))
+      {
+        geneS1 <- input$findMarkersFeaturePair1
+        geneS2 <- input$findMarkersFeaturePair2
+        label_x <- ""
+        label_y <- ""
+        show_label <- as.logical(input$findMarkersFeaturePairLabels)
+        order_exp <- as.logical(input$findMarkersFeaturePairOrder)
+        minq <- paste0("q", input$findMarkersFeaturePairMinCutoff)
+        maxq <- paste0("q", input$findMarkersFeaturePairMaxCutoff)
+        blendThr <- as.numeric(input$findMarkersBlendThreshold)
+        
+        if(input$findMarkersFeaturePairReductionType == "umap")
+        {
+          label_x <- "UMAP_1"
+          label_y <- "UMAP_2"
+        }
+        else if(input$findMarkersFeaturePairReductionType == "tsne")
+        {
+          label_x <- "tSNE_1"
+          label_y <- "tSNE_2"
+        }
+        else if(input$findMarkersFeaturePairReductionType == "dfm")
+        {
+          label_x <- "DC_1"
+          label_y <- "DC_2"
+        }
+        else if(input$findMarkersFeaturePairReductionType == "pca")
+        {
+          label_x <- "PC_1"
+          label_y <- "PC_2"
+        }
+        
+        plot <- FeaturePlot(seurat_object, features = c(geneS1, geneS2), blend.threshold = blendThr, 
+                            pt.size = 1.5, label = show_label, label.size = 5, cols = c("lightgrey", "red", "dodgerblue4"), 
+                            order = order_exp, reduction = input$findMarkersFeaturePairReductionType, blend = TRUE, max.cutoff = maxq, min.cutoff = minq) +
+          theme_bw() +
+          theme(axis.text.x = element_text(face = "bold", color = "black", size = 25, angle = 0),
+                axis.text.y = element_text(face = "bold", color = "black", size = 25, angle = 0),
+                axis.title.y = element_text(face = "bold", color = "black", size = 25),
+                axis.title.x = element_text(face = "bold", color = "black", size = 25),
+                legend.text = element_text(face = "bold", color = "black", size = 9),
+                legend.title = element_text(face = "bold", color = "black", size = 9),
+                legend.position="none",
+                title = element_text(face = "bold", color = "black", size = 25, angle = 0)) #+
+        labs(x=label_x, y=label_y, color="Normalized\nexpression")
+        gp1 <- plotly::ggplotly(plot[[1]]) #, tooltip = c("x", "y", geneS))
+        gp2 <- plotly::ggplotly(plot[[2]])
+        gp3 <- plotly::ggplotly(plot[[3]])
+        gp4 <- plotly::ggplotly(plot[[4]]+theme(title = element_text(face = "bold", color = "black", size = 15)))
+        
+        output$findMarkersFPfeature1 <- renderPlotly({ gp1 })
+        output$findMarkersFPfeature2 <- renderPlotly({ gp2 })
+        output$findMarkersFPfeature1_2 <- renderPlotly({ gp3 })
+        output$findMarkersFPcolorbox <- renderPlotly({ gp4 })  
+      }
+  }
+  
   updateUmapTypeChoices <- function(type)
   {
     reductions_choices <<- c(reductions_choices, type)
     updateSelectInput(session, "umapType", choices = reductions_choices)  #umapType, findMarkersReductionType, cellCycleReduction, trajectoryReduction
     updateSelectInput(session, "findMarkersReductionType", choices = reductions_choices)
+    updateSelectInput(session, "findMarkersFeaturePairReductionType", choices = reductions_choices)
     updateSelectInput(session, "cellCycleReduction", choices = reductions_choices)
     updateSelectInput(session, "trajectoryReduction", choices = reductions_choices)
   }
@@ -1830,6 +1923,8 @@ observeEvent(input$findMarkersReductionType, {
     total_genes <- rownames(seurat_object@assays$RNA@counts)
     updateSelectizeInput(session, 'findMarkersGeneSelect', choices = total_genes, server = TRUE) # server-side selectize drastically improves performance
     updateSelectizeInput(session, 'findMarkersGeneSelect2', choices = total_genes, server = TRUE)
+    updateSelectizeInput(session, 'findMarkersFeaturePair1', choices = total_genes, server = TRUE)
+    updateSelectizeInput(session, 'findMarkersFeaturePair2', choices = total_genes, server = TRUE)
   }
   
   updateInputGeneList <- function()

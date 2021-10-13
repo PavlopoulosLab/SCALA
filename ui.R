@@ -312,24 +312,24 @@ ui <- dashboardPage(
                 ),
                 
                 box(
-                  width = 9, status = "info", solidHeader = TRUE, title = "DEA results", height = "1300px",
+                  width = 9, status = "info", solidHeader = TRUE, title = "DEA results", height = "1500px",
                   tabsetPanel(type = "tabs",
                               tabPanel("Marker genes", 
                                        div(class="ldBar", id="DEA1_loader", "data-preset"="circle"),
-                                       dataTableOutput(outputId="findMarkersTable", height = "1100px")),
+                                       dataTableOutput(outputId="findMarkersTable", height = "1300px")),
                               tabPanel("Heatmap", 
                                        div(class="ldBar", id="DEA2_loader", "data-preset"="circle"),
-                                       plotlyOutput(outputId = "findMarkersHeatmap", height = "1100px")),
+                                       plotlyOutput(outputId = "findMarkersHeatmap", height = "1300px")),
                               
                               tabPanel("Dotplot", 
                                        div(class="ldBar", id="DEA3_loader", "data-preset"="circle"),
-                                       plotlyOutput(outputId = "findMarkersDotplot", height = "1100px")),
+                                       plotlyOutput(outputId = "findMarkersDotplot", height = "1300px")),
                               
                               tabPanel("Feature plot", fluidRow(
                                 box(width = 3, status = "info", solidHeader = TRUE, title = "Options",
                                     selectInput("findMarkersReductionType", "Plot type:",
-                                                c("UMAP" = "umap",
-                                                  "tSNE" = "tsne")),
+                                                c("-" = "-")
+                                                ),
                                     selectizeInput(inputId = 'findMarkersGeneSelect',
                                                    label = 'Search for gene:',
                                                    choices = NULL,
@@ -343,14 +343,51 @@ ui <- dashboardPage(
                                                  choices = list("Yes" = TRUE, 
                                                                 "No" = FALSE)
                                                 ),
-                                    sliderInput("findMarkersMaxCutoff", "Set max expression value: (quantile)", min = 0, max = 100, value = 100, step = 1),
-                                    sliderInput("findMarkersMinCutoff", "Set minimum expression value: (quantile)", min = 0, max = 100, value = 0, step = 1),
+                                    sliderInput("findMarkersMaxCutoff", "Set max expression value: (quantile)", min = 0, max = 99, value = 99, step = 1),
+                                    sliderInput("findMarkersMinCutoff", "Set minimum expression value: (quantile)", min = 0, max = 99, value = 0, step = 1),
                                     ),
                                 box(width = 9, status = "info", solidHeader = TRUE, title = "Plot",
                                     div(class="ldBar", id="DEA4_loader", "data-preset"="circle"),
-                                    plotlyOutput(outputId = "findMarkersFeaturePlot", height = "1100px")
+                                    plotlyOutput(outputId = "findMarkersFeaturePlot", height = "1300px")
                                     )
                               )),
+                              tabPanel("Gene-pair expression", fluidRow(
+                                box(width=3, status="info", solidHeader=T, title="Options",
+                                    selectizeInput(inputId = 'findMarkersFeaturePair1',
+                                                   label = 'Select 1st feature:',
+                                                   choices = NULL,
+                                                   selected = NULL,
+                                                   multiple = FALSE),
+                                    selectizeInput(inputId = 'findMarkersFeaturePair2',
+                                                   label = 'Select 2nd Feature:',
+                                                   choices = NULL,
+                                                   selected = NULL,
+                                                   multiple = FALSE),
+                                    sliderInput("findMarkersBlendThreshold", "Select threshold for blending:", min = 0, max = 1, value = 0.5, step = 0.1),
+                                    selectInput("findMarkersFeaturePairReductionType", "Plot type:",
+                                                c("-" = "-")
+                                                ),
+                                    radioButtons("findMarkersFeaturePairLabels", label = "Show cluster labels: ",
+                                                 choices = list("Yes" = TRUE, 
+                                                                "No" = FALSE)
+                                    ),
+                                    radioButtons("findMarkersFeaturePairOrder", label = "Prioritize expressing cells: ",
+                                                 choices = list("Yes" = TRUE, 
+                                                                "No" = FALSE)
+                                    ),
+                                    sliderInput("findMarkersFeaturePairMaxCutoff", "Set max expression value: (quantile)", min = 0, max = 99, value = 99, step = 1),
+                                    sliderInput("findMarkersFeaturePairMinCutoff", "Set minimum expression value: (quantile)", min = 0, max = 99, value = 0, step = 1),
+                                    ),
+                                box(width=9, status="info", solidHeader=TRUE, title="Plot",
+                                    div(
+                                    column(plotlyOutput(outputId="findMarkersFPfeature1", height = "650px"), width = 6),
+                                    column(plotlyOutput(outputId="findMarkersFPfeature2", height = "650px"), width = 6),
+                                    column(plotlyOutput(outputId="findMarkersFPfeature1_2", height = "650px"), width = 6),
+                                    column(plotlyOutput(outputId="findMarkersFPcolorbox", height = "650px"), width = 6),
+                                    )
+                                )
+                              )
+                              ),
                               tabPanel("Violin plot", fluidRow(
                                 box(width = 3, status = "info", solidHeader = TRUE, title = "Options",
                                     #textInput(inputId = "findMarkersGeneSelect", label = "Search for gene:", value = "Actb"),
@@ -362,7 +399,7 @@ ui <- dashboardPage(
                                 ),
                                 box(width = 9, status = "info", solidHeader = TRUE, title = "Plot",
                                     div(class="ldBar", id="DEA5_loader", "data-preset"="circle"),
-                                    plotlyOutput(outputId = "findMarkersViolinPlot", height = "1100px")
+                                    plotlyOutput(outputId = "findMarkersViolinPlot", height = "1300px")
                                 )
                               )),
                               tabPanel("VolcanoPlot", fluidRow(
@@ -370,7 +407,7 @@ ui <- dashboardPage(
                                     textInput(inputId = "findMarkersClusterSelect", label = "Cluster:", value = "0")),
                                 box(width = 9, status = "info", solidHeader = TRUE, title = "Volcano plot",
                                     div(class="ldBar", id="DEA6_loader", "data-preset"="circle"),
-                                    plotlyOutput(outputId = "findMarkersVolcanoPlot", height = "1100px"))
+                                    plotlyOutput(outputId = "findMarkersVolcanoPlot", height = "1300px"))
                               ))
                       )
                 )
