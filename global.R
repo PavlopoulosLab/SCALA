@@ -19,6 +19,7 @@ library(slingshot) # BiocManager::install("slingshot")
 library(nichenetr) # devtools::install_github("saeyslab/nichenetr") # BiocManager::install("limma")
 library(tidyverse)
 library(destiny) #remotes::install_github("theislab/destiny")
+library(UCell) #remotes::install_github("carmonalab/UCell")
 
 #Global variables
 

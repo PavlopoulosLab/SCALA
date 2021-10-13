@@ -327,14 +327,24 @@ ui <- dashboardPage(
                               
                               tabPanel("Feature plot", fluidRow(
                                 box(width = 3, status = "info", solidHeader = TRUE, title = "Options",
-                                    selectInput("findMarkersReductionType", "Plot type:",
-                                                c("-" = "-")
-                                                ),
+                                    radioButtons("findMarkersFeatureSignature", label = "Select between gene or signature: ",
+                                                 choices = list("Gene" = "gene", 
+                                                                "Gene signature" = "signature"
+                                                 ), 
+                                                 selected = "gene"),
                                     selectizeInput(inputId = 'findMarkersGeneSelect',
-                                                   label = 'Search for gene:',
+                                                   label = 'Select a gene:',
                                                    choices = NULL,
                                                    selected = NULL,
                                                    multiple = FALSE),
+                                    selectizeInput(inputId = 'findMarkersSignatureSelect',
+                                                   label = 'Select a signature:',
+                                                   choices = "-",
+                                                   selected = "-",
+                                                   multiple = FALSE),
+                                    selectInput("findMarkersReductionType", "Plot type:",
+                                                c("-" = "-")
+                                                ),
                                     radioButtons("findMarkersLabels", label = "Show cluster labels: ",
                                                  choices = list("Yes" = TRUE, 
                                                                 "No" = FALSE)
@@ -345,6 +355,11 @@ ui <- dashboardPage(
                                                 ),
                                     sliderInput("findMarkersMaxCutoff", "Set max expression value: (quantile)", min = 0, max = 99, value = 99, step = 1),
                                     sliderInput("findMarkersMinCutoff", "Set minimum expression value: (quantile)", min = 0, max = 99, value = 0, step = 1),
+                                    tags$hr(),
+                                    tags$h3("Add a new signature"),
+                                    textInput(inputId = "findMarkersSignatureName", label = "Gene signature name :", value = "Signature1"),
+                                    textAreaInput(inputId = "findMarkersSignatureMembers", label = "Paste a list of genes", cols = 80, rows = 15, placeholder = "Prg4\nTspan15\nCol22a1\nHtra4"),
+                                    actionButton(inputId = "findMarkersSignatureAdd", label = "Calculate signature score")
                                     ),
                                 box(width = 9, status = "info", solidHeader = TRUE, title = "Plot",
                                     div(class="ldBar", id="DEA4_loader", "data-preset"="circle"),

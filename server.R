@@ -3,7 +3,7 @@ server <- function(input, output, session) {
   source("global.R", local=TRUE)
   
   session$sendCustomMessage("handler_disableTabs", "sidebarMenu") # disable all tab panels (except Data Input) until files are uploaded
-  metaD <- reactiveValues(my_project_name="-", my_activePC=1, all_lin="0")
+  metaD <- reactiveValues(my_project_name="-", all_lin="0")
   
   #------------------Upload tab--------------------------------
   observeEvent(input$uploadCountMatrixConfirm, {
@@ -1044,13 +1044,33 @@ server <- function(input, output, session) {
       session$sendCustomMessage("handler_enableButton", "umapConfirm")
     })
   })
-  
+
+  observeEvent(input$findMarkersSignatureAdd, {
+    markers <- list()
+    varTextarea <- input$findMarkersSignatureMembers
+    markers[[1]] <- unlist(strsplit(varTextarea, "\\n")) #c("Prg4", "Tspan14", "Clic5", "Htra4")
+    sig_name <- input$findMarkersSignatureName
+    print(sig_name)
+    names(markers)[1] <- sig_name
+    print(markers)
+    
+    seurat_object <<- AddModuleScore_UCell(seurat_object, features = markers)
+    updateSignatures()
+  })
+    
 observeEvent(input$findMarkersReductionType, {
   if(input$findMarkersReductionType != "-")
   {
     output$findMarkersFeaturePlot <- renderPlotly(
       {
-        geneS <- input$findMarkersGeneSelect
+        if(input$findMarkersFeatureSignature == "signature")
+        {
+          geneS <- input$findMarkersSignatureSelect
+        }
+        else
+        {
+          geneS <- input$findMarkersGeneSelect
+        }
         label_x <- ""
         label_y <- ""
         show_label <- as.logical(input$findMarkersLabels)
@@ -1896,6 +1916,12 @@ observeEvent(input$findMarkersFeaturePairOrder, {
     updateSelectInput(session, "findMarkersFeaturePairReductionType", choices = reductions_choices)
     updateSelectInput(session, "cellCycleReduction", choices = reductions_choices)
     updateSelectInput(session, "trajectoryReduction", choices = reductions_choices)
+  }
+  
+  updateSignatures <- function()
+  {
+    sig_names <- grep(pattern = "_UCell", x = colnames(seurat_object@meta.data))
+    updateSelectInput(session, "findMarkersSignatureSelect", choices = colnames(seurat_object@meta.data)[sig_names])
   }
   
   #function update selectInput
