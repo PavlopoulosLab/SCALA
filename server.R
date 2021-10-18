@@ -967,8 +967,16 @@ server <- function(input, output, session) {
         session$sendCustomMessage("handler_startLoader", c("DEA4_loader", 75))
         
         output$findMarkersViolinPlot <- renderPlotly(
-          {
-            geneS <- input$findMarkersGeneSelect2
+        {
+            geneS <- ""
+            if(input$findMarkersViolinFeaturesSignature == "gene")
+            {
+              geneS <- input$findMarkersGeneSelect2
+            }
+            else
+            {
+              geneS <- input$findMarkersViolinSignatureSelect
+            }
             plot <- VlnPlot(seurat_object, features = geneS, pt.size = 0, 
                             cols = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(seurat_object@meta.data[, 'seurat_clusters'])))) + 
               theme_bw() +
@@ -1063,6 +1071,7 @@ observeEvent(input$findMarkersReductionType, {
   {
     output$findMarkersFeaturePlot <- renderPlotly(
       {
+        geneS <- ""
         if(input$findMarkersFeatureSignature == "signature")
         {
           geneS <- input$findMarkersSignatureSelect
@@ -1922,6 +1931,7 @@ observeEvent(input$findMarkersFeaturePairOrder, {
   {
     sig_names <- grep(pattern = "_UCell", x = colnames(seurat_object@meta.data))
     updateSelectInput(session, "findMarkersSignatureSelect", choices = colnames(seurat_object@meta.data)[sig_names])
+    updateSelectInput(session, "findMarkersViolinSignatureSelect", choices = colnames(seurat_object@meta.data)[sig_names])
   }
   
   #function update selectInput

@@ -406,11 +406,21 @@ ui <- dashboardPage(
                               tabPanel("Violin plot", fluidRow(
                                 box(width = 3, status = "info", solidHeader = TRUE, title = "Options",
                                     #textInput(inputId = "findMarkersGeneSelect", label = "Search for gene:", value = "Actb"),
+                                    radioButtons("findMarkersViolinFeaturesSignature", label = "Select between gene or signature: ",
+                                                 choices = list("Gene" = "gene", 
+                                                                "Gene signature" = "signature"
+                                                 ), 
+                                                 selected = "gene"),
                                     selectizeInput(inputId = 'findMarkersGeneSelect2',
                                                 label = 'Search for gene:',
                                                 choices = NULL,
                                                 selected = NULL,
-                                                multiple = FALSE) # allow for multiple inputs
+                                                multiple = FALSE), # allow for multiple inputs
+                                    selectizeInput(inputId = 'findMarkersViolinSignatureSelect',
+                                                   label = 'Select a signature:',
+                                                   choices = "-",
+                                                   selected = "-",
+                                                   multiple = FALSE),
                                 ),
                                 box(width = 9, status = "info", solidHeader = TRUE, title = "Plot",
                                     div(class="ldBar", id="DEA5_loader", "data-preset"="circle"),
