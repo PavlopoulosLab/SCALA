@@ -1298,62 +1298,62 @@ observeEvent(input$findMarkersFeaturePairOrder, {
       else {
         cluster_temp <- input$gProfilerList
         temp_df <- data.frame()
-        if(cluster_temp == "all_clusters")
-        {
-          #all clusters used
-          all_clusters <- as.character(unique(seurat_object@misc$markers$cluster))
-          
-          gene_lists <- list()
-          for(i in 1:length(all_clusters))
-          {
-            if(input$gProfilerLFCRadio == "Up")#UP regulated
-            {
-              gene_lists[[i]] <- seurat_object@misc$markers[which(seurat_object@misc$markers$cluster == all_clusters[i] & 
-                                                                    seurat_object@misc$markers[, markers_logFCBase] >= as.numeric(input$gProfilerSliderLogFC) &
-                                                                    seurat_object@misc$markers[, input$gprofilerRadio] < as.numeric(input$gProfilerSliderSignificance)), 'gene']
-            }
-            else #down
-            {
-              gene_lists[[i]] <- seurat_object@misc$markers[which(seurat_object@misc$markers$cluster == all_clusters[i] & 
-                                                                    seurat_object@misc$markers[, markers_logFCBase] <= (as.numeric(input$gProfilerSliderLogFC)*(-1)) &
-                                                                    seurat_object@misc$markers[, input$gprofilerRadio] < as.numeric(input$gProfilerSliderSignificance)), 'gene']
-            }
-          }
-          
-          names(gene_lists) <- all_clusters
-          session$sendCustomMessage("handler_startLoader", c("gprof1_loader", 60))
-          
-          # gostres <- gost(query = gene_lists, 
-          #                 organism = "mmusculus", ordered_query = FALSE, 
-          #                 multi_query = F, significant = TRUE, exclude_iea = T, 
-          #                 measure_underrepresentation = FALSE, evcodes = TRUE, 
-          #                 user_threshold = 0.05, correction_method = "g_SCS", 
-          #                 domain_scope = "annotated", custom_bg = NULL, 
-          #                 numeric_ns = "", sources = NULL, as_short_link = FALSE)
-          
-          gostres <- gost(query = gene_lists, 
-                          organism = input$gProfilerOrganism, ordered_query = FALSE, 
-                          multi_query = F, significant = TRUE, exclude_iea = F, 
-                          measure_underrepresentation = FALSE, evcodes = TRUE, 
-                          user_threshold = as.numeric(input$gProfilerSliderSignificanceTerms), 
-                          correction_method = input$gprofilerRadioCorrection, 
-                          domain_scope = "annotated", custom_bg = NULL, 
-                          numeric_ns = "", sources = input$gProfilerDatasources, as_short_link = FALSE)
-          
-          temp_df <- gostres$result
-          
-          # output$gProfilerManhatan <- renderPlotly({ gostplot(gostres, capped = T, interactive = T) %>% 
-          # layout(width=1500, height=length(all_clusters)*400) })
-          if (!is.na(all_clusters)){ # TODO check if null or sth else
-            session$sendCustomMessage("handler_fixHeight", c("gProfilerManhatan", length(all_clusters)))
-            output$gProfilerManhatan <- renderPlotly({ print(gostplot(gostres, capped = TRUE, interactive = TRUE)) })
-            session$sendCustomMessage("handler_startLoader", c("gprof2_loader", 80))
-          } else session$sendCustomMessage("handler_alert", "Please, first calculate clusters") # TODO desicde sentence
-          #output$gProfilerManhatan <- renderPlotly({ plotly::ggplotly(gostplot(gostres, capped = TRUE, interactive = TRUE)) })
-          #output$gProfilerManhatan <- renderPlot({gostplot(gostres, capped = TRUE, interactive = FALSE)}, height = 4000)
-        }
-        else
-        {
+        # if(cluster_temp == "all_clusters")
+        # {
+        #   #all clusters used
+        #   all_clusters <- as.character(unique(seurat_object@misc$markers$cluster))
+        #   
+        #   gene_lists <- list()
+        #   for(i in 1:length(all_clusters))
+        #   {
+        #     if(input$gProfilerLFCRadio == "Up")#UP regulated
+        #     {
+        #       gene_lists[[i]] <- seurat_object@misc$markers[which(seurat_object@misc$markers$cluster == all_clusters[i] & 
+        #                                                             seurat_object@misc$markers[, markers_logFCBase] >= as.numeric(input$gProfilerSliderLogFC) &
+        #                                                             seurat_object@misc$markers[, input$gprofilerRadio] < as.numeric(input$gProfilerSliderSignificance)), 'gene']
+        #     }
+        #     else #down
+        #     {
+        #       gene_lists[[i]] <- seurat_object@misc$markers[which(seurat_object@misc$markers$cluster == all_clusters[i] & 
+        #                                                             seurat_object@misc$markers[, markers_logFCBase] <= (as.numeric(input$gProfilerSliderLogFC)*(-1)) &
+        #                                                             seurat_object@misc$markers[, input$gprofilerRadio] < as.numeric(input$gProfilerSliderSignificance)), 'gene']
+        #     }
+        #   }
+        #   
+        #   names(gene_lists) <- all_clusters
+        #   session$sendCustomMessage("handler_startLoader", c("gprof1_loader", 60))
+        #   
+        #   # gostres <- gost(query = gene_lists, 
+        #   #                 organism = "mmusculus", ordered_query = FALSE, 
+        #   #                 multi_query = F, significant = TRUE, exclude_iea = T, 
+        #   #                 measure_underrepresentation = FALSE, evcodes = TRUE, 
+        #   #                 user_threshold = 0.05, correction_method = "g_SCS", 
+        #   #                 domain_scope = "annotated", custom_bg = NULL, 
+        #   #                 numeric_ns = "", sources = NULL, as_short_link = FALSE)
+        #   
+        #   gostres <- gost(query = gene_lists, 
+        #                   organism = input$gProfilerOrganism, ordered_query = FALSE, 
+        #                   multi_query = F, significant = TRUE, exclude_iea = F, 
+        #                   measure_underrepresentation = FALSE, evcodes = TRUE, 
+        #                   user_threshold = as.numeric(input$gProfilerSliderSignificanceTerms), 
+        #                   correction_method = input$gprofilerRadioCorrection, 
+        #                   domain_scope = "annotated", custom_bg = NULL, 
+        #                   numeric_ns = "", sources = input$gProfilerDatasources, as_short_link = FALSE)
+        #   
+        #   temp_df <- gostres$result
+        #   
+        #   # output$gProfilerManhatan <- renderPlotly({ gostplot(gostres, capped = T, interactive = T) %>% 
+        #   # layout(width=1500, height=length(all_clusters)*400) })
+        #   if (!is.na(all_clusters)){ # TODO check if null or sth else
+        #     session$sendCustomMessage("handler_fixHeight", c("gProfilerManhatan", length(all_clusters)))
+        #     output$gProfilerManhatan <- renderPlotly({ print(gostplot(gostres, capped = TRUE, interactive = TRUE)) })
+        #     session$sendCustomMessage("handler_startLoader", c("gprof2_loader", 80))
+        #   } else session$sendCustomMessage("handler_alert", "Please, first calculate clusters") # TODO desicde sentence
+        #   #output$gProfilerManhatan <- renderPlotly({ plotly::ggplotly(gostplot(gostres, capped = TRUE, interactive = TRUE)) })
+        #   #output$gProfilerManhatan <- renderPlot({gostplot(gostres, capped = TRUE, interactive = FALSE)}, height = 4000)
+        # }
+        # else
+        # {
           gene_lists <- list()
           
           if(input$gProfilerLFCRadio == "Up")#UP regulated
@@ -1385,7 +1385,7 @@ observeEvent(input$findMarkersFeaturePairOrder, {
           temp_df <- gostres$result
           output$gProfilerManhatan <- renderPlotly({ print(gostplot(gostres, capped = TRUE, interactive = TRUE)) })
           session$sendCustomMessage("handler_startLoader", c("gprof2_loader", 80))
-        }
+        
         session$sendCustomMessage("handler_startLoader", c("gprof1_loader", 80))
         
         output$gProfilerTable <- renderDataTable(temp_df[, c(1, 3:6, 9:11, 16)], options = list(pageLength = 10), rownames = F)
@@ -1966,8 +1966,7 @@ observeEvent(input$findMarkersFeaturePairOrder, {
   updateInputGeneList <- function()
   {
     all_cluster_names <- as.character(unique(seurat_object@misc$markers$cluster))
-    gene_list_choises <- c(all_cluster_names, "all_clusters")
-    updateSelectInput(session, "gProfilerList", choices = gene_list_choises)
+    updateSelectInput(session, "gProfilerList", choices = all_cluster_names)
   }
   
   updateInputLineageList <- function(lin_names)

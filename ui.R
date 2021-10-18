@@ -469,7 +469,7 @@ ui <- dashboardPage(
                     tags$h3("1. Options for input list"),
                     tags$hr(),
                     selectInput("gProfilerList", "Input list of genes:",
-                                c("All clusters" = "all_clusters")),
+                                c("-" = "-")),
                     radioButtons("gprofilerRadio", label = "Sigificance threshold : ",
                                  choices = list("P-value" = "p_val", 
                                                 "Adjusted P-value" = "p_val_adj",
