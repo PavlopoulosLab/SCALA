@@ -128,7 +128,7 @@ ui <- dashboardPage(
                   tags$h3("2. Filter out low quality cells"),
                   tags$hr(),
                   textInput(inputId = "minUniqueGenes", label = "Filter out cells that have unique feature counts less than :", value = "500"),
-                  textInput(inputId = "maxUniqueGenes", label = "Filter out cells that have unique feature counts over than :", value = "6000"),
+                  textInput(inputId = "maxUniqueGenes", label = "Filter out cells that have unique feature counts over than :", value = "4000"),
                   textInput(inputId = "maxMtReads", label = "Filter out cells with mitochondrial counts % over :", value = "10"),
                   selectInput("qcColorBy", "Color by:",
                               c("orig.ident" = "orig.ident")),
@@ -139,12 +139,22 @@ ui <- dashboardPage(
                   title = "Quality control plots",
                   div(class="ldBar", id="qc_loader", "data-preset"="circle"),
                   div(
+                    column(tags$h3("Pre-filtering plots"), width=12),
+                    column(tags$hr(), width = 12),
                     column(plotlyOutput(outputId = "nFeatureViolin", height = "100%"), width = 4),
                     column(plotlyOutput(outputId = "totalCountsViolin", height = "100%"), width = 4),
                     column(plotlyOutput(outputId = "mitoViolin", height = "100%"), width = 4),
                     column(plotlyOutput(outputId = "genesCounts", height= "100%"), width = 6),
                     column(plotlyOutput(outputId = "mtCounts", height= "100%"), width = 6),
-                    column(verbatimTextOutput(outputId = "cellStats"), width = 4)
+                    column(verbatimTextOutput(outputId = "cellStats"), width = 4),
+                    column(tags$h3("Post-filtering plots"), width=12),
+                    column(tags$hr(), width = 12),
+                    column(plotlyOutput(outputId = "filteredNFeatureViolin", height = "100%"), width = 4),
+                    column(plotlyOutput(outputId = "filteredTotalCountsViolin", height = "100%"), width = 4),
+                    column(plotlyOutput(outputId = "filteredMitoViolin", height = "100%"), width = 4),
+                    column(plotlyOutput(outputId = "filteredGenesCounts", height= "100%"), width = 6),
+                    column(plotlyOutput(outputId = "filteredMtCounts", height= "100%"), width = 6),
+                    column(verbatimTextOutput(outputId = "filteredCellStats"), width = 4)
                   )
                 )
               )

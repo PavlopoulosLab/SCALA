@@ -180,12 +180,12 @@ server <- function(input, output, session) {
     session$sendCustomMessage("handler_startLoader", c("qc_loader", 10))
     session$sendCustomMessage("handler_disableButton", "qcDisplay")
     tryCatch({
-      if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
+      if (identical(init_seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else{
         output$nFeatureViolin <- renderPlotly(
           {
-            p <- VlnPlot(seurat_object, features = c("nFeature_RNA"), pt.size = 0.5, group.by = input$qcColorBy,
-                         cols = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(seurat_object@meta.data[, input$qcColorBy])))) + 
+            p <- VlnPlot(init_seurat_object, features = c("nFeature_RNA"), pt.size = 0.5, group.by = input$qcColorBy,
+                         cols = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(init_seurat_object@meta.data[, input$qcColorBy])))) + 
               theme_bw() + 
               geom_hline(yintercept=c(as.numeric(input$minUniqueGenes), as.numeric(input$maxUniqueGenes)), linetype="dashed", color = "red", size=1) + 
               theme(
@@ -201,8 +201,8 @@ server <- function(input, output, session) {
         
         output$totalCountsViolin <- renderPlotly(
           {
-            p <- VlnPlot(seurat_object, features = c("nCount_RNA"), pt.size = 0.5, group.by = input$qcColorBy,
-                         cols = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(seurat_object@meta.data[, input$qcColorBy])))) + 
+            p <- VlnPlot(init_seurat_object, features = c("nCount_RNA"), pt.size = 0.5, group.by = input$qcColorBy,
+                         cols = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(init_seurat_object@meta.data[, input$qcColorBy])))) + 
               theme_bw() + 
               theme(
                 plot.title = element_blank(),
@@ -217,8 +217,8 @@ server <- function(input, output, session) {
         
         output$mitoViolin <- renderPlotly(
           {
-            p <- VlnPlot(seurat_object, features = c("percent.mt"), pt.size = 0.5, group.by = input$qcColorBy,
-                         cols = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(seurat_object@meta.data[, input$qcColorBy])))) + 
+            p <- VlnPlot(init_seurat_object, features = c("percent.mt"), pt.size = 0.5, group.by = input$qcColorBy,
+                         cols = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(init_seurat_object@meta.data[, input$qcColorBy])))) + 
               theme_bw() + 
               geom_hline(yintercept= as.numeric(input$maxMtReads), linetype="dashed", color = "red", size=1) +
               theme(
@@ -239,8 +239,8 @@ server <- function(input, output, session) {
             #    theme_bw()+
             #    labs(x="Total reads/ cell", y="% of reads mapped to mitochondrial genome/ cell") +
             #    theme(legend.position = "none")
-            p <- FeatureScatter(seurat_object, feature1 = "nCount_RNA", feature2 = "percent.mt", group.by = input$qcColorBy, 
-                                cols = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(seurat_object@meta.data[, input$qcColorBy]))))
+            p <- FeatureScatter(init_seurat_object, feature1 = "nCount_RNA", feature2 = "percent.mt", group.by = input$qcColorBy, 
+                                cols = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(init_seurat_object@meta.data[, input$qcColorBy]))))
             gp <- plotly::ggplotly(p)
             print(gp)
           }
@@ -254,8 +254,8 @@ server <- function(input, output, session) {
             #    theme_bw()+
             #    labs(x="Total reads/ cell", y="Genes detected/ cell") +
             #    theme(legend.position = "none")
-            p <- FeatureScatter(seurat_object, feature1 = "nCount_RNA", feature2 = "nFeature_RNA", group.by = input$qcColorBy, 
-                                cols = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(seurat_object@meta.data[, input$qcColorBy]))))
+            p <- FeatureScatter(init_seurat_object, feature1 = "nCount_RNA", feature2 = "nFeature_RNA", group.by = input$qcColorBy, 
+                                cols = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(init_seurat_object@meta.data[, input$qcColorBy]))))
             gp <- plotly::ggplotly(p)
             print(gp)
           }
@@ -296,7 +296,7 @@ server <- function(input, output, session) {
         seurat_object <<- subset(init_seurat_object, subset = nFeature_RNA > as.numeric(qc_minFeatures) & nFeature_RNA < as.numeric(qc_maxFeatures) & percent.mt < as.double(qc_maxMtPercent)) #filter object
         
         session$sendCustomMessage("handler_startLoader", c("qc_loader", 75))
-        output$nFeatureViolin <- renderPlotly(
+        output$filteredNFeatureViolin <- renderPlotly(
           {
             p <- VlnPlot(seurat_object, features = c("nFeature_RNA"), pt.size = 0.5, group.by = input$qcColorBy,
                          cols = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(seurat_object@meta.data[, input$qcColorBy])))) + 
@@ -310,7 +310,7 @@ server <- function(input, output, session) {
             plotly::ggplotly(p, tooltip = c("x", "y")) 
           }
         )
-        output$totalCountsViolin <- renderPlotly(
+        output$filteredTotalCountsViolin <- renderPlotly(
           {
             p <- VlnPlot(seurat_object, features = c("nCount_RNA"), pt.size = 0.5, group.by = input$qcColorBy,
                          cols = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(seurat_object@meta.data[, input$qcColorBy])))) + 
@@ -324,7 +324,7 @@ server <- function(input, output, session) {
             plotly::ggplotly(p, tooltip = c("x", "y")) 
           }
         )
-        output$mitoViolin <- renderPlotly(
+        output$filteredMitoViolin <- renderPlotly(
           {
             p <- VlnPlot(seurat_object, features = c("percent.mt"), pt.size = 0.5, group.by = input$qcColorBy,
                          cols = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(seurat_object@meta.data[, input$qcColorBy])))) + 
@@ -338,7 +338,7 @@ server <- function(input, output, session) {
             plotly::ggplotly(p, tooltip = c("x", "y"))
           }
         )
-        output$mtCounts <- renderPlotly(
+        output$filteredMtCounts <- renderPlotly(
           {
             # p <- ggplot(seurat_object@meta.data, aes(x=nCount_RNA, y=percent.mt, color=input$qcColorBy)) + 
             #    geom_point() +
@@ -351,7 +351,7 @@ server <- function(input, output, session) {
             print(gp)
           }
         )
-        output$genesCounts <- renderPlotly(
+        output$filteredGenesCounts <- renderPlotly(
           {
             # p <- ggplot(seurat_object@meta.data, aes(x=nCount_RNA, y=nFeature_RNA, color=input$qcColorBy)) + 
             #    geom_point() +
@@ -364,9 +364,8 @@ server <- function(input, output, session) {
             print(gp)
           }
         )
-        output$cellStats <- renderPrint(
+        output$filteredCellStats <- renderPrint(
           {
-            cat(paste0("Total number of cells before filtering: ", nrow(init_seurat_object@meta.data)))
             cat(paste0("\nTotal number of cells after filtering: ", nrow(seurat_object@meta.data)))
           }
         )
