@@ -85,11 +85,8 @@ function enableTabs(tab_ids){
   var tab_id, element, i, j,
       navbar_li_children = document.getElementById(tab_ids[0]).parentElement.getElementsByTagName("li");;
   for (i = 1; i < tab_ids.length; i++){ // skipping panelSet id
-    console.log(tab_ids[i]);
     for (j = 2; j < (navbar_li_children.length - 2); j++){ // skipping Home, Data Input, Help and About pages
-      console.log(navbar_li_children[j].innerText);
       if (tab_ids[i] == navbar_li_children[j].innerText){
-        console.log("ENTERED")
         navbar_li_children[j].style.pointerEvents = "all";
         navbar_li_children[j].style.opacity = 1;
         continue;

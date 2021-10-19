@@ -52,6 +52,7 @@ ui <- dashboardPage(
     tags$head(tags$link(rel = "stylesheet", type = "text/css", href="loading-bar.css")), # loading bar CSS
     tags$head(tags$script(src = "rshiny_handlers.js")), # R to JS
     tags$head(tags$script(src = "loading-bar.js")), # loading bar JS
+    tags$head(tags$script(src = "sliderfix.js")),
     tabItems(
       #home tab
       tabItem(tabName = "home", 
