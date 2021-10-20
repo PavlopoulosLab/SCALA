@@ -171,8 +171,8 @@ ui <- dashboardPage(
                   title = "Normalize and scale the data",
                   tags$h3("1. Log-normalization"),
                   tags$hr(),
-                  textInput(inputId = "normScaleFactor", label = "Scale factor :", value = "10000"),
-                  
+                  #textInput(inputId = "normScaleFactor", label = "Scale factor :", value = "10000"),
+                  sliderInput(inputId = "normScaleFactor", label = "Scale factor :", min = 1000, max = 1000000, value = 10000, step = 1000),
                   tags$h3("2. Identification of highly variable features"),
                   tags$hr(),
                   radioButtons("radioHVG", label = h3("Select one of the following methods : "),
@@ -182,8 +182,8 @@ ui <- dashboardPage(
                                               
                                               "Dispersion method" = "disp"), 
                                selected = "vst"),
-                  textInput(inputId = "nHVGs", label = "Number of genes to select as top variable genes (applicable only to the first and third option) :", value = "2000"),
-                  
+                  #textInput(inputId = "nHVGs", label = "Number of genes to select as top variable genes (applicable only to the first and third option) :", value = "2000"),
+                  sliderInput(inputId = "nHVGs", label = "Number of genes to select as top variable genes (applicable only to the first and third option) :", min = 200, max = 4000, value = 2000, step = 100),
                   tags$h3("3. Scaling the data"),
                   tags$hr(),
                   tags$p("Scaling transformation is implemented before dimensionality reduction of the dataset and performs the following steps : "),
@@ -221,7 +221,8 @@ ui <- dashboardPage(
                 box(
                   width = 12, status = "info", solidHeader = TRUE,
                   title = "Explore particular principal components", height = "990px",
-                  column(textInput(inputId = "PCin", label = "Select a principal component :", value = "1"), width = 6),
+                  #column(textInput(inputId = "PCin", label = "Select a principal component :", value = "1"), width = 6),
+                  selectInput("PCin", "Select a principal component :", choices=1:50, selected = 1, multiple = FALSE,selectize = TRUE, width = NULL, size = NULL),
                   column(actionButton(inputId = "PCconfirm", label = "OK"), width = 12),
                   div(class="ldBar", id="PCA2_loader", "data-preset"="circle"),
                   div(
@@ -240,13 +241,16 @@ ui <- dashboardPage(
                   title = "k-NN & Clustering parameters",
                   tags$h3("1. Construction of the shared nearest neighbour"),
                   tags$hr(),
-                  textInput(inputId = "snnK", label = "k-nearest neighbours for each cell :", value = "20"),
-                  textInput(inputId = "snnPCs", label = "Number of principal components to use :", value = "15"),
-                  
+                  #textInput(inputId = "snnK", label = "k-nearest neighbours for each cell :", value = "20"),
+                  sliderInput(inputId = "snnK", label = "k-nearest neighbours for each cell :", min = 1, max = 200, value = 20, step = 1),
+                  #textInput(inputId = "snnPCs", label = "Number of principal components to use :", value = "15"),
+                  sliderInput(inputId = "snnPCs", label = "Number of principal components to use :", min = 1, max = 50, value = 15, step = 1),
                   tags$h3("2. Clustering of the cells"),
                   tags$hr(),
-                  textInput(inputId = "clusterRes", label = "Clustering resolution :", value = "0.6"),
-                  textInput(inputId = "clusterPCs", label = "Number of principal components to use :", value = "15"),
+                  #textInput(inputId = "clusterRes", label = "Clustering resolution :", value = "0.6"),
+                  sliderInput(inputId = "clusterRes", label = "Clustering resolution :", min = 0.1, max = 60, value = 0.8, step = 0.1),
+                  #textInput(inputId = "clusterPCs", label = "Number of principal components to use :", value = "15"),
+                  sliderInput(inputId = "clusterPCs", label = "Number of principal components to use :", min = 1, max = 50, value = 15, step = 1),
                   actionButton(inputId = "snnConfirm", label = "OK"),
                 ),
                 box(
@@ -271,8 +275,10 @@ ui <- dashboardPage(
               fluidRow(
                 box(width = 3, status = "info", solidHeader = TRUE,
                     title = "Cell visualization options",
-                    textInput(inputId = "umapPCs", label = "Number of principal components to use:", value = "15"),
-                    textInput(inputId = "umapOutComponents", label = "Number of principal components to fit output:", value = "3"),
+                    #textInput(inputId = "umapPCs", label = "Number of principal components to use:", value = "15"),
+                    sliderInput(inputId = "umapPCs", label = "Number of principal components to use :", min = 1, max = 50, value = 15, step = 1),
+                    #textInput(inputId = "umapOutComponents", label = "Number of principal components to fit output:", value = "3"),
+                    sliderInput(inputId = "umapOutComponents", label = "Number of dimensions to fit output:", min = 1, max = 50, value = 15, step = 1),
                     actionButton(inputId = "umapRunUmap", label = "Run UMAP"),
                     actionButton(inputId = "umapRunTsne", label = "Run tSNE"),
                     actionButton(inputId = "umapRunDFM", label = "Run Diffusion Map"),
@@ -318,9 +324,12 @@ ui <- dashboardPage(
                                                 "log(2)" = "avg_log2FC"
                                  ), 
                                  selected = "avg_logFC"),
-                    textInput(inputId = "findMarkersMinPct", label = "Only test genes that are detected in a minimum fraction of cells in either of the two populations :", value = "0.1"),
-                    textInput(inputId = "findMarkersLogFC", label = "Limit testing to genes which show, on average, at least X-fold difference (log-scale) between the two groups of cells :", value = "0.25"),
-                    textInput(inputId = "findMarkersPval", label = "Only return markers that have a p-value < slected threshold, or a power > selected threshold (if the test is ROC) :", value = "0.01"),
+                    #textInput(inputId = "findMarkersMinPct", label = "Only test genes that are detected in a minimum fraction of cells in either of the two populations :", value = "0.1"),
+                    sliderInput(inputId = "findMarkersMinPct", label = "Only test genes that are detected in a minimum fraction of cells in either of the two populations :", min = 0, max = 1, value = 0.1, step = 0.05),
+                    #textInput(inputId = "findMarkersLogFC", label = "Limit testing to genes which show, on average, at least X-fold difference (log-scale) between the two groups of cells :", value = "0.25"),
+                    sliderInput(inputId = "findMarkersLogFC", label = "Limit testing to genes which show, on average, at least X-fold difference (log-scale) between the two groups of cells :", min = 0, max = 3, value = 0.25, step = 0.05),
+                    #textInput(inputId = "findMarkersPval", label = "Only return markers that have a p-value < slected threshold, or a power > selected threshold (if the test is ROC) :", value = "0.01"),
+                    sliderInput(inputId = "findMarkersPval", label = "Only return markers that have a p-value < slected threshold, or a power > selected threshold (if the test is ROC) :", min = 0, max = 1, value = 0.01, step = 0.01),
                     actionButton(inputId = "findMarkersConfirm", label = "OK")
                 ),
                 
