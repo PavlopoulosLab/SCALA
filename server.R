@@ -417,6 +417,7 @@ server <- function(input, output, session) {
         else seurat_object <<- ScaleData(seurat_object, vars.to.regress=normalize_scaleRegressOut)
         session$sendCustomMessage("handler_log", "Finished centering and scaling data matrix.")
         session$sendCustomMessage("handler_startLoader", c("normalize_loader", 75))
+        updateSignatures()
         
         output$hvgScatter <- renderPlotly(
           {
@@ -1925,6 +1926,8 @@ observeEvent(input$findMarkersFeaturePairOrder, {
     updateSliderInput(session, "maxUniqueGenes", min = min(init_seurat_object$nFeature_RNA)+2, max = max(init_seurat_object$nFeature_RNA))
   }
   
+  
+  
   updateUmapTypeChoices <- function(type)
   {
     reductions_choices <<- c(reductions_choices, type)
@@ -1937,9 +1940,13 @@ observeEvent(input$findMarkersFeaturePairOrder, {
   
   updateSignatures <- function()
   {
-    sig_names <- grep(pattern = "_UCell", x = colnames(seurat_object@meta.data))
-    updateSelectInput(session, "findMarkersSignatureSelect", choices = colnames(seurat_object@meta.data)[sig_names])
-    updateSelectInput(session, "findMarkersViolinSignatureSelect", choices = colnames(seurat_object@meta.data)[sig_names])
+    #sig_names <- grep(pattern = "_UCell", x = colnames(seurat_object@meta.data))
+    colnames(seurat_object@meta.data)
+    tableMeta <- seurat_object@meta.data
+    f <- sapply(tableMeta, is.numeric)
+    sig_names <- colnames(tableMeta[, f])
+    updateSelectInput(session, "findMarkersSignatureSelect", choices = sig_names)#colnames(seurat_object@meta.data)[sig_names])
+    updateSelectInput(session, "findMarkersViolinSignatureSelect", choices = sig_names) #colnames(seurat_object@meta.data)[sig_names])
   }
   
   #function update selectInput
@@ -2033,9 +2040,12 @@ observeEvent(input$findMarkersFeaturePairOrder, {
     output$findMarkersHeatmap <- NULL
     output$findMarkersDotplot <- NULL
     output$findMarkersFeaturePlot <- NULL
+    output$findMarkersFPcolorbox <- NULL
+    output$findMarkersFPfeature1_2 <- NULL
+    output$findMarkersFPfeature1 <- NULL
+    output$findMarkersFPfeature2 <- NULL
     output$findMarkersViolinPlot <- NULL
     output$findMarkersVolcanoPlot <- NULL
-    
     # renderPlot
     output$trajectoryPlot <- NULL
     output$trajectoryPseudotimePlot <- NULL
@@ -2053,6 +2063,13 @@ observeEvent(input$findMarkersFeaturePairOrder, {
     # dittoDimPlot
     plot_D <- NULL
     plot_P <- NULL
+    
+    reductions_choices <<- c("-")
+    updateSelectInput(session, "umapType", choices = reductions_choices)  #umapType, findMarkersReductionType, cellCycleReduction, trajectoryReduction
+    updateSelectInput(session, "findMarkersReductionType", choices = reductions_choices)
+    updateSelectInput(session, "findMarkersFeaturePairReductionType", choices = reductions_choices)
+    updateSelectInput(session, "cellCycleReduction", choices = reductions_choices)
+    updateSelectInput(session, "trajectoryReduction", choices = reductions_choices)
   }
 }
 
