@@ -66,7 +66,5 @@ reductions_choices <- c("-")
 #TO DO
 # Rename + delete buttons gia ta objects
 # Selectbox gia kathe tab gia to arxeio poy ginetai processed
-# Check oti exei ginei to proigoumeno bhma
-# Weights + edges of k-NN
-# clusters + cells belonging there
 # input color file by user
+# bug barplot in clustering doesn't appear when loading a new object

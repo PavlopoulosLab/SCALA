@@ -360,7 +360,7 @@ ui <- dashboardPage(
                                                    selected = NULL,
                                                    multiple = FALSE),
                                     selectizeInput(inputId = 'findMarkersSignatureSelect',
-                                                   label = 'Select a signature:',
+                                                   label = 'Select signature/numeric variable:',
                                                    choices = "-",
                                                    selected = "-",
                                                    multiple = FALSE),
@@ -439,7 +439,7 @@ ui <- dashboardPage(
                                                 selected = NULL,
                                                 multiple = FALSE), # allow for multiple inputs
                                     selectizeInput(inputId = 'findMarkersViolinSignatureSelect',
-                                                   label = 'Select a signature:',
+                                                   label = 'Select signature/numeric variable:',
                                                    choices = "-",
                                                    selected = "-",
                                                    multiple = FALSE),
