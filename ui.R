@@ -298,6 +298,7 @@ ui <- dashboardPage(
                     sliderInput("umapDotSize", "Size:", min = 1, max = 20, value = 5, step = 0.5),
                     sliderInput("umapDotOpacity", "Opacity:", min = 0, max = 1, value = 1, step = 0.1),
                     sliderInput("umapDotBorder", "Border width:", min = 0, max = 10, value = 1, step = 0.1),
+                    actionButton(inputId = "umapConfirm", label = "Display plot")
                     ),
 
                 box(width = 9, status = "info", solidHeader = TRUE, title = "Plot", height = "1200px",
@@ -378,6 +379,7 @@ ui <- dashboardPage(
                                                 ),
                                     sliderInput("findMarkersMaxCutoff", "Set max expression value: (quantile)", min = 0, max = 99, value = 99, step = 1),
                                     sliderInput("findMarkersMinCutoff", "Set minimum expression value: (quantile)", min = 0, max = 99, value = 0, step = 1),
+                                    actionButton(inputId = "findMarkersFPConfirm", label = "Display plot"),
                                     tags$hr(),
                                     tags$h3("Add a new signature"),
                                     textInput(inputId = "findMarkersSignatureName", label = "Gene signature name :", value = "Signature1"),
@@ -385,7 +387,7 @@ ui <- dashboardPage(
                                     actionButton(inputId = "findMarkersSignatureAdd", label = "Calculate signature score")
                                     ),
                                 box(width = 9, status = "info", solidHeader = TRUE, title = "Plot",
-                                    div(class="ldBar", id="DEA4_loader", "data-preset"="circle"),
+                                    #div(class="ldBar", id="DEA4_loader", "data-preset"="circle"),
                                     plotlyOutput(outputId = "findMarkersFeaturePlot", height = "1300px")
                                     )
                               )),
@@ -415,6 +417,7 @@ ui <- dashboardPage(
                                     ),
                                     sliderInput("findMarkersFeaturePairMaxCutoff", "Set max expression value: (quantile)", min = 0, max = 99, value = 99, step = 1),
                                     sliderInput("findMarkersFeaturePairMinCutoff", "Set minimum expression value: (quantile)", min = 0, max = 99, value = 0, step = 1),
+                                    actionButton(inputId = "findMarkersFeaturePairConfirm", label = "Display plot")
                                     ),
                                 box(width=9, status="info", solidHeader=TRUE, title="Plot",
                                     div(
@@ -444,9 +447,10 @@ ui <- dashboardPage(
                                                    choices = "-",
                                                    selected = "-",
                                                    multiple = FALSE),
+                                    actionButton(inputId = "findMarkersViolinConfirm", label = "Display plot")
                                 ),
                                 box(width = 9, status = "info", solidHeader = TRUE, title = "Plot",
-                                    div(class="ldBar", id="DEA5_loader", "data-preset"="circle"),
+                                    #div(class="ldBar", id="DEA5_loader", "data-preset"="circle"),
                                     plotlyOutput(outputId = "findMarkersViolinPlot", height = "1300px")
                                 )
                               )),

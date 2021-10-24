@@ -419,7 +419,7 @@ server <- function(input, output, session) {
         session$sendCustomMessage("handler_startLoader", c("normalize_loader", 75))
         updateSignatures()
         
-        output$hvgScatter <- renderPlotly(
+        output$hvgScatter <- renderPlotly(#tooltip example TODO the same in all plots
           {
             if(length(VariableFeatures(seurat_object)) != 0)
             {
@@ -431,29 +431,34 @@ server <- function(input, output, session) {
               
               if(normalize_hvgMethod == "vst")
               {
-                p <- ggplot(varplot, aes(x=log10(mean), y=variance.standardized, color=colors, label=gene)) + 
+                #p <- ggplot(varplot, aes(x=log10(mean), y=variance.standardized, color=colors, label=gene)) + 
+                p <- ggplot(varplot, aes(x=log10(mean), y=variance.standardized, color=colors, text = paste0("log10(mean expression): ", log10(mean),
+                                                                                                             "\nstandardized variance: ", variance.standardized,
+                                                                                                             "\ngene: ", gene)
+                                         )) +
                   geom_point() +
                   theme_bw() +
                   #scale_color_manual(values = c("black", "red")) +
                   scale_color_manual(
-                    #labels = paste(c('Non-variable', 'Variable'), 'count:', table(varplot$colors)),
                     values = c("red", "black")
                   )+
                   labs(x="Average Expression", y="Standardized Variance", color="")  
               }
               else
               {
-                p <- ggplot(varplot, aes(x=mean, y=dispersion.scaled, color=colors, label=gene)) + 
+                p <- ggplot(varplot, aes(x=mean, y=dispersion.scaled, color=colors, text = paste0("mean expression: ", mean,
+                                                                                                  "\nscaled dispersion: ", dispersion.scaled,
+                                                                                                  "\ngene: ", gene)
+                )) +
                   geom_point() +
                   theme_bw() +
                   scale_color_manual(
-                    #labels = paste(c('Non-variable', 'Variable'), 'count:', table(varplot$colors)),
                     values = c("red", "black")
-                  )+
+                  )+ 
                   labs(x="Average Expression", y="Scaled Dispersion", color="")
               }
               
-              gp <- plotly::ggplotly(p, tooltip = c("label", "x", "y"))
+              gp <- plotly::ggplotly(p, tooltip = "text")#c("label", "x", "y"))
               print(gp)  
             }
           }
@@ -854,34 +859,39 @@ server <- function(input, output, session) {
     })
   })
   
-  observeEvent(input$umapType, {
+  # observeEvent(input$umapType, {
+  #   if(input$umapType != "-")
+  #     updateReduction()
+  # })
+  # 
+  # observeEvent(input$umapColorBy, { 
+  #   if(input$umapType != "-")
+  #   updateReduction()
+  # })
+  # 
+  # observeEvent(input$umapDimensions, { 
+  #   if(input$umapType != "-")
+  #   updateReduction()
+  # })
+  # 
+  # observeEvent(input$umapDotSize, { 
+  #   if(input$umapType != "-")
+  #   updateReduction()
+  # })
+  # 
+  # observeEvent(input$umapDotOpacity, { 
+  #   if(input$umapType != "-")
+  #   updateReduction()
+  # })
+  # 
+  # observeEvent(input$umapDotBorder, { 
+  #   if(input$umapType != "-")
+  #   updateReduction()
+  # })
+  
+  observeEvent(input$umapConfirm, { 
     if(input$umapType != "-")
       updateReduction()
-  })
-  
-  observeEvent(input$umapColorBy, { 
-    if(input$umapType != "-")
-    updateReduction()
-  })
-  
-  observeEvent(input$umapDimensions, { 
-    if(input$umapType != "-")
-    updateReduction()
-  })
-  
-  observeEvent(input$umapDotSize, { 
-    if(input$umapType != "-")
-    updateReduction()
-  })
-  
-  observeEvent(input$umapDotOpacity, { 
-    if(input$umapType != "-")
-    updateReduction()
-  })
-  
-  observeEvent(input$umapDotBorder, { 
-    if(input$umapType != "-")
-    updateReduction()
   })
   
   #------------------DEA tab-----------------------------------------------
@@ -889,8 +899,8 @@ server <- function(input, output, session) {
     session$sendCustomMessage("handler_startLoader", c("DEA1_loader", 10))
     session$sendCustomMessage("handler_startLoader", c("DEA2_loader", 10))
     session$sendCustomMessage("handler_startLoader", c("DEA3_loader", 10))
-    session$sendCustomMessage("handler_startLoader", c("DEA4_loader", 10))
-    session$sendCustomMessage("handler_startLoader", c("DEA5_loader", 10))
+    #session$sendCustomMessage("handler_startLoader", c("DEA4_loader", 10))
+    #session$sendCustomMessage("handler_startLoader", c("DEA5_loader", 10))
     session$sendCustomMessage("handler_startLoader", c("DEA6_loader", 10))
     session$sendCustomMessage("handler_disableButton", "umapConfirm")
     tryCatch({
@@ -965,38 +975,11 @@ server <- function(input, output, session) {
           }
         )
         
-        session$sendCustomMessage("handler_startLoader", c("DEA3_loader", 75))
+        #session$sendCustomMessage("handler_startLoader", c("DEA3_loader", 75))
         
-        session$sendCustomMessage("handler_startLoader", c("DEA4_loader", 75))
+        #session$sendCustomMessage("handler_startLoader", c("DEA4_loader", 75))
         
-        output$findMarkersViolinPlot <- renderPlotly(
-        {
-            geneS <- ""
-            if(input$findMarkersViolinFeaturesSignature == "gene")
-            {
-              geneS <- input$findMarkersGeneSelect2
-            }
-            else
-            {
-              geneS <- input$findMarkersViolinSignatureSelect
-            }
-            plot <- VlnPlot(seurat_object, features = geneS, pt.size = 0, 
-                            cols = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(seurat_object@meta.data[, 'seurat_clusters'])))) + 
-              theme_bw() +
-              theme(axis.text.x = element_text(face = "bold", color = "black", size = 25, angle = 0),
-                    axis.text.y = element_text(face = "bold", color = "black", size = 25, angle = 0),
-                    axis.title.y = element_text(face = "bold", color = "black", size = 25),
-                    axis.title.x = element_text(face = "bold", color = "black", size = 25),
-                    legend.text = element_text(face = "bold", color = "black", size = 9),
-                    legend.title = element_text(face = "bold", color = "black", size = 9),
-                    #legend.position="right",
-                    title = element_text(face = "bold", color = "black", size = 25, angle = 0)) +
-              labs(x="Cluster", y="Expression", title = geneS, fill="Cluster")
-            gp <- plotly::ggplotly(plot, tooltip = c("x", "y", geneS))
-            gp
-          }
-        )
-        session$sendCustomMessage("handler_startLoader", c("DEA5_loader", 75))
+        #session$sendCustomMessage("handler_startLoader", c("DEA5_loader", 75))
         
         output$findMarkersVolcanoPlot <- renderPlotly(
           {
@@ -1042,15 +1025,15 @@ server <- function(input, output, session) {
       session$sendCustomMessage("handler_startLoader", c("DEA1_loader", 100))
       session$sendCustomMessage("handler_startLoader", c("DEA2_loader", 100))
       session$sendCustomMessage("handler_startLoader", c("DEA3_loader", 100))
-      session$sendCustomMessage("handler_startLoader", c("DEA4_loader", 100))
-      session$sendCustomMessage("handler_startLoader", c("DEA5_loader", 100))
+      #session$sendCustomMessage("handler_startLoader", c("DEA4_loader", 100))
+      #session$sendCustomMessage("handler_startLoader", c("DEA5_loader", 100))
       session$sendCustomMessage("handler_startLoader", c("DEA6_loader", 100))
       Sys.sleep(1)
       session$sendCustomMessage("handler_finishLoader", c("DEA1_loader"))
       session$sendCustomMessage("handler_finishLoader", c("DEA2_loader"))
       session$sendCustomMessage("handler_finishLoader", c("DEA3_loader"))
-      session$sendCustomMessage("handler_finishLoader", c("DEA4_loader"))
-      session$sendCustomMessage("handler_finishLoader", c("DEA5_loader"))
+      #session$sendCustomMessage("handler_finishLoader", c("DEA4_loader"))
+      #session$sendCustomMessage("handler_finishLoader", c("DEA5_loader"))
       session$sendCustomMessage("handler_finishLoader", c("DEA6_loader"))
       session$sendCustomMessage("handler_enableButton", "umapConfirm")
     })
@@ -1069,7 +1052,7 @@ server <- function(input, output, session) {
     updateSignatures()
   })
     
-observeEvent(input$findMarkersReductionType, {
+observeEvent(input$findMarkersFPConfirm, {
   if(input$findMarkersReductionType != "-")
   {
     output$findMarkersFeaturePlot <- renderPlotly(
@@ -1122,7 +1105,7 @@ observeEvent(input$findMarkersReductionType, {
                 legend.title = element_text(face = "bold", color = "black", size = 9),
                 legend.position="right",
                 title = element_text(face = "bold", color = "black", size = 25, angle = 0)) +
-          labs(x=label_x, y=label_y, title = geneS, color="Normalized\nexpression")
+          labs(x=label_x, y=label_y, title = geneS, color="")
         gp <- plotly::ggplotly(plot, tooltip = c("x", "y", geneS))
         gp
       }
@@ -1130,36 +1113,76 @@ observeEvent(input$findMarkersReductionType, {
   }
 })
 
-observeEvent(input$findMarkersBlendThreshold, {
-  updateFeaturePair()
+observeEvent(input$findMarkersFeaturePairConfirm, {
+   updateFeaturePair()
 })
 
-observeEvent(input$findMarkersFeaturePairReductionType, {
-    updateFeaturePair()
-})
+# observeEvent(input$findMarkersBlendThreshold, {
+#   updateFeaturePair()
+# })
+# 
+# observeEvent(input$findMarkersFeaturePairReductionType, {
+#     updateFeaturePair()
+# })
+# 
+# observeEvent(input$findMarkersFeaturePairMaxCutoff, {
+#   updateFeaturePair()
+# })
+# 
+# observeEvent(input$findMarkersFeaturePairMinCutoff, {
+#   updateFeaturePair()
+# })
+# 
+# observeEvent(input$findMarkersFeaturePair1, {
+#   updateFeaturePair()
+# })
+# 
+# observeEvent(input$findMarkersFeaturePair2, {
+#   updateFeaturePair()
+# })
+# 
+# observeEvent(input$findMarkersFeaturePairLabels, {
+#   updateFeaturePair()
+# })
+# 
+# observeEvent(input$findMarkersFeaturePairOrder, {
+#   updateFeaturePair()
+# })
 
-observeEvent(input$findMarkersFeaturePairMaxCutoff, {
-  updateFeaturePair()
-})
-
-observeEvent(input$findMarkersFeaturePairMinCutoff, {
-  updateFeaturePair()
-})
-
-observeEvent(input$findMarkersFeaturePair1, {
-  updateFeaturePair()
-})
-
-observeEvent(input$findMarkersFeaturePair2, {
-  updateFeaturePair()
-})
-
-observeEvent(input$findMarkersFeaturePairLabels, {
-  updateFeaturePair()
-})
-
-observeEvent(input$findMarkersFeaturePairOrder, {
-  updateFeaturePair()
+observeEvent(input$findmarkersViolinConfirm, {
+  print("Event button")
+  if(!identical(seurat_object, NULL) & input$findMarkersViolinSignatureSelect != "-" & !identical(input$findMarkersGeneSelect2, NULL))
+  {
+    output$findMarkersViolinPlot <- renderPlotly(
+      {
+        geneS <- ""
+        if(input$findMarkersViolinFeaturesSignature == "gene")
+        {
+          geneS <- input$findMarkersGeneSelect2
+        }
+        else
+        {
+          geneS <- input$findMarkersViolinSignatureSelect
+        }
+        print(geneS)
+        plot <- VlnPlot(seurat_object, features = geneS, pt.size = 0, 
+                        cols = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(seurat_object@meta.data[, 'seurat_clusters'])))) + 
+          theme_bw() +
+          theme(axis.text.x = element_text(face = "bold", color = "black", size = 25, angle = 0),
+                axis.text.y = element_text(face = "bold", color = "black", size = 25, angle = 0),
+                axis.title.y = element_text(face = "bold", color = "black", size = 25),
+                axis.title.x = element_text(face = "bold", color = "black", size = 25),
+                legend.text = element_text(face = "bold", color = "black", size = 9),
+                legend.title = element_text(face = "bold", color = "black", size = 9),
+                #legend.position="right",
+                title = element_text(face = "bold", color = "black", size = 25, angle = 0)) +
+          labs(x="Cluster", y="", title = geneS, fill="Cluster")
+        gp <- plotly::ggplotly(plot, tooltip = c("x", "y", geneS))
+        gp
+        print("violin printed")
+      }
+    )  
+  }
 })
   
   #------------------Cell cycle tab------------------------------------------
@@ -1194,7 +1217,7 @@ observeEvent(input$findMarkersFeaturePairOrder, {
         
         output$cellCyclePCA <- renderPlotly(
           {
-            if(!is.null(seurat_object))
+            if(!is.null(seurat_object) & input$cellCycleReduction != "-")
             {
               meta <- seurat_object@meta.data
               meta$Cell_id <- rownames(meta)
