@@ -18,6 +18,7 @@ ui <- dashboardPage(
       menuItem(text = "HOME", tabName = "home", icon = icon("home")),
       tags$hr(),
       menuItem(text = "DATA INPUT", tabName = "upload", icon = icon("upload")),
+      menuItem(text = "UTILITY OPTIONS", tabName = "utilities", icon = icon("edit")),
       menuItem(text = "QUALITY CONTROL", tabName = "qc", icon = icon("check-circle")),
       menuItem(tags$div("DATA NORMALIZATION",
                         tags$br(),
@@ -117,6 +118,31 @@ ui <- dashboardPage(
                 )
               ),
       ),
+      
+      #utilities tab
+      tabItem(tabName = "utilities",
+              fluidRow(
+                box(
+                  width = 12, status = "info", solidHeader = TRUE,
+                  title = "Edit/export working object",
+                  tags$h3("Rename cluster"),
+                  tags$hr(),
+                  selectInput(inputId = "utilitiesRenameOldName", label = "Cluster to be renamed (old name):", choices = "-", multiple = F),
+                  textInput(inputId = "utilitiesRenameNewName", label = "New name of the cluster:", value = "New_name_1"),
+                  actionButton(inputId = "utilitiesConfirmRename", label = "Rename"),
+                  tags$h3("Delete cluster"),
+                  tags$hr(),
+                  selectInput(inputId = "utilitiesDeleteCluster", label = "Cluster to be deleted:", choices = "-", multiple = F),
+                  actionButton(inputId = "utilitiesConfirmDelete", label = "Delete"),
+                  tags$h3("Export working object as .RDS file"),
+                  tags$hr(),
+                  downloadButton(outputId = "utilitiesConfirmExport", label = "Export .RDS"),
+                  #tags$h3("Select palette for cluster colors"),
+                  #tags$hr(),
+                  #actionButton(inputId = "utilitiesColorPicker", label = "choose palette")
+                  )
+                )
+              ),
       
       #QC tab
       tabItem(tabName = "qc",
@@ -666,6 +692,9 @@ ui <- dashboardPage(
                                   )
                          ),
                          tabPanel("Data Input"
+                                  
+                         ),
+                         tabPanel("Utility options"
                                   
                          ),
                          tabPanel("Quality Control"

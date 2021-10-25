@@ -21,11 +21,12 @@ library(nichenetr) # devtools::install_github("saeyslab/nichenetr") # BiocManage
 library(tidyverse)
 library(destiny) #remotes::install_github("theislab/destiny")
 library(UCell) #remotes::install_github("carmonalab/UCell")
+library(colorspace)
 
 #Global variables
 
 #tab Upload
-objectInputType <- "Input10x"
+#objectInputType <- "Input10x"
 seurat_object <- NULL # readRDS("seurat_processed.RDS") # NULL
 init_seurat_object <- NULL
 #my_metadata <- NULL

@@ -2,12 +2,12 @@ server <- function(input, output, session) {
   options(shiny.maxRequestSize=30*1024^2) #increase upload limit
   source("global.R", local=TRUE)
   
-  session$sendCustomMessage("handler_disableTabs", "sidebarMenu") # disable all tab panels (except Data Input) until files are uploaded
+  #session$sendCustomMessage("handler_disableTabs", "sidebarMenu") # disable all tab panels (except Data Input) until files are uploaded
   metaD <- reactiveValues(my_project_name="-", all_lin="0")
   
   #------------------Upload tab--------------------------------
   observeEvent(input$uploadCountMatrixConfirm, {
-    session$sendCustomMessage("handler_disableTabs", "sidebarMenu") # disable all tab panels (except Data Input) until files are uploaded
+    #session$sendCustomMessage("handler_disableTabs", "sidebarMenu") # disable all tab panels (except Data Input) until files are uploaded
     session$sendCustomMessage("handler_startLoader", c("input_loader", 10))
     session$sendCustomMessage("handler_disableButton", "uploadCountMatrixConfirm")
     tryCatch({
@@ -56,7 +56,7 @@ server <- function(input, output, session) {
       # updateInpuTrajectoryClusters()
       # print(organism)
       # saveRDS(seurat_object, "seurat_object.RDS")
-      session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " QUALITY CONTROL", " DATA NORMALIZATION\n& SCALING"))
+      session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " QUALITY CONTROL", " DATA NORMALIZATION\n& SCALING", "UTILITY OPTIONS"))
     # }, warning = function(w) {
     #   print(paste("Warning:  ", w))
     }, error = function(e) {
@@ -71,7 +71,7 @@ server <- function(input, output, session) {
   })
   
   observeEvent(input$upload10xRNAConfirm, {
-    session$sendCustomMessage("handler_disableTabs", "sidebarMenu") # disable all tab panels (except Data Input) until files are uploaded
+    #session$sendCustomMessage("handler_disableTabs", "sidebarMenu") # disable all tab panels (except Data Input) until files are uploaded
     session$sendCustomMessage("handler_startLoader", c("input_loader", 10))
     session$sendCustomMessage("handler_disableButton", "upload10xRNAConfirm")
     tryCatch({
@@ -119,7 +119,7 @@ server <- function(input, output, session) {
       # updateInpuTrajectoryClusters()
       # print(organism)
       # saveRDS(seurat_object, "seurat_object.RDS")
-      session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " QUALITY CONTROL", " DATA NORMALIZATION\n& SCALING"))
+      session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " QUALITY CONTROL", " DATA NORMALIZATION\n& SCALING", "UTILITY OPTIONS"))
       # }, warning = function(w) {
       #   print(paste("Warning:  ", w))
     }, error = function(e) {
@@ -134,7 +134,7 @@ server <- function(input, output, session) {
   })
   
   observeEvent(input$upload10xExampleRNAConfirm, {
-    session$sendCustomMessage("handler_disableTabs", "sidebarMenu") # disable all tab panels (except Data Input) until files are uploaded
+    #session$sendCustomMessage("handler_disableTabs", "sidebarMenu") # disable all tab panels (except Data Input) until files are uploaded
     session$sendCustomMessage("handler_startLoader", c("input_loader", 10))
     session$sendCustomMessage("handler_disableButton", "upload10xExampleRNAConfirm")
     tryCatch({
@@ -164,7 +164,7 @@ server <- function(input, output, session) {
       # updateInpuTrajectoryClusters()
       # print(organism)
       # saveRDS(seurat_object, "seurat_object.RDS")
-      session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " QUALITY CONTROL", " DATA NORMALIZATION\n& SCALING"))
+      session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", "UTILITY OPTIONS", " QUALITY CONTROL", " DATA NORMALIZATION\n& SCALING"))
       # }, warning = function(w) {
       #   print(paste("Warning:  ", w))
     }, error = function(e) {
@@ -177,6 +177,47 @@ server <- function(input, output, session) {
       session$sendCustomMessage("handler_enableButton", "upload10xExampleRNAConfirm")
     })
   })
+  
+  #------------------Utilities------------------------------------------
+  # observeEvent(input$utilitiesColorPicker, {
+  #   user_palette <- choose_palette()
+  #   print(class(user_palette))
+  #   print("\n")
+  #   print(user_palette)
+  # })
+  
+  observeEvent(input$utilitiesConfirmRename, {
+    if(!identical(seurat_object, NULL) & input$utilitiesRenameOldName != "-" & input$utilitiesRenameNewName != "")
+    {
+      old_idents <- unique(seurat_object$seurat_clusters)
+      #print(old_idents)
+      new_idents <- gsub(input$utilitiesRenameOldName, input$utilitiesRenameNewName, old_idents)
+      #print(new_idents)
+      names(new_idents) <- levels(old_idents)
+      #print(new_idents)
+      seurat_object <<- RenameIdents(seurat_object, new_idents)
+      seurat_object$seurat_clusters <<- Idents(seurat_object)
+      updateInputLRclusters()
+    }
+  })
+  
+  observeEvent(input$utilitiesConfirmDelete, {
+    if(!identical(seurat_object, NULL) & input$utilitiesDeleteCluster != "-")
+    {
+      ident_to_remove <- input$utilitiesDeleteCluster
+      seurat_object <<- subset(seurat_object, idents = ident_to_remove, invert = TRUE)
+      seurat_object$seurat_clusters <<- Idents(seurat_object)
+      updateInputLRclusters()
+    }
+  })
+  
+  output$utilitiesConfirmExport <- downloadHandler(
+    filename = function() { 
+      paste("processed_seurat_object-", Sys.Date(), ".RDS", sep="")
+    },
+    content = function(file) {
+      saveRDS(seurat_object, file)
+    })
   
   #------------------Quality Control tab--------------------------------
   observeEvent(input$qcDisplay, {
@@ -374,9 +415,9 @@ server <- function(input, output, session) {
         )
         updateRegressOut()
         updateSelInpColor()
-        session$sendCustomMessage("handler_disableTabs", "sidebarMenu")
+        #session$sendCustomMessage("handler_disableTabs", "sidebarMenu")
         cleanAllPlots(F) # fromDataInput -> FALSE
-        session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " QUALITY CONTROL", " DATA NORMALIZATION\n& SCALING"))
+        session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " QUALITY CONTROL", " DATA NORMALIZATION\n& SCALING", "UTILITY OPTIONS"))
       }
     # }, warning = function(w) {
     #   print(paste("Warning:  ", w))
@@ -2047,6 +2088,8 @@ observeEvent(input$sendToFlame, {
     all_cluster_names <- (levels(seurat_object@meta.data[, 'seurat_clusters']))
     updateSelectInput(session, "ligandReceptorSender", choices = all_cluster_names)
     updateSelectInput(session, "ligandReceptorReciever", choices = all_cluster_names)
+    updateSelectInput(session, "utilitiesRenameOldName", choices = all_cluster_names)
+    updateSelectInput(session, "utilitiesDeleteCluster", choices = all_cluster_names)
   }
   
   updateInpuTrajectoryClusters <- function()
