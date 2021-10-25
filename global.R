@@ -1,6 +1,7 @@
 library(shinydashboard)
 library(DT)
 library(shiny)
+library(shinyjs)
 library(SeuratObject)
 library(Seurat)
 library(plotly)
@@ -59,6 +60,12 @@ markers_logFCBase <- "avg_logFC"
 
 #tabs Umap/tsne, DEA, Cell cycle, Trajectory
 reductions_choices <- c("-")
+
+js.enrich <- "
+  shinyjs.Enrich = function(url) {
+    window.open(url[0]);
+  }
+"
 
 #gProfiler
 #set_base_url("http://biit.cs.ut.ee/gprofiler_archive3/e102_eg49_p15")

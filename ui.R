@@ -53,6 +53,8 @@ ui <- dashboardPage(
     tags$head(tags$script(src = "rshiny_handlers.js")), # R to JS
     tags$head(tags$script(src = "loading-bar.js")), # loading bar JS
     tags$head(tags$script(src = "sliderfix.js")),
+    useShinyjs(),
+    extendShinyjs(text = js.enrich, functions = c("Enrich")),
     tabItems(
       #home tab
       tabItem(tabName = "home", 
@@ -528,7 +530,8 @@ ui <- dashboardPage(
                                  selected = "bonferroni"
                                  ), 
                     sliderInput("gProfilerSliderSignificanceTerms", "Significance for enriched terms :", min = 0, max = 1, value = 0.05, step = 0.01),
-                    actionButton(inputId = "gProfilerConfirm", label = "OK")
+                    actionButton(inputId = "gProfilerConfirm", label = "OK"),
+                    actionButton(inputId = "sendToFlame", label = "Send to Flame")
                 ),
                 box(
                   width = 10, status = "info", solidHeader = TRUE, title = "gProfiler results",

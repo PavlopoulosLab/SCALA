@@ -1430,6 +1430,36 @@ observeEvent(input$findMarkersViolinConfirm, {
       session$sendCustomMessage("handler_enableButton", "gProfilerConfirm")
     })
   })
+
+observeEvent(input$sendToFlame, {
+  tryCatch({
+    if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
+    else if (identical(seurat_object@misc$markers, NULL)) session$sendCustomMessage("handler_alert", "Please, execute the gene differential analysis at the MARKERS' IDENTIFICATION tab first.")
+    else {
+      cluster_temp <- input$gProfilerList
+      temp_df <- data.frame()
+      gene_lists <- list()
+      
+      if(input$gProfilerLFCRadio == "Up")#UP regulated
+      {
+        gene_lists[[1]] <- seurat_object@misc$markers[which(seurat_object@misc$markers$cluster == cluster_temp & 
+                                                              #seurat_object@misc$markers$avg_logFC >= as.numeric(input$gProfilerSliderLogFC) & 
+                                                              seurat_object@misc$markers[, markers_logFCBase] >= as.numeric(input$gProfilerSliderLogFC) &
+                                                              seurat_object@misc$markers[, input$gprofilerRadio] < as.numeric(input$gProfilerSliderSignificance)), 'gene']
+      }
+      else #down
+      {
+        gene_lists[[1]] <- seurat_object@misc$markers[which(seurat_object@misc$markers$cluster == cluster_temp & 
+                                                              seurat_object@misc$markers[, markers_logFCBase] <= (as.numeric(input$gProfilerSliderLogFC)*(-1)) &
+                                                              seurat_object@misc$markers[, input$gprofilerRadio] < as.numeric(input$gProfilerSliderSignificance)), 'gene']
+      }
+      js$Enrich(paste0("http://bib.fleming.gr:3838/Flame/?url_genes=", paste(gene_lists[[1]], collapse = ",")))
+    }
+  }, error = function(e) {
+    print(paste("Error :  ", e))
+    session$sendCustomMessage("handler_alert", "There was an error with the Enrichment Analysis.")
+  })
+})
   
   #------------------CIPR tab-----------------------------------------------
   observeEvent(input$annotateClustersConfirm, {
