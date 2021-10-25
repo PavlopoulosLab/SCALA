@@ -1149,40 +1149,40 @@ observeEvent(input$findMarkersFeaturePairConfirm, {
 #   updateFeaturePair()
 # })
 
-observeEvent(input$findmarkersViolinConfirm, {
-  print("Event button")
-  if(!identical(seurat_object, NULL) & input$findMarkersViolinSignatureSelect != "-" & !identical(input$findMarkersGeneSelect2, NULL))
-  {
-    output$findMarkersViolinPlot <- renderPlotly(
-      {
-        geneS <- ""
-        if(input$findMarkersViolinFeaturesSignature == "gene")
+observeEvent(input$findMarkersViolinConfirm, {
+  if(!identical(seurat_object, NULL)){
+    if ((input$findMarkersViolinFeaturesSignature == "gene" & !identical(input$findMarkersGeneSelect2, NULL))
+        | (input$findMarkersViolinFeaturesSignature == "signature" & input$findMarkersViolinSignatureSelect != "-")){
+      output$findMarkersViolinPlot <- renderPlotly(
         {
-          geneS <- input$findMarkersGeneSelect2
+          geneS <- ""
+          if(input$findMarkersViolinFeaturesSignature == "gene")
+          {
+            geneS <- input$findMarkersGeneSelect2
+          }
+          else
+          {
+            geneS <- input$findMarkersViolinSignatureSelect
+          }
+          print(geneS)
+          plot <- VlnPlot(seurat_object, features = geneS, pt.size = 0,
+                          cols = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(seurat_object@meta.data[, 'seurat_clusters'])))) +
+            theme_bw() +
+            theme(axis.text.x = element_text(face = "bold", color = "black", size = 25, angle = 0),
+                  axis.text.y = element_text(face = "bold", color = "black", size = 25, angle = 0),
+                  axis.title.y = element_text(face = "bold", color = "black", size = 25),
+                  axis.title.x = element_text(face = "bold", color = "black", size = 25),
+                  legend.text = element_text(face = "bold", color = "black", size = 9),
+                  legend.title = element_text(face = "bold", color = "black", size = 9),
+                  #legend.position="right",
+                  title = element_text(face = "bold", color = "black", size = 25, angle = 0)) +
+            labs(x="Cluster", y="", title = geneS, fill="Cluster")
+          gp <- plotly::ggplotly(plot, tooltip = c("x", "y", geneS))
+          gp
         }
-        else
-        {
-          geneS <- input$findMarkersViolinSignatureSelect
-        }
-        print(geneS)
-        plot <- VlnPlot(seurat_object, features = geneS, pt.size = 0, 
-                        cols = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(seurat_object@meta.data[, 'seurat_clusters'])))) + 
-          theme_bw() +
-          theme(axis.text.x = element_text(face = "bold", color = "black", size = 25, angle = 0),
-                axis.text.y = element_text(face = "bold", color = "black", size = 25, angle = 0),
-                axis.title.y = element_text(face = "bold", color = "black", size = 25),
-                axis.title.x = element_text(face = "bold", color = "black", size = 25),
-                legend.text = element_text(face = "bold", color = "black", size = 9),
-                legend.title = element_text(face = "bold", color = "black", size = 9),
-                #legend.position="right",
-                title = element_text(face = "bold", color = "black", size = 25, angle = 0)) +
-          labs(x="Cluster", y="", title = geneS, fill="Cluster")
-        gp <- plotly::ggplotly(plot, tooltip = c("x", "y", geneS))
-        gp
-        print("violin printed")
-      }
-    )  
-  }
+      )
+    } else session$sendCustomMessage("handler_alert", "Please select signature.")
+  } else session$sendCustomMessage("handler_alert", "Please upload some data first.")
 })
   
   #------------------Cell cycle tab------------------------------------------
