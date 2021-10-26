@@ -189,14 +189,10 @@ server <- function(input, output, session) {
   observeEvent(input$utilitiesConfirmRename, {
     if(!identical(seurat_object, NULL) & input$utilitiesRenameOldName != "-" & input$utilitiesRenameNewName != "")
     {
-      old_idents <- unique(seurat_object$seurat_clusters)
-      #print(old_idents)
-      new_idents <- gsub(input$utilitiesRenameOldName, input$utilitiesRenameNewName, old_idents)
-      #print(new_idents)
-      names(new_idents) <- levels(old_idents)
-      #print(new_idents)
-      seurat_object <<- RenameIdents(seurat_object, new_idents)
-      seurat_object$seurat_clusters <<- Idents(seurat_object)
+      old_idents_for_change <- seurat_object$seurat_clusters
+      seurat_object$seurat_clusters <<- gsub(pattern = paste0("^",input$utilitiesRenameOldName,"$"), replacement = input$utilitiesRenameNewName, x = old_idents_for_change)
+      seurat_object$seurat_clusters <<- as.factor(seurat_object$seurat_clusters)
+      Idents(seurat_object) <<- seurat_object$seurat_clusters
       updateInputLRclusters()
     }
   })
