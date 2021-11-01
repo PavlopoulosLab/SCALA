@@ -1,5 +1,6 @@
 # TODO add loading bar divs and source js file
 source("help.R", local=TRUE)
+library(bsplus)
 
 ui <- dashboardPage(
   title="scAnner",
@@ -215,12 +216,20 @@ ui <- dashboardPage(
                   sliderInput(inputId = "nHVGs", label = "Number of genes to select as top variable genes (applicable only to the first and third option) :", min = 200, max = 4000, value = 2000, step = 100),
                   tags$h3("3. Scaling the data"),
                   tags$hr(),
-                  tags$p("Scaling transformation is implemented before dimensionality reduction of the dataset and performs the following steps : "),
-                  tags$ul(),
-                  tags$li("Shifts the expression of each gene, so that the mean expression across cells is 0"),
-                  tags$li("Scales the expression of each gene, so that the variance across cells is 1(this step gives equal weight in downstream analyses, so that highly-expressed genes do not dominate)"),
+                  # tags$p("Scaling transformation is implemented before dimensionality reduction of the dataset and performs the following steps : "),
+                  # tags$ul(),
+                  # tags$li("Shifts the expression of each gene, so that the mean expression across cells is 0"),
+                  # tags$li("Scales the expression of each gene, so that the variance across cells is 1(this step gives equal weight in downstream analyses, so that highly-expressed genes do not dominate)"),
                   tags$br(),
-                  selectInput("normalizeRegressColumns", "Select variables to regress out", list(), selected = NULL, multiple = TRUE, selectize = TRUE, width = NULL, size = NULL),
+                  selectInput("normalizeRegressColumns", "Select variables to regress out", list(), selected = NULL, multiple = TRUE, selectize = TRUE, width = NULL, size = NULL)%>%
+                    shinyInput_label_embed(
+                      shiny_iconlink() %>%
+                        bs_embed_popover(
+                          title = "Scaling transformation is implemented before dimensionality reduction of the dataset and performs the following steps :
+                          \nShifts the expression of each gene, so that the mean expression across cells is 0
+                          \nScales the expression of each gene, so that the variance across cells is 1(this step gives equal weight in downstream analyses, so that highly-expressed genes do not dominate)", placement = "left"
+                        )
+                    ),
                   
                   actionButton(inputId = "normalizeConfirm", label = "OK"),
                 ),
