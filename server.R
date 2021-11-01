@@ -2,12 +2,12 @@ server <- function(input, output, session) {
   options(shiny.maxRequestSize=30*1024^2) #increase upload limit
   source("global.R", local=TRUE)
   
-  #session$sendCustomMessage("handler_disableTabs", "sidebarMenu") # disable all tab panels (except Data Input) until files are uploaded
+  session$sendCustomMessage("handler_disableTabs", "sidebarMenu") # disable all tab panels (except Data Input) until files are uploaded
   metaD <- reactiveValues(my_project_name="-", all_lin="0")
   
   #------------------Upload tab--------------------------------
   observeEvent(input$uploadCountMatrixConfirm, {
-    #session$sendCustomMessage("handler_disableTabs", "sidebarMenu") # disable all tab panels (except Data Input) until files are uploaded
+    session$sendCustomMessage("handler_disableTabs", "sidebarMenu") # disable all tab panels (except Data Input) until files are uploaded
     session$sendCustomMessage("handler_startLoader", c("input_loader", 10))
     session$sendCustomMessage("handler_disableButton", "uploadCountMatrixConfirm")
     tryCatch({
@@ -56,7 +56,7 @@ server <- function(input, output, session) {
       # updateInpuTrajectoryClusters()
       # print(organism)
       # saveRDS(seurat_object, "seurat_object.RDS")
-      session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " QUALITY CONTROL", " DATA NORMALIZATION\n& SCALING", "UTILITY OPTIONS"))
+      session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " QUALITY CONTROL", " DATA NORMALIZATION\n& SCALING", " UTILITY OPTIONS"))
     # }, warning = function(w) {
     #   print(paste("Warning:  ", w))
     }, error = function(e) {
@@ -71,7 +71,7 @@ server <- function(input, output, session) {
   })
   
   observeEvent(input$upload10xRNAConfirm, {
-    #session$sendCustomMessage("handler_disableTabs", "sidebarMenu") # disable all tab panels (except Data Input) until files are uploaded
+    session$sendCustomMessage("handler_disableTabs", "sidebarMenu") # disable all tab panels (except Data Input) until files are uploaded
     session$sendCustomMessage("handler_startLoader", c("input_loader", 10))
     session$sendCustomMessage("handler_disableButton", "upload10xRNAConfirm")
     tryCatch({
@@ -119,7 +119,7 @@ server <- function(input, output, session) {
       # updateInpuTrajectoryClusters()
       # print(organism)
       # saveRDS(seurat_object, "seurat_object.RDS")
-      session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " QUALITY CONTROL", " DATA NORMALIZATION\n& SCALING", "UTILITY OPTIONS"))
+      session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " QUALITY CONTROL", " DATA NORMALIZATION\n& SCALING", " UTILITY OPTIONS"))
       # }, warning = function(w) {
       #   print(paste("Warning:  ", w))
     }, error = function(e) {
@@ -134,7 +134,7 @@ server <- function(input, output, session) {
   })
   
   observeEvent(input$upload10xExampleRNAConfirm, {
-    #session$sendCustomMessage("handler_disableTabs", "sidebarMenu") # disable all tab panels (except Data Input) until files are uploaded
+    session$sendCustomMessage("handler_disableTabs", "sidebarMenu") # disable all tab panels (except Data Input) until files are uploaded
     session$sendCustomMessage("handler_startLoader", c("input_loader", 10))
     session$sendCustomMessage("handler_disableButton", "upload10xExampleRNAConfirm")
     tryCatch({
@@ -164,7 +164,7 @@ server <- function(input, output, session) {
       # updateInpuTrajectoryClusters()
       # print(organism)
       # saveRDS(seurat_object, "seurat_object.RDS")
-      session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", "UTILITY OPTIONS", " QUALITY CONTROL", " DATA NORMALIZATION\n& SCALING"))
+      session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " QUALITY CONTROL", " DATA NORMALIZATION\n& SCALING", " UTILITY OPTIONS"))
       # }, warning = function(w) {
       #   print(paste("Warning:  ", w))
     }, error = function(e) {
@@ -411,9 +411,9 @@ server <- function(input, output, session) {
         )
         updateRegressOut()
         updateSelInpColor()
-        #session$sendCustomMessage("handler_disableTabs", "sidebarMenu")
+        session$sendCustomMessage("handler_disableTabs", "sidebarMenu")
         cleanAllPlots(F) # fromDataInput -> FALSE
-        session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " QUALITY CONTROL", " DATA NORMALIZATION\n& SCALING", "UTILITY OPTIONS"))
+        session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " QUALITY CONTROL", " DATA NORMALIZATION\n& SCALING", " UTILITY OPTIONS"))
       }
     # }, warning = function(w) {
     #   print(paste("Warning:  ", w))
@@ -526,6 +526,14 @@ server <- function(input, output, session) {
       else if (!"ScaleData.RNA" %in% names(seurat_object@commands)) session$sendCustomMessage("handler_alert", "Data need to be scaled first. Please, execute the previous step in DATA NORMALIZATION & SCALING.")
       else {
         seurat_object <<- RunPCA(seurat_object, features = VariableFeatures(object = seurat_object))
+        
+        optimal_nPCs <- 0 #only for visualization purposes
+        if(input$pcaRadio == "yes")
+        {
+          data.use <- PrepDR(seurat_object, genes.use = VariableFeatures(seurat_object), use.imputed = F, assay.type = "RNA")
+          optimal_nPCs <- PCA_estimate_nPC(data.use, from.nPC = 1, to.nPC=50, by.nPC= as.numeric(input$pcaStepBy), k = 10)
+        }
+        
         updateUmapTypeChoices("pca")
         
         output$elbowPlotPCA <- renderPlotly(
@@ -535,10 +543,21 @@ server <- function(input, output, session) {
             colnames(plot1_data)[1] <- "PC"
             colnames(plot1_data)[2] <- "SD"
             
-            p <- ggplot(plot1_data, aes(x=PC, y=SD))+
-              geom_point() +
-              theme_bw() +
-              labs(x="PC", y="Standard Deviation")
+            if(input$pcaRadio == "yes")
+            {
+              p <- ggplot(plot1_data, aes(x=PC, y=SD))+
+                geom_point() +
+                theme_bw() +
+                geom_vline(xintercept= optimal_nPCs, linetype="dashed", color = "red", size=1) +
+                labs(x="PC", y="Standard Deviation")
+            }
+            else
+            {
+              p <- ggplot(plot1_data, aes(x=PC, y=SD))+
+                geom_point() +
+                theme_bw() +
+                labs(x="PC", y="Standard Deviation")
+            }
             
             gp <- plotly::ggplotly(p, tooltip = c("x", "y"))
             print(gp)
@@ -555,7 +574,7 @@ server <- function(input, output, session) {
             reduc_data <- data.frame()
             
             #prepare colors
-            cols = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(meta[, input$pcaColorBy])))
+            cols = colorRampPalette(brewer.pal(12, "Paired"))(1)
             
             #umap data frame
             seurat_object_reduc <- as.data.frame(seurat_object@reductions$pca@cell.embeddings)
@@ -563,8 +582,8 @@ server <- function(input, output, session) {
             seurat_object_reduc$Cell_id <- rownames(seurat_object_reduc)
             reduc_data <- left_join(seurat_object_reduc, meta)
             
-            p <- ggplot(data=reduc_data, aes_string(x="PC_1", y="PC_2", fill=input$pcaColorBy)) +
-              geom_point(size=4, shape=19)+
+            p <- ggplot(data=reduc_data, aes_string(x="PC_1", y="PC_2", fill="orig.ident")) +
+              geom_point(size=2, shape=19, stroke=0)+
               scale_fill_manual(values = cols)+
               scale_size()+
               theme_bw() +
@@ -576,7 +595,7 @@ server <- function(input, output, session) {
                     legend.title = element_text(face = "bold", color = "black", size = 9),
                     legend.position="right",
                     title = element_text(face = "bold", color = "black", size = 25, angle = 0)) +
-              labs(x="PC 1", y="PC 2", color="Cell type", title = "", fill="Color")
+              labs(x="PC 1", y="PC 2", title = "", fill="Color")
             print(plotly::ggplotly(p))
           }
         )
@@ -2163,7 +2182,73 @@ observeEvent(input$sendToFlame, {
     updateSelectInput(session, "cellCycleReduction", choices = reductions_choices)
     updateSelectInput(session, "trajectoryReduction", choices = reductions_choices)
   }
+  
+  #functions for optimal number of PCs
+  #Initialize Functions
+  PrepDR <- function( # From Seurat
+    object,
+    genes.use = NULL,
+    use.imputed = FALSE,
+    assay.type="RNA"
+  ) {
+    
+    if (length(VariableFeatures(object = object)) == 0 && is.null(x = genes.use)) {
+      stop("Variable genes haven't been set. Run MeanVarPlot() or provide a vector
+         of genes names in genes.use and retry.")
+    }
+    if (use.imputed) {
+      data.use <- t(x = scale(x = t(x = object@imputed)))
+    } else {
+      data.use <- GetAssayData(object, assay.type = assay.type,slot = "scale.data")
+    }
+    genes.use <- if(is.null(genes.use)) VariableFeatures(object = object) else genes.use # Changed
+    genes.use <- unique(x = genes.use[genes.use %in% rownames(x = data.use)])
+    genes.var <- apply(X = data.use[genes.use, ], MARGIN = 1, FUN = var)
+    genes.use <- genes.use[genes.var > 0]
+    genes.use <- genes.use[! is.na(x = genes.use)]
+    data.use <- data.use[genes.use, ]
+    return(data.use)
+  }
+  
+  PCA_estimate_nPC<-function(data, k=10, from.nPC = 2, to.nPC=150, by.nPC=5, maxit=200, seed=617) {
+    PC <-seq(from = from.nPC, to = to.nPC, by = by.nPC)
+    # Init the error matrices
+    error1<-matrix(0, nrow = length(c(1:k)), ncol = length(PC))
+    error2<-matrix(0, nrow = length(c(1:k)), ncol = length(PC))
+    print(paste0(k,"-fold paritioning..."))
+    # K-Fold Partitioning
+    dgem.kfold<-dismo::kfold(t(data), k=k)
+    # SVD-CV based on https://stats.stackexchange.com/questions/93845/how-to-perform-leave-one-out-cross-validation-for-pca-to-determine-the-number-of
+    for(i in c(1:k)) {
+      print(paste0("k:",i))
+      X.train<-t(data[, dgem.kfold!=i])
+      X.test<-t(data[, dgem.kfold==i])
+      # Find a few approximate singular values and corresponding singular vectors of a matrix.
+      print("Running SVD...")
+      # Seurat uses IRLBA to do PCA : https://github.com/satijalab/seurat/blob/cec7cb95c73fd6d605723e9af9a1f96eda5635de/R/dimensional_reduction.R
+      pca.results<-irlba::irlba(A = X.train, nv = to.nPC, maxit = maxit) # Otherwise, default maxit=100 do not converge
+      gl<-pca.results$v
+      for(j in 1:length(PC)) {
+        print(paste0("Ndims:",PC[j]))
+        P<-gl[,1:PC[j]]%*%t(gl[,1:PC[j]])
+        # Naive method
+        err1<-X.test %*% (diag(dim(P)[1]) - P)
+        # Approximate method
+        err2<-X.test %*% (diag(dim(P)[1]) - P + diag(diag(P)))
+        error1[i,j]<-sum(err1^2)
+        error2[i,j]<-sum(err2^2)
+        rm(err1)
+        rm(err2)
+      }
+    }
+    errors1<-colSums(error1)
+    errors2<-colSums(error2)
+    nPC=PC[which(errors2 == min(errors2))]
+    #saveRDS(nPC,whereto)
+    plot(PC,errors1)
+    plot(PC,errors2)
+    return(nPC)
+  }  
 }
-
 
 

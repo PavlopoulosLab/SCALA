@@ -238,9 +238,13 @@ ui <- dashboardPage(
               fluidRow(
                 box(
                   width = 12, status = "info", solidHeader = TRUE,
-                  title = "PCA results", height = "990px",
+                  title = "PCA results", height = "1290px",
+                  column(radioButtons("pcaRadio", label = h3("Suggest optimal number of PCs Using 10-fold SVA-CV: "),
+                                      choices = list("Yes (slow operation)" = "yes", 
+                                                     "No" = "no"), 
+                                      selected = "no"), width = 12),
+                  column(sliderInput(inputId = "pcaStepBy", label = "Resolution/step-by: (applicable only in SVA-CV)", min = 1, max = 5, value = 3, step = 1), width = 12),
                   column(actionButton(inputId = "PCrunPCA", label = "Run PCA"), width = 12),
-                  column(selectInput("pcaColorBy", "Color by:", c("orig.ident" = "orig.ident")), width = 12),
                   div(class="ldBar", id="PCA1_loader", "data-preset"="circle"),
                   div(
                     column(plotlyOutput(outputId = "elbowPlotPCA", height = "790px"), width = 6),

@@ -22,6 +22,7 @@ library(tidyverse)
 library(destiny) #remotes::install_github("theislab/destiny")
 library(UCell) #remotes::install_github("carmonalab/UCell")
 library(colorspace)
+library(missMDA)
 
 #Global variables
 
