@@ -514,7 +514,7 @@ server <- function(input, output, session) {
       session$sendCustomMessage("handler_enableButton", "normalizeConfirm")
       session$sendCustomMessage("handler_log", " ### Finished normalization procedure ###")
     })
-  })
+  }) 
   
   #------------------PCA tab------------------------------------------
   observeEvent(input$PCrunPCA, {
@@ -819,6 +819,7 @@ server <- function(input, output, session) {
     session$sendCustomMessage("handler_disableButton", "umapRunUmap")
     session$sendCustomMessage("handler_disableButton", "umapRunTsne")
     session$sendCustomMessage("handler_disableButton", "umapRunDFM")
+    session$sendCustomMessage("handler_disableButton", "umapRunPhate")
     tryCatch({
       if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else if (!"pca" %in% names(seurat_object)) session$sendCustomMessage("handler_alert", "Please, first execute PRINCIPAL COMPONENT ANALYSIS.")
@@ -840,6 +841,7 @@ server <- function(input, output, session) {
       session$sendCustomMessage("handler_enableButton", "umapRunUmap")
       session$sendCustomMessage("handler_enableButton", "umapRunTsne")
       session$sendCustomMessage("handler_enableButton", "umapRunDFM")
+      session$sendCustomMessage("handler_enableButton", "umapRunPhate")
     })
   })
   
@@ -848,6 +850,7 @@ server <- function(input, output, session) {
     session$sendCustomMessage("handler_disableButton", "umapRunUmap")
     session$sendCustomMessage("handler_disableButton", "umapRunTsne")
     session$sendCustomMessage("handler_disableButton", "umapRunDFM")
+    session$sendCustomMessage("handler_disableButton", "umapRunPhate")
     tryCatch({
       if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else if (!"pca" %in% names(seurat_object)) session$sendCustomMessage("handler_alert", "Please, first execute PRINCIPAL COMPONENT ANALYSIS.")
@@ -869,6 +872,7 @@ server <- function(input, output, session) {
       session$sendCustomMessage("handler_enableButton", "umapRunUmap")
       session$sendCustomMessage("handler_enableButton", "umapRunTsne")
       session$sendCustomMessage("handler_enableButton", "umapRunDFM")
+      session$sendCustomMessage("handler_enableButton", "umapRunPhate")
     })
   })
   
@@ -877,6 +881,7 @@ server <- function(input, output, session) {
     session$sendCustomMessage("handler_disableButton", "umapRunUmap")
     session$sendCustomMessage("handler_disableButton", "umapRunTsne")
     session$sendCustomMessage("handler_disableButton", "umapRunDFM")
+    session$sendCustomMessage("handler_disableButton", "umapRunPhate")
     tryCatch({
       if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else if (!"pca" %in% names(seurat_object)) session$sendCustomMessage("handler_alert", "Please, first execute PRINCIPAL COMPONENT ANALYSIS.")
@@ -912,6 +917,38 @@ server <- function(input, output, session) {
       session$sendCustomMessage("handler_enableButton", "umapRunUmap")
       session$sendCustomMessage("handler_enableButton", "umapRunTsne")
       session$sendCustomMessage("handler_enableButton", "umapRunDFM")
+      session$sendCustomMessage("handler_enableButton", "umapRunPhate")
+    })
+  })
+  
+  observeEvent(input$umapRunPhate, {
+    session$sendCustomMessage("handler_startLoader", c("dim_red1_loader", 10))
+    session$sendCustomMessage("handler_disableButton", "umapRunUmap")
+    session$sendCustomMessage("handler_disableButton", "umapRunTsne")
+    session$sendCustomMessage("handler_disableButton", "umapRunDFM")
+    session$sendCustomMessage("handler_disableButton", "umapRunPhate")
+    tryCatch({
+      if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
+      else if (!"pca" %in% names(seurat_object)) session$sendCustomMessage("handler_alert", "Please, first execute PRINCIPAL COMPONENT ANALYSIS.")
+      else {
+        session$sendCustomMessage("handler_startLoader", c("dim_red1_loader", 25))
+        seurat_object <<- RunPHATE(seurat_object, dims = 1:as.numeric(input$umapPCs), n.components = as.numeric(input$umapOutComponents), reduction = "pca")
+        session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " TRAJECTORY ANALYSIS"))
+        updateUmapTypeChoices("phate")
+      }
+      # }, warning = function(w) {
+      #   print(paste("Warning:  ", w))
+    }, error = function(e) {
+      print(paste("Error :  ", e))
+      session$sendCustomMessage("handler_alert", "There was an error with the Phate procedure.")
+    }, finally = {
+      session$sendCustomMessage("handler_startLoader", c("dim_red1_loader", 100))
+      Sys.sleep(1)
+      session$sendCustomMessage("handler_finishLoader", "dim_red1_loader")
+      session$sendCustomMessage("handler_enableButton", "umapRunUmap")
+      session$sendCustomMessage("handler_enableButton", "umapRunTsne")
+      session$sendCustomMessage("handler_enableButton", "umapRunDFM")
+      session$sendCustomMessage("handler_enableButton", "umapRunPhate")
     })
   })
   
@@ -1149,6 +1186,11 @@ observeEvent(input$findMarkersFPConfirm, {
           label_x <- "PC_1"
           label_y <- "PC_2"
         }
+        else if(input$findMarkersReductionType == "phate")
+        {
+          label_x <- "PHATE_1"
+          label_y <- "PHATE_2"
+        }
         
         plot <- FeaturePlot(seurat_object, features = geneS, pt.size = 1.5, label = show_label, label.size = 5, cols = c("lightgrey", "red"), 
                             order = order_exp, reduction = input$findMarkersReductionType, max.cutoff = maxq, min.cutoff = minq) +
@@ -1295,6 +1337,11 @@ observeEvent(input$findMarkersViolinConfirm, {
               {
                 label_x <- "DC_1"
                 label_y <- "DC_2"
+              }
+              else if(selected_Reduction == "phate")
+              {
+                label_x <- "PHATE_1"
+                label_y <- "PHATE_2"
               }
               
               plot1 <- DimPlot(seurat_object, reduction = selected_Reduction)
@@ -1955,6 +2002,33 @@ observeEvent(input$sendToFlame, {
                        colors = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(meta[, input$umapColorBy]))) ) 
           output$umapPlot <- renderPlotly({print(p)})
         }
+        else if(type == "phate" & dims == 2)
+        {
+          p <- ggplot(data=reduc_data, aes_string(x="PHATE_1", y="PHATE_2", fill=input$umapColorBy)) +
+            geom_point(size= as.numeric(input$umapDotSize), shape=21, alpha= as.numeric(input$umapDotOpacity), stroke=as.numeric(input$umapDotBorder)) +
+            scale_fill_manual(values = cols)+
+            scale_size()+
+            theme_bw() +
+            theme(axis.text.x = element_text(face = "bold", color = "black", size = 25, angle = 0),
+                  axis.text.y = element_text(face = "bold", color = "black", size = 25, angle = 0),
+                  axis.title.y = element_text(face = "bold", color = "black", size = 25),
+                  axis.title.x = element_text(face = "bold", color = "black", size = 25),
+                  legend.text = element_text(face = "bold", color = "black", size = 9),
+                  legend.title = element_text(face = "bold", color = "black", size = 9),
+                  legend.position="right",
+                  title = element_text(face = "bold", color = "black", size = 25, angle = 0)) +
+            labs(x="PHATE 1", y="PHATE 2", color="Cell type", title = "", fill="Color")
+          output$umapPlot <- renderPlotly({plotly::ggplotly(p)})  
+        }
+        else if(type == "phate" & dims == 3)
+        {
+          p <- plot_ly(reduc_data, x=~PHATE_1, y=~PHATE_2, z=~PHATE_3, type="scatter3d", mode="markers", alpha = as.numeric(input$umapDotOpacity), color=as.formula(paste0('~', input$umapColorBy)), 
+                       marker = list(size = as.numeric(input$umapDotSize), 
+                                     line = list(color = 'black', width = as.numeric(input$umapDotBorder))
+                       ),
+                       colors = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(meta[, input$umapColorBy]))) ) 
+          output$umapPlot <- renderPlotly({print(p)})
+        }
       }
       # }, warning = function(w) {
       #   print(paste("Warning:  ", w))
@@ -2002,6 +2076,11 @@ observeEvent(input$sendToFlame, {
         {
           label_x <- "PC_1"
           label_y <- "PC_2"
+        }
+        else if(input$findMarkersFeaturePairReductionType == "phate")
+        {
+          label_x <- "PHATE_1"
+          label_y <- "PHATE_2"
         }
         
         plot <- FeaturePlot(seurat_object, features = c(geneS1, geneS2), blend.threshold = blendThr, 

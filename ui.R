@@ -315,6 +315,7 @@ ui <- dashboardPage(
                     actionButton(inputId = "umapRunUmap", label = "Run UMAP"),
                     actionButton(inputId = "umapRunTsne", label = "Run tSNE"),
                     actionButton(inputId = "umapRunDFM", label = "Run Diffusion Map"),
+                    actionButton(inputId = "umapRunPhate", label = "Run PHATE"),
                     tags$h3("Display settings"),
                     tags$hr(),
                     div(class="ldBar", id="dim_red1_loader", "data-preset"="circle"),

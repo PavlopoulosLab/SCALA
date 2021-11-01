@@ -23,6 +23,7 @@ library(destiny) #remotes::install_github("theislab/destiny")
 library(UCell) #remotes::install_github("carmonalab/UCell")
 library(colorspace)
 library(missMDA)
+library(phateR) #pip install phate //\\ #install.packages("phateR") //\\ *devtools::install_github("scottgigante/seurat", ref="patch/add-PHATE-again") //\\ #reticulate::py_install("phate", pip=TRUE)
 
 #Global variables
 
