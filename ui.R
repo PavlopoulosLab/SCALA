@@ -104,6 +104,13 @@ ui <- dashboardPage(
                                        actionButton(inputId = "upload10xRNAConfirm", label = "Submit")
                                        ),
                               tabPanel("10x input files (scATAC-seq)", 
+                                       textInput(inputId = "uploadATACprojectID", label = "Project name : ", value = "Project1"),
+                                       fileInput(inputId = "uploadATACFragments", label = "Please upload fragments.tsv.gz file", accept = ".gz"),
+                                       radioButtons("upload10xATACRadioSpecies", label = h3("Select organism : "),
+                                                    choices = list("Mus musculus (Mouse)" = "mouse", 
+                                                                   "Homo sapiens (Human)" = "human"
+                                                    ), 
+                                                    selected = "human"),
                                        actionButton(inputId = "upload10xATACConfirm", label = "Submit")
                               ),
                               tabPanel("Load example data", 

@@ -178,6 +178,52 @@ server <- function(input, output, session) {
     })
   })
   
+  observeEvent(input$upload10xATACConfirm, {
+    session$sendCustomMessage("handler_disableTabs", "sidebarMenu") # disable all tab panels (except Data Input) until files are uploaded
+    session$sendCustomMessage("handler_startLoader", c("input_loader", 10))
+    session$sendCustomMessage("handler_disableButton", "upload10xATACConfirm")
+    tryCatch({
+      # Create the user directory for the input and output of the analysis
+      
+      organism <<- input$upload10xRNARadioSpecies
+      
+      
+      session$sendCustomMessage("handler_startLoader", c("input_loader", 25))
+      if(organism == "mouse")
+      {
+        addArchRGenome("mm10")
+      }
+      else
+      {
+        addArchRGenome("hg19")
+      }
+      
+      ArrowFiles <<- createArrowFiles(
+        inputFiles = input$uploadATACFragments,
+        sampleNames = input$uploadATACprojectID,
+        filterTSS = 4, #Dont set this too high because you can always increase later
+        filterFrags = 1000, 
+        addTileMat = TRUE,
+        addGeneScoreMat = TRUE
+      )
+      
+      session$sendCustomMessage("handler_startLoader", c("input_loader", 50))
+      session$sendCustomMessage("handler_startLoader", c("input_loader", 75))
+      cleanAllPlots(T) # fromDataInput -> TRUE
+      session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " QUALITY CONTROL", " DATA NORMALIZATION\n& SCALING", " UTILITY OPTIONS"))
+      # }, warning = function(w) {
+      #   print(paste("Warning:  ", w))
+    }, error = function(e) {
+      print(paste("Error :  ", e))
+      session$sendCustomMessage("handler_alert", "Data Input error. Please, refer to the help pages for input format.")
+    }, finally = { # with or without error
+      session$sendCustomMessage("handler_startLoader", c("input_loader", 100))
+      Sys.sleep(1) # giving some time for renderer for smoother transition
+      session$sendCustomMessage("handler_finishLoader", "input_loader")
+      session$sendCustomMessage("handler_enableButton", "upload10xATACConfirm")
+    })
+  })
+  
   #------------------Utilities------------------------------------------
   # observeEvent(input$utilitiesColorPicker, {
   #   user_palette <- choose_palette()
