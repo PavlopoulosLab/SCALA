@@ -194,6 +194,9 @@ server <- function(input, output, session) {
       seurat_object$seurat_clusters <<- as.factor(seurat_object$seurat_clusters)
       Idents(seurat_object) <<- seurat_object$seurat_clusters
       updateInputLRclusters()
+      updateInpuTrajectoryClusters()
+      output$metadataTable <- renderDataTable(seurat_object@meta.data, options = list(pageLength = 20))
+      updateClusterTabe()
     }
   })
   
@@ -204,6 +207,9 @@ server <- function(input, output, session) {
       seurat_object <<- subset(seurat_object, idents = ident_to_remove, invert = TRUE)
       seurat_object$seurat_clusters <<- Idents(seurat_object)
       updateInputLRclusters()
+      updateInpuTrajectoryClusters()
+      output$metadataTable <- renderDataTable(seurat_object@meta.data, options = list(pageLength = 20))
+      updateClusterTabe()
     }
   })
   
@@ -412,6 +418,7 @@ server <- function(input, output, session) {
         updateRegressOut()
         updateSelInpColor()
         session$sendCustomMessage("handler_disableTabs", "sidebarMenu")
+        output$metadataTable <- renderDataTable(seurat_object@meta.data, options = list(pageLength = 20))
         cleanAllPlots(F) # fromDataInput -> FALSE
         session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " QUALITY CONTROL", " DATA NORMALIZATION\n& SCALING", " UTILITY OPTIONS"))
       }
@@ -725,6 +732,7 @@ server <- function(input, output, session) {
         updateSelInpColor()
         updateInputLRclusters()
         updateInpuTrajectoryClusters()
+        output$metadataTable <- renderDataTable(seurat_object@meta.data, options = list(pageLength = 20))
         session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " ADDITIONAL DIMENSIONALITY\nREDUCTION METHODS", " TRAJECTORY ANALYSIS",
                                                           " MARKERS' IDENTIFICATION", " LIGAND - RECEPTOR\nANALYSIS"))
       }
@@ -1143,6 +1151,7 @@ server <- function(input, output, session) {
     
     seurat_object <<- AddModuleScore_UCell(seurat_object, features = markers)
     updateSignatures()
+    output$metadataTable <- renderDataTable(seurat_object@meta.data, options = list(pageLength = 20))
   })
     
 observeEvent(input$findMarkersFPConfirm, {
@@ -1312,6 +1321,7 @@ observeEvent(input$findMarkersViolinConfirm, {
         seurat_object <<- CellCycleScoring(seurat_object, s.features = s.genes, g2m.features = g2m.genes, set.ident = F)
         seurat_object@meta.data$CC.Difference <<- seurat_object$S.Score - seurat_object$G2M.Score
         seurat_object@meta.data$Phase <<- factor(seurat_object@meta.data$Phase, levels = c("G1", "S", "G2M"))
+        output$metadataTable <- renderDataTable(seurat_object@meta.data, options = list(pageLength = 20))
         
         output$cellCyclePCA <- renderPlotly(
           {
@@ -1667,6 +1677,7 @@ observeEvent(input$sendToFlame, {
         }
         
         updateInputLineageList(names(metaD$all_lin))
+        output$metadataTable <- renderDataTable(seurat_object@meta.data, options = list(pageLength = 20))
         session$sendCustomMessage("handler_startLoader", c("traj1_loader", 50))
         session$sendCustomMessage("handler_startLoader", c("traj2_loader", 50))
         #print(paste0("after update:", names(metaD$all_lin)))
@@ -1864,6 +1875,16 @@ observeEvent(input$sendToFlame, {
   })
   
   #updates on UI elements ----------
+  updateClusterTabe <- function()
+  {
+    #****
+    cluster_df <- as.data.frame(table(Idents(seurat_object)))
+    colnames(cluster_df)[1] <- "Cluster"
+    colnames(cluster_df)[2] <- "Number of cells"
+    cluster_df$`% of cells per cluster` <- cluster_df$`Number of cells`/length(seurat_object@meta.data$orig.ident)*100
+    output$clusterTable <- renderDataTable(cluster_df, options = list(pageLength = 10), rownames = F)
+  }
+  
   updateReduction <- function()
   {
     session$sendCustomMessage("handler_startLoader", c("dim_red2_loader", 10))
