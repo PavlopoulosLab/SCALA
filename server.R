@@ -197,6 +197,7 @@ server <- function(input, output, session) {
       updateInpuTrajectoryClusters()
       output$metadataTable <- renderDataTable(seurat_object@meta.data, options = list(pageLength = 20))
       updateClusterTabe()
+      cleanModesAfterClusterEdits()
     }
   })
   
@@ -210,6 +211,7 @@ server <- function(input, output, session) {
       updateInpuTrajectoryClusters()
       output$metadataTable <- renderDataTable(seurat_object@meta.data, options = list(pageLength = 20))
       updateClusterTabe()
+      cleanModesAfterClusterEdits()
     }
   })
   
@@ -2281,6 +2283,31 @@ observeEvent(input$sendToFlame, {
     updateSelectInput(session, "findMarkersFeaturePairReductionType", choices = reductions_choices)
     updateSelectInput(session, "cellCycleReduction", choices = reductions_choices)
     updateSelectInput(session, "trajectoryReduction", choices = reductions_choices)
+  }
+  
+  #To be called after changes in the clusters of the dataset
+  cleanModesAfterClusterEdits <- function()
+  {
+    #clean plots and tables
+    output$gProfilerTable <- NULL
+    output$annotateClustersCIPRTable <- NULL
+    output$findMarkersTable <- NULL
+    
+    output$gProfilerManhatan <- NULL
+    output$annotateClustersCIPRDotplot <- NULL
+    output$ligandReceptorFullHeatmap <- NULL
+    output$ligandReceptorCuratedHeatmap <- NULL
+    output$trajectoryPlot <- NULL
+    output$trajectoryPseudotimePlot <- NULL
+    
+    #clean data
+    seurat_object@misc$markers <- NULL
+    
+    for_delete <- grep("Lineage", colnames(seurat_object@meta.data))
+    if(length(for_delete) != 0)
+    {
+      seurat_object@meta.data <<- seurat_object@meta.data[, -for_delete]
+    }
   }
   
   #functions for optimal number of PCs
