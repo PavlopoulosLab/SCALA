@@ -154,49 +154,91 @@ ui <- dashboardPage(
       
       #QC tab
       tabItem(tabName = "qc",
-              #two boxes inside QC tab
-              fluidRow(
-                box(
-                  width = 3, status = "info", solidHeader = TRUE,
-                  title = "Quality control",
-                  tags$h3("1. Display unfiltered quality control plots"),
-                  actionButton(inputId = "qcDisplay", label = "OK"),
-                  tags$hr(),
-                  tags$h3("2. Filter out low quality cells"),
-                  tags$hr(),
-                  #textInput(inputId = "minUniqueGenes", label = "Filter out cells that have unique feature counts less than :", value = "500"),
-                  sliderInput(inputId = "minUniqueGenes", label = "Filter out cells that have unique feature counts less than :", min = 200, max = 2000, value = 500, step = 1),
-                  sliderInput(inputId = "maxUniqueGenes", label = "Filter out cells that have unique feature counts over than :", min = 2001, max = 7000, value = 4500, step = 1),
-                  #textInput(inputId = "maxUniqueGenes", label = "Filter out cells that have unique feature counts over than :", value = "4000"),
-                  sliderInput(inputId = "maxMtReads", label = "Filter out cells with mitochondrial counts % over :", min = 1, max = 100, value = 10, step = 1),
-                  #textInput(inputId = "maxMtReads", label = "Filter out cells with mitochondrial counts % over :", value = "10"),
-                  selectInput("qcColorBy", "Color by:",
-                              c("orig.ident" = "orig.ident")),
-                  actionButton(inputId = "qcConfirm", label = "OK"),
-                  ),
-                box(
-                  width = 9, status = "info", solidHeader = TRUE,
-                  title = "Quality control plots",
-                  div(class="ldBar", id="qc_loader", "data-preset"="circle"),
-                  div(
-                    column(tags$h3("Pre-filtering plots"), width=12),
-                    column(tags$hr(), width = 12),
-                    column(plotlyOutput(outputId = "nFeatureViolin", height = "100%"), width = 4),
-                    column(plotlyOutput(outputId = "totalCountsViolin", height = "100%"), width = 4),
-                    column(plotlyOutput(outputId = "mitoViolin", height = "100%"), width = 4),
-                    column(plotlyOutput(outputId = "genesCounts", height= "100%"), width = 6),
-                    column(plotlyOutput(outputId = "mtCounts", height= "100%"), width = 6),
-                    column(verbatimTextOutput(outputId = "cellStats"), width = 4),
-                    column(tags$h3("Post-filtering plots"), width=12),
-                    column(tags$hr(), width = 12),
-                    column(plotlyOutput(outputId = "filteredNFeatureViolin", height = "100%"), width = 4),
-                    column(plotlyOutput(outputId = "filteredTotalCountsViolin", height = "100%"), width = 4),
-                    column(plotlyOutput(outputId = "filteredMitoViolin", height = "100%"), width = 4),
-                    column(plotlyOutput(outputId = "filteredGenesCounts", height= "100%"), width = 6),
-                    column(plotlyOutput(outputId = "filteredMtCounts", height= "100%"), width = 6),
-                    column(verbatimTextOutput(outputId = "filteredCellStats"), width = 4)
-                  )
-                )
+              tabsetPanel(type = "tabs",
+                          tabPanel("scRNA-seq",
+                                   #two boxes inside QC tab
+                                   fluidRow(
+                                     box(
+                                       width = 3, status = "info", solidHeader = TRUE,
+                                       title = "Quality control",
+                                       tags$h3("1. Display unfiltered quality control plots"),
+                                       actionButton(inputId = "qcDisplay", label = "OK"),
+                                       tags$hr(),
+                                       tags$h3("2. Filter out low quality cells"),
+                                       tags$hr(),
+                                       #textInput(inputId = "minUniqueGenes", label = "Filter out cells that have unique feature counts less than :", value = "500"),
+                                       sliderInput(inputId = "minUniqueGenes", label = "Filter out cells that have unique feature counts less than :", min = 200, max = 2000, value = 500, step = 1),
+                                       sliderInput(inputId = "maxUniqueGenes", label = "Filter out cells that have unique feature counts over than :", min = 2001, max = 7000, value = 4500, step = 1),
+                                       #textInput(inputId = "maxUniqueGenes", label = "Filter out cells that have unique feature counts over than :", value = "4000"),
+                                       sliderInput(inputId = "maxMtReads", label = "Filter out cells with mitochondrial counts % over :", min = 1, max = 100, value = 10, step = 1),
+                                       #textInput(inputId = "maxMtReads", label = "Filter out cells with mitochondrial counts % over :", value = "10"),
+                                       selectInput("qcColorBy", "Color by:",
+                                                   c("orig.ident" = "orig.ident")),
+                                       actionButton(inputId = "qcConfirm", label = "OK"),
+                                     ),
+                                     box(
+                                       width = 9, status = "info", solidHeader = TRUE,
+                                       title = "Quality control plots",
+                                       div(class="ldBar", id="qc_loader", "data-preset"="circle"),
+                                       div(
+                                         column(tags$h3("Pre-filtering plots"), width=12),
+                                         column(tags$hr(), width = 12),
+                                         column(plotlyOutput(outputId = "nFeatureViolin", height = "100%"), width = 4),
+                                         column(plotlyOutput(outputId = "totalCountsViolin", height = "100%"), width = 4),
+                                         column(plotlyOutput(outputId = "mitoViolin", height = "100%"), width = 4),
+                                         column(plotlyOutput(outputId = "genesCounts", height= "100%"), width = 6),
+                                         column(plotlyOutput(outputId = "mtCounts", height= "100%"), width = 6),
+                                         column(verbatimTextOutput(outputId = "cellStats"), width = 4),
+                                         column(tags$h3("Post-filtering plots"), width=12),
+                                         column(tags$hr(), width = 12),
+                                         column(plotlyOutput(outputId = "filteredNFeatureViolin", height = "100%"), width = 4),
+                                         column(plotlyOutput(outputId = "filteredTotalCountsViolin", height = "100%"), width = 4),
+                                         column(plotlyOutput(outputId = "filteredMitoViolin", height = "100%"), width = 4),
+                                         column(plotlyOutput(outputId = "filteredGenesCounts", height= "100%"), width = 6),
+                                         column(plotlyOutput(outputId = "filteredMtCounts", height= "100%"), width = 6),
+                                         column(verbatimTextOutput(outputId = "filteredCellStats"), width = 4)
+                                       )
+                                     )
+                                   )
+                          ),
+                          tabPanel("scATAC-seq",
+                                   #two boxes inside QC tab
+                                   fluidRow(
+                                     box(
+                                       width = 3, status = "info", solidHeader = TRUE,
+                                       title = "Quality control",
+                                       tags$h3("1. Display unfiltered quality control plots"),
+                                       actionButton(inputId = "qcDisplayATAC", label = "OK"),
+                                       tags$hr(),
+                                       tags$h3("2. Filter out low quality cells"),
+                                       tags$hr(),                                       
+                                       sliderInput(inputId = "minFrags", label = "The minimum number of mapped ATAC-seq fragments required per cell to pass filtering for use in downstream analyses:", 
+                                                   min = 500, max = 2000, value = 1000, step = 100),
+                                       sliderInput(inputId = "minTSS", label = "The minimum numeric transcription start site (TSS) enrichment score required for a cell to pass filtering 
+									   for use in downstream analyses:", min = 1, max = 10, value = 4, step = 1),
+                                       actionButton(inputId = "qcConfirmATAC", label = "OK"),
+                                     ),
+                                     box(
+                                       width = 9, status = "info", solidHeader = TRUE,
+                                       title = "Quality control plots",
+                                       div(class="ldBar", id="qc_loader", "data-preset"="circle"),
+                                       div(
+                                         column(tags$h3("Pre-filtering plots"), width=12),
+                                         column(tags$hr(), width = 12),
+                                         column(plotlyOutput(outputId = "TSS_nFrag_plot", height = "100%"), width = 4),
+                                         column(plotlyOutput(outputId = "TSS_plot", height = "100%"), width = 4),
+                                         column(plotlyOutput(outputId = "nFrag_plot", height = "100%"), width = 4),
+                                         column(verbatimTextOutput(outputId = "cellStatsATAC"), width = 4),
+                                         column(tags$h3("Post-filtering plots"), width=12),
+                                         column(tags$hr(), width = 12),
+                                         #column(plotlyOutput(outputId = "filteredTSS_plot", height = "100%"), width = 4),
+                                         column(plotOutput(outputId = "filterednFrag_plot", height = "100%"), width = 4),
+                                         column(plotlyOutput(outputId = "filteredTSS_nFrag_plot", height = "100%"), width = 4),
+                                         column(verbatimTextOutput(outputId = "filteredCellStatsATAC"), width = 4)
+                                       )
+                                     )
+                                   )
+                          )
               )
       ),
       

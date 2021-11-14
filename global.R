@@ -68,6 +68,7 @@ reductions_choices <- c("-")
 
 #ATAC variables
 ArrowFiles <- NULL
+proj_default <- NULL
 
 js.enrich <- "
   shinyjs.Enrich = function(url) {

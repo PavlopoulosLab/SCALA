@@ -1,5 +1,5 @@
 server <- function(input, output, session) {
-  options(shiny.maxRequestSize=30*1024^2) #increase upload limit
+  options(shiny.maxRequestSize=3*1024^3) #increase upload limit
   source("global.R", local=TRUE)
   
   session$sendCustomMessage("handler_disableTabs", "sidebarMenu") # disable all tab panels (except Data Input) until files are uploaded
@@ -183,29 +183,53 @@ server <- function(input, output, session) {
     session$sendCustomMessage("handler_startLoader", c("input_loader", 10))
     session$sendCustomMessage("handler_disableButton", "upload10xATACConfirm")
     tryCatch({
-      # Create the user directory for the input and output of the analysis
-      
-      organism <<- input$upload10xRNARadioSpecies
-      
       
       session$sendCustomMessage("handler_startLoader", c("input_loader", 25))
-      if(organism == "mouse")
+      
+      #user dir creation
+      projectNameATAC <<- input$uploadATACprojectID
+      userId <- "User1_"
+      user_dir <- paste0("D:\\BSRC_Fleming\\SCANNER\\", userId, projectNameATAC) #TODO remove 2 random barcodes, does it crash?
+      #dir.create(user_dir)
+      #file.copy(from = input$uploadATACFragments$datapath, to = paste0(user_dir, "\\", input$uploadATACFragments$name), overwrite = TRUE)
+      
+      #select genome version and organism
+      addArchRGenome(input$upload10xATACRadioSpecies)
+      if(grep("mm", input$upload10xATACRadioSpecies))
       {
-        addArchRGenome("mm10")
+        organism <<- "mouse"
       }
       else
       {
-        addArchRGenome("hg19")
+        organism <<- "human"
       }
       
-      ArrowFiles <<- createArrowFiles(
-        inputFiles = input$uploadATACFragments,
-        sampleNames = input$uploadATACprojectID,
-        filterTSS = 4, #Dont set this too high because you can always increase later
-        filterFrags = 1000, 
-        addTileMat = TRUE,
-        addGeneScoreMat = TRUE
-      )
+      #set number of threads, TODO set to 1 in server version
+      addArchRThreads(threads = as.numeric(input$upload10xATACThreads)) 
+      
+      ####################################
+      ######## Create Arrow files ########
+      ####################################
+      
+      # arrow_files <- ArchR::createArrowFiles( #TODO default values, QC changes lead to re-creation of Arrow files
+      #   inputFiles = "fragments.ucsc.tsv.gz",
+      #   sampleNames = "pooled", force = T
+      # )
+      
+      ########################################
+      ######### Create Arch Project ##########
+      ########################################
+      # proj_default <<- ArchRProject(
+      #   ArrowFiles = "example.arrow",
+      #   #outputDirectory = "pooled",
+      #   outputDirectory = "default",
+      #   copyArrows = TRUE #This is recommened so that if you modify the Arrow files you have an original copy for later usage.
+      # )
+      
+      #saveArchRProject(proj_default)
+      #print("Project saved")
+      
+      proj_default <<- loadArchRProject(path = "default/")
       
       session$sendCustomMessage("handler_startLoader", c("input_loader", 50))
       session$sendCustomMessage("handler_startLoader", c("input_loader", 75))
@@ -472,6 +496,50 @@ server <- function(input, output, session) {
       session$sendCustomMessage("handler_finishLoader", "qc_loader")
       session$sendCustomMessage("handler_enableButton", "qcConfirm")
     })
+  })
+  
+  #ATAC qc
+  observeEvent(input$qcConfirmATAC, {
+    
+    #TSS plot
+    p1 <- plotGroups(
+      ArchRProj = proj_default,
+      colorBy = "cellColData",
+      name = "TSSEnrichment",
+      plotAs = "violin",
+      alpha = 0.4,
+      addBoxPlot = TRUE
+    )
+    output$filteredTSS_plot <- renderPlotly( expr =  ggplot(p1$data, aes(x=x, y=y, fill=x)) + geom_violin() + theme_bw() )
+    
+    #nFrags plot
+    p2 <- plotGroups(
+      ArchRProj = proj_default,
+      colorBy = "cellColData",
+      name = "log10(nFrags)",
+      plotAs = "ridges"
+    )
+    output$filterednFrag_plot <- renderPlot( expr = ggplot(p2$data, aes(y=x, x=y, fill=x)) + geom_density_ridges() + theme_bw() + scale_y_discrete(expand = c(0, 0)), 
+                                             width = 500, height = 500
+                                          )
+    #nFrags-TSS plot
+    df <- getCellColData(proj_default, select = c("log10(nFrags)", "TSSEnrichment"))
+    p3 <- ggPoint(
+      x = df[,1],
+      y = df[,2],
+      #size = 3,
+      #baseSize=30,
+      #legendSize=5,
+      #dpi=1200,
+      colorDensity = TRUE,
+      continuousSet = "sambaNight",
+      xlabel = "Log10 Unique Fragments",
+      ylabel = "TSS Enrichment",
+      xlim = c(log10(500), quantile(df[,1], probs = 0.99)),
+      ylim = c(0, quantile(df[,2], probs = 0.99))
+    ) + geom_hline(yintercept = 4, lty = "dashed") + geom_vline(xintercept = 3, lty = "dashed")
+    output$filteredTSS_nFrag_plot <- renderPlotly( expr =  ggplotly(p3))
+    
   })
   
   #------------------Normalization tab--------------------------------
