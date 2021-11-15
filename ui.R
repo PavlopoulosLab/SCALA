@@ -303,7 +303,9 @@ ui <- dashboardPage(
                                       choices = list("Yes (slow operation)" = "yes", 
                                                      "No" = "no"), 
                                       selected = "no"), width = 12),
+
                   #column(sliderInput(inputId = "pcaStepBy", label = "Resolution/step-by: (applicable only in SVA-CV)", min = 1, max = 5, value = 3, step = 1), width = 12),
+
                   column(actionButton(inputId = "PCrunPCA", label = "Run PCA"), width = 12),
                   div(class="ldBar", id="PCA1_loader", "data-preset"="circle"),
                   div(
@@ -377,7 +379,9 @@ ui <- dashboardPage(
                     #textInput(inputId = "umapPCs", label = "Number of principal components to use:", value = "15"),
                     sliderInput(inputId = "umapPCs", label = "Number of principal components to use :", min = 1, max = 100, value = 15, step = 1),
                     #textInput(inputId = "umapOutComponents", label = "Number of principal components to fit output:", value = "3"),
+
                     sliderInput(inputId = "umapOutComponents", label = "Number of dimensions to fit output:", min = 2, max = 100, value = 15, step = 1),
+                    
                     actionButton(inputId = "umapRunUmap", label = "Run UMAP"),
                     actionButton(inputId = "umapRunTsne", label = "Run tSNE"),
                     actionButton(inputId = "umapRunDFM", label = "Run Diffusion Map"),
@@ -396,7 +400,7 @@ ui <- dashboardPage(
 
                     sliderInput("umapDotSize", "Size:", min = 1, max = 20, value = 5, step = 0.5),
                     sliderInput("umapDotOpacity", "Opacity:", min = 0, max = 1, value = 1, step = 0.1),
-                    sliderInput("umapDotBorder", "Border width:", min = 0, max = 10, value = 1, step = 0.1),
+                    sliderInput("umapDotBorder", "Border width:", min = 0, max = 10, value = 0.5, step = 0.1),
                     actionButton(inputId = "umapConfirm", label = "Display plot")
                     ),
 
@@ -578,9 +582,8 @@ ui <- dashboardPage(
                               tabPanel("PCA plot", 
                                        actionButton(inputId = "cellCycleRun", label = "Run cell cycle analysis"), # TODO remove this button
                                        selectInput("cellCycleReduction", "Plot type:", # TODO observe this selectbox instead, default value "-" -> do nothing
-                                                   c("PCA" = "pca",
-                                                     "UMAP" = "umap",
-                                                     "tSNE" = "tsne"), selected ="pca"),
+                                                   c("-" = "-")
+                                                   ),
                                        div(class="ldBar", id="CC1_loader", "data-preset"="circle"),
                                        plotlyOutput(outputId = "cellCyclePCA", height = "1100px")),
                               tabPanel("Barplot", # TODO this should appear together with cellCyclePCA output, by observed event cellCycleReduction
@@ -611,7 +614,7 @@ ui <- dashboardPage(
                                                 "Down-regulated" = "Down"),
                                  selected = "Up"
                                  ),
-                    sliderInput("gProfilerSliderLogFC", "Log FC threshold:", min = 0, max = 3, value = 0.35, step = 0.05),
+                    sliderInput("gProfilerSliderLogFC", "Log FC threshold:", min = 0, max = 3, value = 0.25, step = 0.05),
                     tags$h3("2. Options for enrichment analysis"),
                     tags$hr(),
                     selectInput("gProfilerDatasources", "Select datasources", list('Gene Ontology'=list("Gene Ontology-Molecular Function (GO:MF)"="GO:MF", "Gene Ontology-Cellular Component (GO:CC)"= "GO:CC", "Gene Ontology-Biological Process (GO:BP)"="GO:BP"),
@@ -674,7 +677,7 @@ ui <- dashboardPage(
                                               "Spearman (all genes)" = "all_genes_spearman",
                                               "Pearson (all genes)" = "all_genes_pearson"
                                ),
-                               selected = "logfc_dot_product"
+                               selected = "logfc_pearson"
                   ),
                   tags$hr(),
                   actionButton(inputId = "annotateClustersConfirm", label = "OK"),
@@ -701,9 +704,11 @@ ui <- dashboardPage(
                   title = "Trajectory parameters",
                   selectInput("trajectoryReduction", "Dimensionality reduction method:", choices=c("PCA"="pca","UMAP"="umap", "tSNE"="tsne", "Diffusion Map"="dfm"), selected = "PCA",
                               multiple = FALSE,selectize = TRUE, width = NULL, size = NULL),
+
                   sliderInput("trajectorySliderDimensions", "Number of dimensions to use :", min = 0, max = 100, value = 10, step = 1),
                   selectInput("trajectoryStart", "Initial state:", choices=c("0"="0"), selected = "0", multiple = F, selectize = F),
                   selectInput("trajectoryEnd", "Final state:", choices=c("0"="0"), selected = "0", multiple = F, selectize = F),
+
                   actionButton(inputId = "trajectoryConfirm", label = "OK")
                 ),
                 box(
@@ -737,8 +742,8 @@ ui <- dashboardPage(
                  box(
                    width = 3, status = "info", solidHeader = TRUE,
                    title = "L-R analysis parameters",
-                   selectInput("ligandReceptorSender", "Ligand expressing cluster:", choices=c("0"="0"), selected = "0", multiple = F, selectize = F),
-                   selectInput("ligandReceptorReciever", "Receptor expressing cluster:", choices=c("0"="0"), selected = "0", multiple = F, selectize = F),
+                   selectInput("ligandReceptorSender", "Ligand expressing cluster:", choices=c("-"="-"), multiple = F, selectize = F),
+                   selectInput("ligandReceptorReciever", "Receptor expressing cluster:", choices=c("-"="-"), multiple = F, selectize = F),
                    actionButton(inputId = "ligandReceptorConfirm", label = "OK")
                  ),
                  box(
