@@ -5,3 +5,12 @@
 ligand_target_matrix.rds
 testMatrix.txt
 weighted_networks.rds
+ArchRLogs/ArchR-createArrows-2cb842f1336e-Date-2021-11-11_Time-13-22-59.log
+ArchRLogs/ArchR-createArrows-2cb8ad9404-Date-2021-11-11_Time-13-08-08.log
+*.log
+default
+QualityControl
+User1_Project9
+example.arrow
+fragments.ucsc.tsv.gz.tbi
+pooled_atac.RDS

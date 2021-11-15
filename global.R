@@ -24,6 +24,8 @@ library(UCell) #remotes::install_github("carmonalab/UCell")
 library(colorspace)
 library(missMDA)
 library(phateR) #pip install phate //\\ #install.packages("phateR") //\\ *devtools::install_github("scottgigante/seurat", ref="patch/add-PHATE-again") //\\ #reticulate::py_install("phate", pip=TRUE)
+#ATAC libraries
+library(ArchR)
 
 #Global variables
 
@@ -63,6 +65,10 @@ markers_logFCBase <- "avg_logFC"
 
 #tabs Umap/tsne, DEA, Cell cycle, Trajectory
 reductions_choices <- c("-")
+
+#ATAC variables
+ArrowFiles <- NULL
+proj_default <- NULL
 
 js.enrich <- "
   shinyjs.Enrich = function(url) {

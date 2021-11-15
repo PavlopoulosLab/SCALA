@@ -1,5 +1,5 @@
 server <- function(input, output, session) {
-  options(shiny.maxRequestSize=30*1024^2) #increase upload limit
+  options(shiny.maxRequestSize=3*1024^3) #increase upload limit
   source("global.R", local=TRUE)
   
   session$sendCustomMessage("handler_disableTabs", "sidebarMenu") # disable all tab panels (except Data Input) until files are uploaded
@@ -175,6 +175,76 @@ server <- function(input, output, session) {
       Sys.sleep(1) # giving some time for renderer for smoother transition
       session$sendCustomMessage("handler_finishLoader", "input_loader")
       session$sendCustomMessage("handler_enableButton", "upload10xExampleRNAConfirm")
+    })
+  })
+  
+  observeEvent(input$upload10xATACConfirm, {
+    session$sendCustomMessage("handler_disableTabs", "sidebarMenu") # disable all tab panels (except Data Input) until files are uploaded
+    session$sendCustomMessage("handler_startLoader", c("input_loader", 10))
+    session$sendCustomMessage("handler_disableButton", "upload10xATACConfirm")
+    tryCatch({
+      
+      session$sendCustomMessage("handler_startLoader", c("input_loader", 25))
+      
+      #user dir creation
+      projectNameATAC <<- input$uploadATACprojectID
+      userId <- "User1_"
+      user_dir <- paste0("D:\\BSRC_Fleming\\SCANNER\\", userId, projectNameATAC) #TODO remove 2 random barcodes, does it crash?
+      #dir.create(user_dir)
+      #file.copy(from = input$uploadATACFragments$datapath, to = paste0(user_dir, "\\", input$uploadATACFragments$name), overwrite = TRUE)
+      
+      #select genome version and organism
+      addArchRGenome(input$upload10xATACRadioSpecies)
+      if(grep("mm", input$upload10xATACRadioSpecies))
+      {
+        organism <<- "mouse"
+      }
+      else
+      {
+        organism <<- "human"
+      }
+      
+      #set number of threads, TODO set to 1 in server version
+      addArchRThreads(threads = as.numeric(input$upload10xATACThreads)) 
+      
+      ####################################
+      ######## Create Arrow files ########
+      ####################################
+      
+      # arrow_files <- ArchR::createArrowFiles( #TODO default values, QC changes lead to re-creation of Arrow files
+      #   inputFiles = "fragments.ucsc.tsv.gz",
+      #   sampleNames = "pooled", force = T
+      # )
+      
+      ########################################
+      ######### Create Arch Project ##########
+      ########################################
+      # proj_default <<- ArchRProject(
+      #   ArrowFiles = "example.arrow",
+      #   #outputDirectory = "pooled",
+      #   outputDirectory = "default",
+      #   copyArrows = TRUE #This is recommened so that if you modify the Arrow files you have an original copy for later usage.
+      # )
+      
+      #saveArchRProject(proj_default)
+      #print("Project saved")
+      
+      proj_default <<- loadArchRProject(path = "default/")
+      
+      session$sendCustomMessage("handler_startLoader", c("input_loader", 50))
+      session$sendCustomMessage("handler_startLoader", c("input_loader", 75))
+      cleanAllPlots(T) # fromDataInput -> TRUE
+      session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " QUALITY CONTROL", " DATA NORMALIZATION\n& SCALING", " UTILITY OPTIONS"))
+      # }, warning = function(w) {
+      #   print(paste("Warning:  ", w))
+    }, error = function(e) {
+      print(paste("Error :  ", e))
+      session$sendCustomMessage("handler_alert", "Data Input error. Please, refer to the help pages for input format.")
+    }, finally = { # with or without error
+      session$sendCustomMessage("handler_startLoader", c("input_loader", 100))
+      Sys.sleep(1) # giving some time for renderer for smoother transition
+      session$sendCustomMessage("handler_finishLoader", "input_loader")
+      session$sendCustomMessage("handler_enableButton", "upload10xATACConfirm")
     })
   })
   
@@ -437,6 +507,79 @@ server <- function(input, output, session) {
     })
   })
   
+  #ATAC qc
+  observeEvent(input$qcDisplayATAC, {
+    session$sendCustomMessage("handler_startLoader", c("qc_loader2", 10))
+    session$sendCustomMessage("handler_disableButton", "qcDisplayATAC")
+    tryCatch({
+      if (identical(proj_default, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
+      else{
+    #TSS plot
+    p1 <- plotGroups(
+      ArchRProj = proj_default,
+      colorBy = "cellColData",
+      name = "TSSEnrichment",
+      plotAs = "violin",
+      alpha = 0.4,
+      addBoxPlot = TRUE
+    )
+    output$TSS_plot <- renderPlotly( expr =  ggplot(p1$data, aes(x=x, y=y, fill=x)) + geom_violin() + theme_bw() + labs(y="TSS Enrichment"))
+    
+    session$sendCustomMessage("handler_startLoader", c("qc_loader2", 50))
+    
+    #nFrags plot
+    p2 <- plotGroups(
+      ArchRProj = proj_default,
+      colorBy = "cellColData",
+      name = "log10(nFrags)",
+      plotAs = "ridges"
+    )
+    output$nFrag_plot <- renderPlot( expr = ggplot(p2$data, aes(y=x, x=y, fill=x)) + geom_density_ridges() + theme_bw() + scale_y_discrete(expand = c(0, 0)) + labs(x="log10(nFrags)"), 
+                                             width = 500, height = 500
+                                          )
+    
+    session$sendCustomMessage("handler_startLoader", c("qc_loader2", 75))
+    
+    #nFrags-TSS plot
+    df <- getCellColData(proj_default, select = c("log10(nFrags)", "TSSEnrichment"))
+    p4 <- ggPoint(
+      x = df[,1],
+      y = df[,2],
+      #size = 3,
+      #baseSize=30,
+      #legendSize=5,
+      #dpi=1200,
+      colorDensity = TRUE,
+      continuousSet = "sambaNight",
+      xlabel = "Log10 Unique Fragments",
+      ylabel = "TSS Enrichment",
+      xlim = c(log10(500), quantile(df[,1], probs = 0.99)),
+      ylim = c(0, quantile(df[,2], probs = 0.99))
+    ) + geom_hline(yintercept = 4, lty = "dashed") + geom_vline(xintercept = 3, lty = "dashed")
+    output$TSS_nFrag_plot <- renderPlotly( expr =  ggplotly(p4))
+    
+    #cells 
+    output$CellStatsATAC <- renderPrint(
+      {
+        cat(paste0("\nTotal number of cells after soft filtering: ", nrow(getCellColData(proj_default))))
+      }
+    )
+    
+    session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " QUALITY CONTROL", " DATA NORMALIZATION\n& SCALING", " UTILITY OPTIONS"))
+      }
+      # }, warning = function(w) {
+      #   print(paste("Warning:  ", w))
+    }, error = function(e) {
+      print(paste("Error :  ", e))
+      session$sendCustomMessage("handler_alert", "The selected Quality Control arguments cannot produce meaningful visualizations.")
+    }, finally = {
+      session$sendCustomMessage("handler_startLoader", c("qc_loader2", 100))
+      Sys.sleep(1)
+      session$sendCustomMessage("handler_finishLoader", "qc_loader2")
+      session$sendCustomMessage("handler_enableButton", "qcDisplayATAC")
+    })
+  })
+  
   #------------------Normalization tab--------------------------------
   observeEvent(input$normalizeConfirm, {
     session$sendCustomMessage("handler_log", " ### Starting normalization procedure ###")
@@ -540,14 +683,16 @@ server <- function(input, output, session) {
         if(input$pcaRadio == "yes")
         {
           data.use <- PrepDR(seurat_object, genes.use = VariableFeatures(seurat_object), use.imputed = F, assay.type = "RNA")
-          optimal_nPCs <- PCA_estimate_nPC(data.use, from.nPC = 1, to.nPC=50, by.nPC= as.numeric(input$pcaStepBy), k = 10)
+          initial_optimal_nPCs <- PCA_estimate_nPC(data.use, from.nPC = 1, to.nPC=100, by.nPC= 10, k = 10)
+          
+          optimal_nPCs <- PCA_estimate_nPC(data.use, from.nPC = 1, to.nPC=initial_optimal_nPCs+10, by.nPC= 1, k = 10)
         }
         
         updateUmapTypeChoices("pca")
         
         output$elbowPlotPCA <- renderPlotly(
           {
-            plot1 <- ElbowPlot(seurat_object, ndims = 50)
+            plot1 <- ElbowPlot(seurat_object, ndims = 100)
             plot1_data <- plot1$data
             colnames(plot1_data)[1] <- "PC"
             colnames(plot1_data)[2] <- "SD"
