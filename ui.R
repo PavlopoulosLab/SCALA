@@ -124,7 +124,13 @@ ui <- dashboardPage(
                   width = 8, solidHeader = TRUE, status = "info",
                   title = "Metadata table",
                   div(class="ldBar", id="input_loader", "data-preset"="circle"),
-                  dataTableOutput("metadataTable")
+                  
+                  tabsetPanel(type = "tabs",
+                              tabPanel("scRNA-seq",
+                                       dataTableOutput("metadataTable", width = "100%", height = "100%")),
+                              tabPanel("scATAC-seq",
+                                       dataTableOutput("metadataTableATAC", width = "100%", height = "100%"))
+                              )
                 )
               ),
       ),
@@ -297,34 +303,56 @@ ui <- dashboardPage(
       
       #PCA tab
       tabItem(tabName = "pca", 
-              fluidRow(
-                box(
-                  width = 12, status = "info", solidHeader = TRUE,
-                  title = "PCA results", height = "1290px",
-                  column(radioButtons("pcaRadio", label = h3("Suggest optimal number of PCs Using 10-fold SVA-CV: "),
-                                      choices = list("Yes (slow operation)" = "yes", 
-                                                     "No" = "no"), 
-                                      selected = "no"), width = 12),
-                  #column(sliderInput(inputId = "pcaStepBy", label = "Resolution/step-by: (applicable only in SVA-CV)", min = 1, max = 5, value = 3, step = 1), width = 12),
-                  column(actionButton(inputId = "PCrunPCA", label = "Run PCA"), width = 12),
-                  div(class="ldBar", id="PCA1_loader", "data-preset"="circle"),
-                  div(
-                    column(plotlyOutput(outputId = "elbowPlotPCA", height = "790px"), width = 6),
-                    column(plotlyOutput(outputId = "PCAscatter", height = "790px"), width = 6)
-                  )
-                ),
-                box(
-                  width = 12, status = "info", solidHeader = TRUE,
-                  title = "Explore particular principal components", height = "990px",
-                  #column(textInput(inputId = "PCin", label = "Select a principal component :", value = "1"), width = 6),
-                  selectInput("PCin", "Select a principal component :", choices=1:100, selected = 1, multiple = FALSE,selectize = TRUE, width = NULL, size = NULL),
-                  column(actionButton(inputId = "PCconfirm", label = "OK"), width = 12),
-                  div(class="ldBar", id="PCA2_loader", "data-preset"="circle"),
-                  div(
-                    column(plotlyOutput(outputId = "PCAloadings", height = "790px"), width = 6),
-                    column(plotlyOutput(outputId = "PCAheatmap", height = "790px"), width = 6)
-                  )
-                )
+              tabsetPanel(type = "tabs",
+                          tabPanel("scRNA-seq: PCA",
+                                   fluidRow(
+                                     box(
+                                       width = 12, status = "info", solidHeader = TRUE,
+                                       title = "PCA results", height = "1290px",
+                                       column(radioButtons("pcaRadio", label = h3("Suggest optimal number of PCs Using 10-fold SVA-CV: "),
+                                                           choices = list("Yes (slow operation)" = "yes", 
+                                                                          "No" = "no"), 
+                                                           selected = "no"), width = 12),
+                                       #column(sliderInput(inputId = "pcaStepBy", label = "Resolution/step-by: (applicable only in SVA-CV)", min = 1, max = 5, value = 3, step = 1), width = 12),
+                                       column(actionButton(inputId = "PCrunPCA", label = "Run PCA"), width = 12),
+                                       div(class="ldBar", id="PCA1_loader", "data-preset"="circle"),
+                                       div(
+                                         column(plotlyOutput(outputId = "elbowPlotPCA", height = "790px"), width = 6),
+                                         column(plotlyOutput(outputId = "PCAscatter", height = "790px"), width = 6)
+                                       )
+                                     ),
+                                     box(
+                                       width = 12, status = "info", solidHeader = TRUE,
+                                       title = "Explore particular principal components", height = "990px",
+                                       #column(textInput(inputId = "PCin", label = "Select a principal component :", value = "1"), width = 6),
+                                       selectInput("PCin", "Select a principal component :", choices=1:100, selected = 1, multiple = FALSE,selectize = TRUE, width = NULL, size = NULL),
+                                       column(actionButton(inputId = "PCconfirm", label = "OK"), width = 12),
+                                       div(class="ldBar", id="PCA2_loader", "data-preset"="circle"),
+                                       div(
+                                         column(plotlyOutput(outputId = "PCAloadings", height = "790px"), width = 6),
+                                         column(plotlyOutput(outputId = "PCAheatmap", height = "790px"), width = 6)
+                                       )
+                                     )
+                                   )
+                          ),
+                          tabPanel("scATAC-seq: LSI",
+                                   fluidRow(
+                                     box(
+                                       width = 6, status = "info", solidHeader = TRUE,
+                                       title = "Latent Semantic Indexing", height = "1290px",
+                                       tags$h3("Input parameters"),
+                                       tags$hr(),
+                                       sliderInput(inputId = "lsiVarFeatures", label = "Number of variable feures: ", min = 5000, max = 100000, value = 25000, step = 1000),#varFeatures
+                                       sliderInput(inputId = "lsiDmensions", label = "Number of dimensions to use: ", min = 1, max = 100, value = 30, step = 1),#dimensions
+                                       sliderInput(inputId = "lsiResolution", label = "Resolution :", min = 0.1, max = 10, value = 2, step = 0.1),#resolution
+                                       sliderInput(inputId = "lsiIterations", label = "Number of iterations: ", min = 1, max = 10, value = 2, step = 1),#iterations
+                                       actionButton(inputId = "lsiConfirm", label = "Run LSI"),
+                                       tags$hr(),
+                                       div(class="ldBar", id="lsi_loader", "data-preset"="circle"),
+                                       verbatimTextOutput(outputId = "lsiOutput")
+                                     )
+                                   )
+                          )
               )
       ),
       #ATAC 

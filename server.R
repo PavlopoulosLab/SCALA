@@ -233,8 +233,9 @@ server <- function(input, output, session) {
       
       session$sendCustomMessage("handler_startLoader", c("input_loader", 50))
       session$sendCustomMessage("handler_startLoader", c("input_loader", 75))
+      output$metadataTableATAC <- renderDataTable(as.data.frame(getCellColData(proj_default)), options = list(pageLength = 10))
       cleanAllPlots(T) # fromDataInput -> TRUE
-      session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " QUALITY CONTROL", " DATA NORMALIZATION\n& SCALING", " UTILITY OPTIONS"))
+      session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " QUALITY CONTROL", " UTILITY OPTIONS"))
       # }, warning = function(w) {
       #   print(paste("Warning:  ", w))
     }, error = function(e) {
@@ -565,7 +566,7 @@ server <- function(input, output, session) {
       }
     )
     
-    session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " QUALITY CONTROL", " DATA NORMALIZATION\n& SCALING", " UTILITY OPTIONS"))
+    session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " QUALITY CONTROL", " PRINCIPAL COMPONENT\nANALYSIS", " UTILITY OPTIONS"))
       }
       # }, warning = function(w) {
       #   print(paste("Warning:  ", w))
@@ -820,6 +821,39 @@ server <- function(input, output, session) {
       session$sendCustomMessage("handler_finishLoader", "PCA2_loader")
       session$sendCustomMessage("handler_enableButton", "PCconfirm")
       session$sendCustomMessage("handler_log", " ### Finished PC Exploration ###")
+    })
+  })
+  
+  observeEvent(input$lsiConfirm, {
+    session$sendCustomMessage("handler_log", " ### Starting PC Exploration ###")
+    session$sendCustomMessage("handler_startLoader", c("lsi_loader", 10))
+    session$sendCustomMessage("handler_disableButton", "lsiConfirm")
+    tryCatch({
+      if (identical(proj_default, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
+      else
+      {
+        session$sendCustomMessage("handler_startLoader", c("lsi_loader", 25))
+        proj_default <<- addIterativeLSI(ArchRProj = proj_default, useMatrix = "TileMatrix", name = "IterativeLSI",
+                                         iterations = as.numeric(input$lsiIterations), varFeatures = as.numeric(input$lsiVarFeatures),
+                                         clusterParams = list( resolution = as.numeric(input$lsiResolution), sampleCells = 10000, n.start = 10),dimsToUse=1:as.numeric(input$lsiDmensions))
+        
+        session$sendCustomMessage("handler_startLoader", c("lsi_loader", 75))
+        output$lsiOutput <- renderPrint(
+          {
+            cat(paste0("LSI executed successfully."))
+          }
+        )
+      }
+      session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " CLUSTERING"))
+    }, error = function(e) {
+      print(paste("Error :  ", e))
+      session$sendCustomMessage("handler_alert", "There was an error with the LSI analysis.")
+    }, finally = {
+      session$sendCustomMessage("handler_startLoader", c("lsi_loader", 100))
+      Sys.sleep(1)
+      session$sendCustomMessage("handler_finishLoader", "lsi_loader")
+      session$sendCustomMessage("handler_enableButton", "lsiConfirm")
+      session$sendCustomMessage("handler_log", " ### Finished LSI ###")
     })
   })
   
