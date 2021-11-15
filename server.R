@@ -499,8 +499,12 @@ server <- function(input, output, session) {
   })
   
   #ATAC qc
-  observeEvent(input$qcConfirmATAC, {
-    
+  observeEvent(input$qcDisplayATAC, {
+    session$sendCustomMessage("handler_startLoader", c("qc_loader2", 10))
+    session$sendCustomMessage("handler_disableButton", "qcDisplayATAC")
+    tryCatch({
+      if (identical(proj_default, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
+      else{
     #TSS plot
     p1 <- plotGroups(
       ArchRProj = proj_default,
@@ -510,7 +514,9 @@ server <- function(input, output, session) {
       alpha = 0.4,
       addBoxPlot = TRUE
     )
-    output$filteredTSS_plot <- renderPlotly( expr =  ggplot(p1$data, aes(x=x, y=y, fill=x)) + geom_violin() + theme_bw() )
+    output$TSS_plot <- renderPlotly( expr =  ggplot(p1$data, aes(x=x, y=y, fill=x)) + geom_violin() + theme_bw() + labs(y="TSS Enrichment"))
+    
+    session$sendCustomMessage("handler_startLoader", c("qc_loader2", 50))
     
     #nFrags plot
     p2 <- plotGroups(
@@ -519,12 +525,15 @@ server <- function(input, output, session) {
       name = "log10(nFrags)",
       plotAs = "ridges"
     )
-    output$filterednFrag_plot <- renderPlot( expr = ggplot(p2$data, aes(y=x, x=y, fill=x)) + geom_density_ridges() + theme_bw() + scale_y_discrete(expand = c(0, 0)), 
+    output$nFrag_plot <- renderPlot( expr = ggplot(p2$data, aes(y=x, x=y, fill=x)) + geom_density_ridges() + theme_bw() + scale_y_discrete(expand = c(0, 0)) + labs(x="log10(nFrags)"), 
                                              width = 500, height = 500
                                           )
+    
+    session$sendCustomMessage("handler_startLoader", c("qc_loader2", 75))
+    
     #nFrags-TSS plot
     df <- getCellColData(proj_default, select = c("log10(nFrags)", "TSSEnrichment"))
-    p3 <- ggPoint(
+    p4 <- ggPoint(
       x = df[,1],
       y = df[,2],
       #size = 3,
@@ -538,8 +547,28 @@ server <- function(input, output, session) {
       xlim = c(log10(500), quantile(df[,1], probs = 0.99)),
       ylim = c(0, quantile(df[,2], probs = 0.99))
     ) + geom_hline(yintercept = 4, lty = "dashed") + geom_vline(xintercept = 3, lty = "dashed")
-    output$filteredTSS_nFrag_plot <- renderPlotly( expr =  ggplotly(p3))
+    output$TSS_nFrag_plot <- renderPlotly( expr =  ggplotly(p4))
     
+    #cells 
+    output$CellStatsATAC <- renderPrint(
+      {
+        cat(paste0("\nTotal number of cells after soft filtering: ", nrow(getCellColData(proj_default))))
+      }
+    )
+    
+    session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " QUALITY CONTROL", " DATA NORMALIZATION\n& SCALING", " UTILITY OPTIONS"))
+      }
+      # }, warning = function(w) {
+      #   print(paste("Warning:  ", w))
+    }, error = function(e) {
+      print(paste("Error :  ", e))
+      session$sendCustomMessage("handler_alert", "The selected Quality Control arguments cannot produce meaningful visualizations.")
+    }, finally = {
+      session$sendCustomMessage("handler_startLoader", c("qc_loader2", 100))
+      Sys.sleep(1)
+      session$sendCustomMessage("handler_finishLoader", "qc_loader2")
+      session$sendCustomMessage("handler_enableButton", "qcDisplayATAC")
+    })
   })
   
   #------------------Normalization tab--------------------------------
@@ -645,14 +674,16 @@ server <- function(input, output, session) {
         if(input$pcaRadio == "yes")
         {
           data.use <- PrepDR(seurat_object, genes.use = VariableFeatures(seurat_object), use.imputed = F, assay.type = "RNA")
-          optimal_nPCs <- PCA_estimate_nPC(data.use, from.nPC = 1, to.nPC=50, by.nPC= as.numeric(input$pcaStepBy), k = 10)
+          initial_optimal_nPCs <- PCA_estimate_nPC(data.use, from.nPC = 1, to.nPC=100, by.nPC= 10, k = 10)
+          
+          optimal_nPCs <- PCA_estimate_nPC(data.use, from.nPC = 1, to.nPC=initial_optimal_nPCs+10, by.nPC= 1, k = 10)
         }
         
         updateUmapTypeChoices("pca")
         
         output$elbowPlotPCA <- renderPlotly(
           {
-            plot1 <- ElbowPlot(seurat_object, ndims = 50)
+            plot1 <- ElbowPlot(seurat_object, ndims = 100)
             plot1_data <- plot1$data
             colnames(plot1_data)[1] <- "PC"
             colnames(plot1_data)[2] <- "SD"

@@ -196,7 +196,7 @@ ui <- dashboardPage(
                                          column(plotlyOutput(outputId = "filteredMitoViolin", height = "100%"), width = 4),
                                          column(plotlyOutput(outputId = "filteredGenesCounts", height= "100%"), width = 6),
                                          column(plotlyOutput(outputId = "filteredMtCounts", height= "100%"), width = 6),
-                                         column(verbatimTextOutput(outputId = "filteredCellStats"), width = 4)
+                                         column(verbatimTextOutput(outputId = "filteredCellStats"), width = 4),
                                        )
                                      )
                                    )
@@ -207,7 +207,7 @@ ui <- dashboardPage(
                                      box(
                                        width = 3, status = "info", solidHeader = TRUE,
                                        title = "Quality control",
-                                       tags$h3("1. Display unfiltered quality control plots"),
+                                       tags$h3("1. Display soft filtered quality control plots"),
                                        actionButton(inputId = "qcDisplayATAC", label = "OK"),
                                        tags$hr(),
                                        tags$h3("2. Filter out low quality cells"),
@@ -217,24 +217,26 @@ ui <- dashboardPage(
                                        sliderInput(inputId = "minTSS", label = "The minimum numeric transcription start site (TSS) enrichment score required for a cell to pass filtering 
 									   for use in downstream analyses:", min = 1, max = 10, value = 4, step = 1),
                                        actionButton(inputId = "qcConfirmATAC", label = "OK"),
+                                       #TODO list of chromosomes to be analysed
+                                       #TODO mark doublets (ATAC, RNA) incorporate after tSNE, UMAP generation and visualize on UMAP, output .csv - exclude? [optional]
                                      ),
                                      box(
                                        width = 9, status = "info", solidHeader = TRUE,
                                        title = "Quality control plots",
-                                       div(class="ldBar", id="qc_loader", "data-preset"="circle"),
+                                       div(class="ldBar", id="qc_loader2", "data-preset"="circle"),
                                        div(
-                                         column(tags$h3("Pre-filtering plots"), width=12),
+                                         column(tags$h3("Soft filtered plots"), width=12),
                                          column(tags$hr(), width = 12),
-                                         column(plotlyOutput(outputId = "TSS_nFrag_plot", height = "100%"), width = 4),
                                          column(plotlyOutput(outputId = "TSS_plot", height = "100%"), width = 4),
-                                         column(plotlyOutput(outputId = "nFrag_plot", height = "100%"), width = 4),
-                                         column(verbatimTextOutput(outputId = "cellStatsATAC"), width = 4),
-                                         column(tags$h3("Post-filtering plots"), width=12),
+                                         column(plotOutput(outputId = "nFrag_plot", height = "100%"), width = 4),
+                                         column(plotlyOutput(outputId = "TSS_nFrag_plot", height = "100%"), width = 4),
+                                         column(verbatimTextOutput(outputId = "CellStatsATAC"), width = 4),
+                                         column(tags$h3("Custom filtered plots"), width=12),
                                          column(tags$hr(), width = 12),
-                                         #column(plotlyOutput(outputId = "filteredTSS_plot", height = "100%"), width = 4),
+                                         column(plotlyOutput(outputId = "filteredTSS_plot", height = "100%"), width = 4),
                                          column(plotOutput(outputId = "filterednFrag_plot", height = "100%"), width = 4),
                                          column(plotlyOutput(outputId = "filteredTSS_nFrag_plot", height = "100%"), width = 4),
-                                         column(verbatimTextOutput(outputId = "filteredCellStatsATAC"), width = 4)
+                                         column(verbatimTextOutput(outputId = "filteredCellStatsATAC"), width = 4),
                                        )
                                      )
                                    )
@@ -301,7 +303,7 @@ ui <- dashboardPage(
                                       choices = list("Yes (slow operation)" = "yes", 
                                                      "No" = "no"), 
                                       selected = "no"), width = 12),
-                  column(sliderInput(inputId = "pcaStepBy", label = "Resolution/step-by: (applicable only in SVA-CV)", min = 1, max = 5, value = 3, step = 1), width = 12),
+                  #column(sliderInput(inputId = "pcaStepBy", label = "Resolution/step-by: (applicable only in SVA-CV)", min = 1, max = 5, value = 3, step = 1), width = 12),
                   column(actionButton(inputId = "PCrunPCA", label = "Run PCA"), width = 12),
                   div(class="ldBar", id="PCA1_loader", "data-preset"="circle"),
                   div(
@@ -313,7 +315,7 @@ ui <- dashboardPage(
                   width = 12, status = "info", solidHeader = TRUE,
                   title = "Explore particular principal components", height = "990px",
                   #column(textInput(inputId = "PCin", label = "Select a principal component :", value = "1"), width = 6),
-                  selectInput("PCin", "Select a principal component :", choices=1:50, selected = 1, multiple = FALSE,selectize = TRUE, width = NULL, size = NULL),
+                  selectInput("PCin", "Select a principal component :", choices=1:100, selected = 1, multiple = FALSE,selectize = TRUE, width = NULL, size = NULL),
                   column(actionButton(inputId = "PCconfirm", label = "OK"), width = 12),
                   div(class="ldBar", id="PCA2_loader", "data-preset"="circle"),
                   div(
@@ -323,6 +325,9 @@ ui <- dashboardPage(
                 )
               )
       ),
+      #ATAC 
+      #input: varFeatures[5000, 100000] step=1000, default=25000, dimsToUse[1, 50] default=30, resolution[0, 10] default=2, iterations [1, 10] default=2
+      #visualize LSI?
       
       #Clustering tab
       tabItem(tabName = "clustering", 
@@ -335,13 +340,13 @@ ui <- dashboardPage(
                   #textInput(inputId = "snnK", label = "k-nearest neighbours for each cell :", value = "20"),
                   sliderInput(inputId = "snnK", label = "k-nearest neighbours for each cell :", min = 1, max = 200, value = 20, step = 1),
                   #textInput(inputId = "snnPCs", label = "Number of principal components to use :", value = "15"),
-                  sliderInput(inputId = "snnPCs", label = "Number of principal components to use :", min = 1, max = 50, value = 15, step = 1),
+                  sliderInput(inputId = "snnPCs", label = "Number of principal components to use :", min = 1, max = 100, value = 15, step = 1),
                   tags$h3("2. Clustering of the cells"),
                   tags$hr(),
                   #textInput(inputId = "clusterRes", label = "Clustering resolution :", value = "0.6"),
                   sliderInput(inputId = "clusterRes", label = "Clustering resolution :", min = 0.1, max = 60, value = 0.8, step = 0.1),
                   #textInput(inputId = "clusterPCs", label = "Number of principal components to use :", value = "15"),
-                  sliderInput(inputId = "clusterPCs", label = "Number of principal components to use :", min = 1, max = 50, value = 15, step = 1),
+                  sliderInput(inputId = "clusterPCs", label = "Number of principal components to use :", min = 1, max = 100, value = 15, step = 1),
                   actionButton(inputId = "snnConfirm", label = "OK"),
                 ),
                 box(
@@ -360,6 +365,9 @@ ui <- dashboardPage(
                 ),
               )
       ),
+      #ATAC 
+      # resolution, dimsToUse
+      # correlation heatmap (RNA, ATAC) using most variable features/or markers [optional]
       
       #UMAP tab
       tabItem(tabName = "umap", 
@@ -367,9 +375,9 @@ ui <- dashboardPage(
                 box(width = 3, status = "info", solidHeader = TRUE,
                     title = "Cell visualization options",
                     #textInput(inputId = "umapPCs", label = "Number of principal components to use:", value = "15"),
-                    sliderInput(inputId = "umapPCs", label = "Number of principal components to use :", min = 1, max = 50, value = 15, step = 1),
+                    sliderInput(inputId = "umapPCs", label = "Number of principal components to use :", min = 1, max = 100, value = 15, step = 1),
                     #textInput(inputId = "umapOutComponents", label = "Number of principal components to fit output:", value = "3"),
-                    sliderInput(inputId = "umapOutComponents", label = "Number of dimensions to fit output:", min = 1, max = 50, value = 15, step = 1),
+                    sliderInput(inputId = "umapOutComponents", label = "Number of dimensions to fit output:", min = 2, max = 100, value = 15, step = 1),
                     actionButton(inputId = "umapRunUmap", label = "Run UMAP"),
                     actionButton(inputId = "umapRunTsne", label = "Run tSNE"),
                     actionButton(inputId = "umapRunDFM", label = "Run Diffusion Map"),
@@ -398,6 +406,9 @@ ui <- dashboardPage(
                 )
               )
       ),
+      #ATAC
+      #UMAP: n_components, ndimsToUse, distance=cosine, neighbors=30, minDist=0.5
+      #tSNE: n_components, ndimsToUse, perplexity =30, check for 3D
       
       #DEA tab
       tabItem(tabName = "findMarkers", 
@@ -690,7 +701,7 @@ ui <- dashboardPage(
                   title = "Trajectory parameters",
                   selectInput("trajectoryReduction", "Dimensionality reduction method:", choices=c("PCA"="pca","UMAP"="umap", "tSNE"="tsne", "Diffusion Map"="dfm"), selected = "PCA",
                               multiple = FALSE,selectize = TRUE, width = NULL, size = NULL),
-                  sliderInput("trajectorySliderDimensions", "Number of dimensions to use :", min = 0, max = 50, value = 10, step = 1),
+                  sliderInput("trajectorySliderDimensions", "Number of dimensions to use :", min = 0, max = 100, value = 10, step = 1),
                   selectInput("trajectoryStart", "Initial state:", choices=c("0"="0"), selected = "0", multiple = F, selectize = F),
                   selectInput("trajectoryEnd", "Final state:", choices=c("0"="0"), selected = "0", multiple = F, selectize = F),
                   actionButton(inputId = "trajectoryConfirm", label = "OK")
