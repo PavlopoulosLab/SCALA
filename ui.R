@@ -106,11 +106,13 @@ ui <- dashboardPage(
                               tabPanel("10x input files (scATAC-seq)", 
                                        textInput(inputId = "uploadATACprojectID", label = "Project name : ", value = "Project1"),
                                        fileInput(inputId = "uploadATACFragments", label = "Please upload fragments.tsv.gz file", accept = ".gz"),
-                                       radioButtons("upload10xATACRadioSpecies", label = h3("Select organism : "),
-                                                    choices = list("Mus musculus (Mouse)" = "mouse", 
-                                                                   "Homo sapiens (Human)" = "human"
+                                       radioButtons("upload10xATACRadioSpecies", label = h3("Select organism and genome version: "),
+                                                    choices = list("Mus musculus (Mouse) - mm10" = "mm10", 
+                                                                   "Homo sapiens (Human) - hg19" = "hg19",
+                                                                   "Homo sapiens (Human) - hg38" = "hg38"
                                                     ), 
-                                                    selected = "human"),
+                                                    selected = "mm10"),
+                                       sliderInput(inputId = "upload10xATACThreads", label = "Threads to be used:", min = 1, max = 200, value = 4, step = 1), #TODO floor(parallel::detectCores()/2)
                                        actionButton(inputId = "upload10xATACConfirm", label = "Submit")
                               ),
                               tabPanel("Load example data", 
@@ -303,9 +305,7 @@ ui <- dashboardPage(
                                       choices = list("Yes (slow operation)" = "yes", 
                                                      "No" = "no"), 
                                       selected = "no"), width = 12),
-
                   #column(sliderInput(inputId = "pcaStepBy", label = "Resolution/step-by: (applicable only in SVA-CV)", min = 1, max = 5, value = 3, step = 1), width = 12),
-
                   column(actionButton(inputId = "PCrunPCA", label = "Run PCA"), width = 12),
                   div(class="ldBar", id="PCA1_loader", "data-preset"="circle"),
                   div(
@@ -379,9 +379,7 @@ ui <- dashboardPage(
                     #textInput(inputId = "umapPCs", label = "Number of principal components to use:", value = "15"),
                     sliderInput(inputId = "umapPCs", label = "Number of principal components to use :", min = 1, max = 100, value = 15, step = 1),
                     #textInput(inputId = "umapOutComponents", label = "Number of principal components to fit output:", value = "3"),
-
                     sliderInput(inputId = "umapOutComponents", label = "Number of dimensions to fit output:", min = 2, max = 100, value = 15, step = 1),
-                    
                     actionButton(inputId = "umapRunUmap", label = "Run UMAP"),
                     actionButton(inputId = "umapRunTsne", label = "Run tSNE"),
                     actionButton(inputId = "umapRunDFM", label = "Run Diffusion Map"),
@@ -704,11 +702,9 @@ ui <- dashboardPage(
                   title = "Trajectory parameters",
                   selectInput("trajectoryReduction", "Dimensionality reduction method:", choices=c("PCA"="pca","UMAP"="umap", "tSNE"="tsne", "Diffusion Map"="dfm"), selected = "PCA",
                               multiple = FALSE,selectize = TRUE, width = NULL, size = NULL),
-
                   sliderInput("trajectorySliderDimensions", "Number of dimensions to use :", min = 0, max = 100, value = 10, step = 1),
                   selectInput("trajectoryStart", "Initial state:", choices=c("0"="0"), selected = "0", multiple = F, selectize = F),
                   selectInput("trajectoryEnd", "Final state:", choices=c("0"="0"), selected = "0", multiple = F, selectize = F),
-
                   actionButton(inputId = "trajectoryConfirm", label = "OK")
                 ),
                 box(
