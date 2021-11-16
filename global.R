@@ -26,6 +26,7 @@ library(missMDA)
 library(phateR) #pip install phate //\\ #install.packages("phateR") //\\ *devtools::install_github("scottgigante/seurat", ref="patch/add-PHATE-again") //\\ #reticulate::py_install("phate", pip=TRUE)
 #ATAC libraries
 library(ArchR)
+library(pheatmap)
 
 #Global variables
 

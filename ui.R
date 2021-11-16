@@ -361,38 +361,66 @@ ui <- dashboardPage(
       
       #Clustering tab
       tabItem(tabName = "clustering", 
-              fluidRow(
-                box(
-                  width = 4, status = "info", solidHeader = TRUE,
-                  title = "k-NN & Clustering parameters",
-                  tags$h3("1. Construction of the shared nearest neighbour"),
-                  tags$hr(),
-                  #textInput(inputId = "snnK", label = "k-nearest neighbours for each cell :", value = "20"),
-                  sliderInput(inputId = "snnK", label = "k-nearest neighbours for each cell :", min = 1, max = 200, value = 20, step = 1),
-                  #textInput(inputId = "snnPCs", label = "Number of principal components to use :", value = "15"),
-                  sliderInput(inputId = "snnPCs", label = "Number of principal components to use :", min = 1, max = 100, value = 15, step = 1),
-                  tags$h3("2. Clustering of the cells"),
-                  tags$hr(),
-                  #textInput(inputId = "clusterRes", label = "Clustering resolution :", value = "0.6"),
-                  sliderInput(inputId = "clusterRes", label = "Clustering resolution :", min = 0.1, max = 60, value = 0.8, step = 0.1),
-                  #textInput(inputId = "clusterPCs", label = "Number of principal components to use :", value = "15"),
-                  sliderInput(inputId = "clusterPCs", label = "Number of principal components to use :", min = 1, max = 100, value = 15, step = 1),
-                  actionButton(inputId = "snnConfirm", label = "OK"),
-                ),
-                box(
-                  width = 8, status = "info", solidHeader = TRUE, title = "k-NN graph & clusters", height = "1500px",
-                  tabsetPanel(type = "tabs",
-                              tabPanel("Clustering results", 
-                                       div(class="ldBar", id="clust1_loader", "data-preset"="circle"),
-                                       dataTableOutput(outputId="clusterTable", height = "500px"),
-                                       selectInput("clusterGroupBy", "Grouping variable:",
-                                                   c("orig.ident" = "orig.ident")),
-                                       actionButton(inputId = "clusterBarplotConfirm", label = "Display barchart"),
-                                       div(class="ldBar", id="clust2_loader", "data-preset"="circle"),
-                                       plotlyOutput(outputId = "clusterBarplot", height = "700px")),
-                              tabPanel("Shared Nearest Neighbour Graph", visNetworkOutput(outputId="snnSNN", height = "1300px"))
-                  ),
-                ),
+              tabsetPanel(type = "tabs",
+                          tabPanel("scRNA-seq",
+                                   fluidRow(
+                                     box(
+                                       width = 4, status = "info", solidHeader = TRUE,
+                                       title = "k-NN & Clustering parameters",
+                                       tags$h3("1. Construction of the shared nearest neighbour"),
+                                       tags$hr(),
+                                       #textInput(inputId = "snnK", label = "k-nearest neighbours for each cell :", value = "20"),
+                                       sliderInput(inputId = "snnK", label = "k-nearest neighbours for each cell :", min = 1, max = 200, value = 20, step = 1),
+                                       #textInput(inputId = "snnPCs", label = "Number of principal components to use :", value = "15"),
+                                       sliderInput(inputId = "snnPCs", label = "Number of principal components to use :", min = 1, max = 100, value = 15, step = 1),
+                                       tags$h3("2. Clustering of the cells"),
+                                       tags$hr(),
+                                       #textInput(inputId = "clusterRes", label = "Clustering resolution :", value = "0.6"),
+                                       sliderInput(inputId = "clusterRes", label = "Clustering resolution :", min = 0.1, max = 60, value = 0.8, step = 0.1),
+                                       #textInput(inputId = "clusterPCs", label = "Number of principal components to use :", value = "15"),
+                                       sliderInput(inputId = "clusterPCs", label = "Number of principal components to use :", min = 1, max = 100, value = 15, step = 1),
+                                       actionButton(inputId = "snnConfirm", label = "OK"),
+                                     ),
+                                     box(
+                                       width = 8, status = "info", solidHeader = TRUE, title = "k-NN graph & clusters", height = "1500px",
+                                       tabsetPanel(type = "tabs",
+                                                   tabPanel("Clustering results", 
+                                                            div(class="ldBar", id="clust1_loader", "data-preset"="circle"),
+                                                            dataTableOutput(outputId="clusterTable", height = "500px"),
+                                                            selectInput("clusterGroupBy", "Grouping variable:",
+                                                                        c("orig.ident" = "orig.ident")),
+                                                            actionButton(inputId = "clusterBarplotConfirm", label = "Display barchart"),
+                                                            div(class="ldBar", id="clust2_loader", "data-preset"="circle"),
+                                                            plotlyOutput(outputId = "clusterBarplot", height = "700px")),
+                                                   tabPanel("Shared Nearest Neighbour Graph", visNetworkOutput(outputId="snnSNN", height = "1300px"))
+                                       ),
+                                     ),
+                                   )
+                          ),
+                          tabPanel("scATAC-seq",
+                                   fluidRow(
+                                     box(
+                                       width = 4, status = "info", solidHeader = TRUE,
+                                       title = "Clustering parameters",
+                                       sliderInput(inputId = "clusterDimensionsATAC", label = "Number of dimensions to use: ", min = 1, max = 100, value = 30, step = 1),
+                                       sliderInput(inputId = "clusterResATAC", label = "Clustering resolution :", min = 0.1, max = 60, value = 2, step = 0.1),
+                                       actionButton(inputId = "clusterConfirmATAC", label = "Run clustering"),
+                                     ),
+                                     box(
+                                       width = 8, status = "info", solidHeader = TRUE, title = "Clustering output", height = "1500px",
+                                       tabsetPanel(type = "tabs",
+                                                   tabPanel("Clustering results", 
+                                                            div(class="ldBar", id="clust3_loader", "data-preset"="circle"),
+                                                            dataTableOutput(outputId="clusterTableATAC", height = "500px"),
+                                                            #selectInput("clusterGroupBy", "Grouping variable:",
+                                                            #            c("Sample" = "Sample")),
+                                                            #actionButton(inputId = "clusterBarplotConfirmATAC", label = "Display barchart"),
+                                                            plotlyOutput(outputId = "clusterBarplotATAC", height = "700px")),
+                                                   tabPanel("Confusion matrix", plotlyOutput(outputId="confusionMatrixATAC", height = "1300px"))
+                                       ),
+                                     ),
+                                   )
+                          )
               )
       ),
       #ATAC 

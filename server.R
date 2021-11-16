@@ -838,6 +838,8 @@ server <- function(input, output, session) {
                                          clusterParams = list( resolution = as.numeric(input$lsiResolution), sampleCells = 10000, n.start = 10),dimsToUse=1:as.numeric(input$lsiDmensions))
         
         session$sendCustomMessage("handler_startLoader", c("lsi_loader", 75))
+        #proj_default <<- addClusters(input = proj_default, reducedDims = "IterativeLSI", method = "Seurat", name = "Clusters_0.8", resolution = 0.8)
+        #print(head(getCellColData(proj_default)))
         output$lsiOutput <- renderPrint(
           {
             cat(paste0("LSI executed successfully."))
@@ -1001,6 +1003,58 @@ server <- function(input, output, session) {
       session$sendCustomMessage("handler_enableButton", "clusterBarplotConfirm")
     })
   })
+  
+  observeEvent(input$clusterConfirmATAC, {
+    session$sendCustomMessage("handler_startLoader", c("clust3_loader", 10))
+    session$sendCustomMessage("handler_disableButton", "clusterConfirmATAC")
+    tryCatch({
+      if (identical(proj_default, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
+      else {
+        
+    #Run clustering
+    proj_default <<- addClusters(input = proj_default, reducedDims = "IterativeLSI", method = "Seurat", neme = "Clusters", #name = paste0("Clusters_res_", input$clusterResATAC), 
+                                 resolution = as.numeric(input$clusterResATAC), dimsToUse = as.numeric(input$clusterDimensionsATAC), force = T)
+    #Cluster table
+    cluster_df <- as.data.frame(table(proj_default$Clusters))
+    colnames(cluster_df)[1] <- "Cluster"
+    colnames(cluster_df)[2] <- "Number of cells"
+    cluster_df$`% of cells per cluster` <- cluster_df$`Number of cells`/nrow(getCellColData(proj_default))*100
+    
+    output$clusterTableATAC <- renderDataTable(cluster_df, options = list(pageLength = 10), rownames = F)
+    
+    
+    cols = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(cluster_df$Cluster)))
+    
+    p <- ggplot(cluster_df) + theme_bw() +
+      geom_bar( mapping = aes(x = Cluster, y = `% of cells per cluster`, fill=Cluster), stat = "identity" ) +
+      scale_fill_manual(values = cols ) +
+      theme(axis.text.x = element_text(face = "bold", color = "black", size = 12, angle = 0),
+            axis.text.y = element_text(face = "bold", color = "black", size = 12, angle = 0),
+            axis.title.y = element_text(face = "bold", color = "black", size = 12),
+            axis.title.x = element_text(face = "bold", color = "black", size = 12),
+            panel.background = element_blank(),
+            axis.line = element_line(colour = "black")) +
+      labs(x="", y="Percent of cells", fill="Clusters")
+    gp <- plotly::ggplotly(p, tooltip = c("x", "y"))
+    session$sendCustomMessage("handler_startLoader", c("clust3_loader", 50))
+    session$sendCustomMessage("handler_startLoader", c("clust3_loader", 75))
+    
+    output$clusterBarplotATAC <- renderPlotly({print(gp)})
+    
+    session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " ADDITIONAL DIMENSIONALITY\nREDUCTION METHODS", " TRAJECTORY ANALYSIS",
+                                                      " MARKERS' IDENTIFICATION"))
+    }
+      }, error = function(e) {
+        print(paste("Error :  ", e))
+        session$sendCustomMessage("handler_alert", "There was an error with the Clustering procedure.")
+      }, finally = {
+        session$sendCustomMessage("handler_startLoader", c("clust3_loader", 100))
+        Sys.sleep(1)
+        session$sendCustomMessage("handler_finishLoader", "clust3_loader")
+        session$sendCustomMessage("handler_enableButton", "clusterConfirmATAC")
+      })
+  })
+  
   
   #------------------Umap/tSNE/DFM tab---------------------------------------
   observeEvent(input$umapRunUmap, {
