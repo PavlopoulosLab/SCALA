@@ -6,7 +6,7 @@ server <- function(input, output, session) {
   metaD <- reactiveValues(my_project_name="-", all_lin="0")
   
   #------------------Upload tab--------------------------------
-  observeEvent(input$uploadCountMatrixConfirm, {
+  observeEvent(input$uploadCountMatrixConfirm, { #TODO one dataset per session, deactivate options from other modality
     session$sendCustomMessage("handler_disableTabs", "sidebarMenu") # disable all tab panels (except Data Input) until files are uploaded
     session$sendCustomMessage("handler_startLoader", c("input_loader", 10))
     session$sendCustomMessage("handler_disableButton", "uploadCountMatrixConfirm")
@@ -233,7 +233,11 @@ server <- function(input, output, session) {
       
       session$sendCustomMessage("handler_startLoader", c("input_loader", 50))
       session$sendCustomMessage("handler_startLoader", c("input_loader", 75))
-      output$metadataTableATAC <- renderDataTable(as.data.frame(getCellColData(proj_default)), options = list(pageLength = 10))
+      
+      df_meta_data <- as.data.frame(getCellColData(proj_default))
+      df_meta_data$cell_id <- rownames(df_meta_data)
+      rownames(df_meta_data) <- NULL
+      output$metadataTableATAC <- renderDataTable(df_meta_data, options = list(pageLength = 10))
       cleanAllPlots(T) # fromDataInput -> TRUE
       session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " QUALITY CONTROL", " UTILITY OPTIONS"))
       # }, warning = function(w) {
@@ -1013,7 +1017,7 @@ server <- function(input, output, session) {
         
     #Run clustering
     proj_default <<- addClusters(input = proj_default, reducedDims = "IterativeLSI", method = "Seurat", neme = "Clusters", #name = paste0("Clusters_res_", input$clusterResATAC), 
-                                 resolution = as.numeric(input$clusterResATAC), dimsToUse = as.numeric(input$clusterDimensionsATAC), force = T)
+                                 resolution = as.numeric(input$clusterResATAC), dimsToUse = 1:as.numeric(input$clusterDimensionsATAC), force = T)
     #Cluster table
     cluster_df <- as.data.frame(table(proj_default$Clusters))
     colnames(cluster_df)[1] <- "Cluster"
@@ -1041,8 +1045,10 @@ server <- function(input, output, session) {
     
     output$clusterBarplotATAC <- renderPlotly({print(gp)})
     
+    updateSelInpColorATAC()
     session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " ADDITIONAL DIMENSIONALITY\nREDUCTION METHODS", " TRAJECTORY ANALYSIS",
                                                       " MARKERS' IDENTIFICATION"))
+    session$sendCustomMessage("handler_disableButton", "umapConfirmATAC")
     }
       }, error = function(e) {
         print(paste("Error :  ", e))
@@ -1057,6 +1063,130 @@ server <- function(input, output, session) {
   
   
   #------------------Umap/tSNE/DFM tab---------------------------------------
+  observeEvent(input$umapRunUmapTsneATAC, {
+    session$sendCustomMessage("handler_startLoader", c("dim_red3_loader", 10))
+    session$sendCustomMessage("handler_disableButton", "umapRunUmapTsneATAC")
+    tryCatch({
+      if (identical(proj_default, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
+      else {
+        
+        ## Dimensionality Reduction ##
+        proj_default <<- addUMAP(ArchRProj = proj_default, reducedDims = "IterativeLSI", name = "umap", nNeighbors = 30, minDist = 0.5, metric = "cosine", 
+                                 force = T, n_components = as.numeric(input$umapOutComponentsATAC), dimsToUse = 1:as.numeric(input$umapDimensionsATAC))
+        session$sendCustomMessage("handler_startLoader", c("dim_red3_loader", 50))
+        proj_default <<- addTSNE(ArchRProj = proj_default, reducedDims = "IterativeLSI", name = "tsne", perplexity = 30, force = T, 
+                                 n_components = as.numeric(input$umapOutComponentsATAC), dimsToUse = 1:as.numeric(input$umapDimensionsATAC))
+        session$sendCustomMessage("handler_startLoader", c("dim_red3_loader", 75))
+        session$sendCustomMessage("handler_enableButton", "umapConfirmATAC")
+        }
+      }, error = function(e) {
+        print(paste("Error :  ", e))
+        session$sendCustomMessage("handler_alert", "There was an error with the generation of UMAP or tSNE.")
+      }, finally = {
+        session$sendCustomMessage("handler_startLoader", c("dim_red3_loader", 100))
+        Sys.sleep(1)
+        session$sendCustomMessage("handler_finishLoader", "dim_red3_loader")
+        session$sendCustomMessage("handler_enableButton", "umapRunUmapTsneATAC")
+      })
+  })
+  
+  observeEvent(input$umapConfirmATAC, {
+    session$sendCustomMessage("handler_startLoader", c("dim_red4_loader", 10))
+    session$sendCustomMessage("handler_disableButton", "umapConfirmATAC")
+    tryCatch({
+      if (identical(proj_default, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
+      else {
+        
+        #get input
+        dims <- as.numeric(input$umapDimensionsPlotATAC)
+        type <- input$umapTypeATAC
+        
+        #prepare metadata
+        meta <- as.data.frame(getCellColData(proj_default))
+        meta$Cell_id <- rownames(meta)
+        reduc_data <- data.frame()
+        
+        #prepare colors
+        cols = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(meta[, input$umapColorByATAC])))
+        
+        #for all reductions
+        archr_object_reduc <- proj_default@embeddings[[input$umapTypeATAC]]$df
+        archr_object_reduc <- archr_object_reduc[, c(1:ncol(archr_object_reduc))]
+        archr_object_reduc$Cell_id <- rownames(archr_object_reduc)
+        reduc_data <- left_join(archr_object_reduc, meta)
+        print(head(reduc_data))
+        
+        session$sendCustomMessage("handler_startLoader", c("dim_red4_loader", 50))
+        colnames(reduc_data) <- gsub("IterativeLSI#", "", colnames(reduc_data))
+        colnames(reduc_data) <- gsub("Dimension_", "", colnames(reduc_data))
+        
+        if(type == "umap" & dims == 2)
+        {
+          p <- ggplot(data=reduc_data, aes_string(x="UMAP_1", y="UMAP_2", fill=input$umapColorByATAC)) +
+            geom_point(size= as.numeric(input$umapDotSizeATAC), shape=21, alpha= as.numeric(input$umapDotOpacityATAC), stroke=as.numeric(input$umapDotBorderATAC))+
+            scale_fill_manual(values = cols)+
+            scale_size()+
+            theme_bw() +
+            theme(axis.text.x = element_text(face = "bold", color = "black", size = 25, angle = 0),
+                  axis.text.y = element_text(face = "bold", color = "black", size = 25, angle = 0),
+                  axis.title.y = element_text(face = "bold", color = "black", size = 25),
+                  axis.title.x = element_text(face = "bold", color = "black", size = 25),
+                  legend.text = element_text(face = "bold", color = "black", size = 9),
+                  legend.title = element_text(face = "bold", color = "black", size = 9),
+                  legend.position="right",
+                  title = element_text(face = "bold", color = "black", size = 25, angle = 0)) +
+            labs(x="UMAP 1", y="UMAP 2", color="Cell type", title = "", fill="Color")
+          output$umapPlotATAC <- renderPlotly({plotly::ggplotly(p)})
+        }
+        else if(type == "umap" & dims == 3)
+        {
+          p <- plot_ly(reduc_data, x=~UMAP_1, y=~UMAP_2, z=~UMAP_3, type="scatter3d", alpha = as.numeric(input$umapDotOpacityATAC), mode="markers", color=as.formula(paste0('~', input$umapColorByATAC)),
+                       marker = list(size = as.numeric(input$umapDotSizeATAC), 
+                                     line = list(color = 'black', width = as.numeric(input$umapDotBorderATAC))
+                       ),
+                       colors = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(meta[, input$umapColorByATAC]))) )
+          
+          output$umapPlotATAC <- renderPlotly({print(p)})
+        }
+        else if(type == "tsne" & dims == 2)
+        {
+          p <- ggplot(data=reduc_data, aes_string(x="TSNE_1", y="TSNE_2", fill=input$umapColorByATAC)) +
+            geom_point(size= as.numeric(input$umapDotSizeATAC), shape=21, alpha= as.numeric(input$umapDotOpacityATAC), stroke=as.numeric(input$umapDotBorderATAC)) +
+            scale_fill_manual(values = cols)+
+            scale_size()+
+            theme_bw() +
+            theme(axis.text.x = element_text(face = "bold", color = "black", size = 25, angle = 0),
+                  axis.text.y = element_text(face = "bold", color = "black", size = 25, angle = 0),
+                  axis.title.y = element_text(face = "bold", color = "black", size = 25),
+                  axis.title.x = element_text(face = "bold", color = "black", size = 25),
+                  legend.text = element_text(face = "bold", color = "black", size = 9),
+                  legend.title = element_text(face = "bold", color = "black", size = 9),
+                  legend.position="right",
+                  title = element_text(face = "bold", color = "black", size = 25, angle = 0)) +
+            labs(x="tSNE 1", y="tSNE 2", color="Cell type", title = "", fill="Color")
+          output$umapPlotATAC <- renderPlotly({plotly::ggplotly(p)})  
+        }
+        else if(type == "tsne" & dims == 3)
+        {
+          p <- plot_ly(reduc_data, x=~TSNE_1, y=~TSNE_2, z=~TSNE_3, type="scatter3d", mode="markers", alpha = as.numeric(input$umapDotOpacityATAC), color=as.formula(paste0('~', input$umapColorByATAC)), 
+                       marker = list(size = as.numeric(input$umapDotSizeATAC), 
+                                     line = list(color = 'black', width = as.numeric(input$umapDotBorderATAC))
+                       ),
+                       colors = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(meta[, input$umapColorByATAC]))) ) 
+          output$umapPlotATAC <- renderPlotly({print(p)})
+        }
+      }
+    }, error = function(e) {
+      print(paste("Error :  ", e))
+      session$sendCustomMessage("handler_alert", "There was an error during of UMAP or tSNE plotting.")
+    }, finally = {
+      session$sendCustomMessage("handler_startLoader", c("dim_red4_loader", 100))
+      Sys.sleep(1)
+      session$sendCustomMessage("handler_finishLoader", "dim_red4_loader")
+      session$sendCustomMessage("handler_enableButton", "umapConfirmATAC")
+    })
+  })
+  
   observeEvent(input$umapRunUmap, {
     session$sendCustomMessage("handler_startLoader", c("dim_red1_loader", 10))
     session$sendCustomMessage("handler_disableButton", "umapRunUmap")
@@ -2608,7 +2738,25 @@ observeEvent(input$sendToFlame, {
     plot(PC,errors1)
     plot(PC,errors2)
     return(nPC)
-  }  
+  }
+  
+  #ATAC
+  #function update selectInput
+  updateSelInpColorATAC <- function()
+  {
+    #print(colnames(as.data.frame(getCellColData(proj_default))))
+    tableMeta <- as.data.frame(getCellColData(proj_default))
+    
+    fac <- sapply(tableMeta, is.factor)
+    
+    chars <- sapply(tableMeta, is.character)
+    
+    selected <- (fac | chars)
+    
+    factors_and_chars <- colnames(tableMeta)[which(selected==T)]
+    print(factors_and_chars)
+    updateSelectInput(session, "umapColorByATAC", choices = factors_and_chars)
+  }
 }
 
 

@@ -429,39 +429,73 @@ ui <- dashboardPage(
       
       #UMAP tab
       tabItem(tabName = "umap", 
-              fluidRow(
-                box(width = 3, status = "info", solidHeader = TRUE,
-                    title = "Cell visualization options",
-                    #textInput(inputId = "umapPCs", label = "Number of principal components to use:", value = "15"),
-                    sliderInput(inputId = "umapPCs", label = "Number of principal components to use :", min = 1, max = 100, value = 15, step = 1),
-                    #textInput(inputId = "umapOutComponents", label = "Number of principal components to fit output:", value = "3"),
-                    sliderInput(inputId = "umapOutComponents", label = "Number of dimensions to fit output:", min = 2, max = 100, value = 15, step = 1),
-                    actionButton(inputId = "umapRunUmap", label = "Run UMAP"),
-                    actionButton(inputId = "umapRunTsne", label = "Run tSNE"),
-                    actionButton(inputId = "umapRunDFM", label = "Run Diffusion Map"),
-                    actionButton(inputId = "umapRunPhate", label = "Run PHATE"),
-                    tags$h3("Display settings"),
-                    tags$hr(),
-                    div(class="ldBar", id="dim_red1_loader", "data-preset"="circle"),
-                    selectInput("umapType", "Plot type:",
-                                c("-" = "-")
-                                ),
-                    selectInput("umapDimensions", "Dimensions:",
-                                c("2D" = "2",
-                                  "3D" = "3")),
-                    selectInput("umapColorBy", "Color by:",
-                                c("Cluster" = "seurat_clusters")),
-
-                    sliderInput("umapDotSize", "Size:", min = 1, max = 20, value = 5, step = 0.5),
-                    sliderInput("umapDotOpacity", "Opacity:", min = 0, max = 1, value = 1, step = 0.1),
-                    sliderInput("umapDotBorder", "Border width:", min = 0, max = 10, value = 0.5, step = 0.1),
-                    actionButton(inputId = "umapConfirm", label = "Display plot")
-                    ),
-
-                box(width = 9, status = "info", solidHeader = TRUE, title = "Plot", height = "1200px",
-                    div(class="ldBar", id="dim_red2_loader", "data-preset"="circle"),
-                    plotlyOutput(outputId = "umapPlot", height = "1100px")
-                )
+              tabsetPanel(type = "tabs",
+                          tabPanel("scRNA-seq",
+                                   fluidRow(
+                                     box(width = 3, status = "info", solidHeader = TRUE,
+                                         title = "Cell visualization options",
+                                         sliderInput(inputId = "umapPCs", label = "Number of principal components to use :", min = 1, max = 100, value = 15, step = 1),
+                                         sliderInput(inputId = "umapOutComponents", label = "Number of dimensions to fit output:", min = 2, max = 100, value = 15, step = 1),
+                                         actionButton(inputId = "umapRunUmap", label = "Run UMAP"),
+                                         actionButton(inputId = "umapRunTsne", label = "Run tSNE"),
+                                         actionButton(inputId = "umapRunDFM", label = "Run Diffusion Map"),
+                                         actionButton(inputId = "umapRunPhate", label = "Run PHATE"),
+                                         tags$h3("Display settings"),
+                                         tags$hr(),
+                                         div(class="ldBar", id="dim_red1_loader", "data-preset"="circle"),
+                                         selectInput("umapType", "Plot type:",
+                                                     c("-" = "-")
+                                         ),
+                                         selectInput("umapDimensions", "Dimensions:",
+                                                     c("2D" = "2",
+                                                       "3D" = "3")),
+                                         selectInput("umapColorBy", "Color by:",
+                                                     c("Cluster" = "seurat_clusters")),
+                                         
+                                         sliderInput("umapDotSize", "Size:", min = 1, max = 20, value = 5, step = 0.5),
+                                         sliderInput("umapDotOpacity", "Opacity:", min = 0, max = 1, value = 1, step = 0.1),
+                                         sliderInput("umapDotBorder", "Border width:", min = 0, max = 10, value = 0.5, step = 0.1),
+                                         actionButton(inputId = "umapConfirm", label = "Display plot")
+                                     ),
+                                     
+                                     box(width = 9, status = "info", solidHeader = TRUE, title = "Plot", height = "1200px",
+                                         div(class="ldBar", id="dim_red2_loader", "data-preset"="circle"),
+                                         plotlyOutput(outputId = "umapPlot", height = "1100px")
+                                     )
+                                   )
+                          ),
+                          tabPanel("scATAC-seq",
+                                   fluidRow(
+                                     box(width = 3, status = "info", solidHeader = TRUE,
+                                         title = "Cell visualization options",
+                                         sliderInput(inputId = "umapDimensionsATAC", label = "Number of principal components to use :", min = 1, max = 100, value = 15, step = 1),
+                                         sliderInput(inputId = "umapOutComponentsATAC", label = "Number of dimensions to fit output:", min = 2, max = 100, value = 15, step = 1),
+                                         actionButton(inputId = "umapRunUmapTsneATAC", label = "Run UMAP and tSNE"),
+                                         tags$h3("Display settings"),
+                                         tags$hr(),
+                                         div(class="ldBar", id="dim_red3_loader", "data-preset"="circle"),
+                                         selectInput("umapTypeATAC", "Plot type:",
+                                                     c("UMAP" = "umap",
+                                                       "tSNE" = "tsne")
+                                         ),
+                                         selectInput("umapDimensionsPlotATAC", "Dimensions:",
+                                                     c("2D" = "2",
+                                                       "3D" = "3")),
+                                         selectInput("umapColorByATAC", "Color by:",
+                                                     c("Clusters" = "Clusters")),
+                                         
+                                         sliderInput("umapDotSizeATAC", "Size:", min = 1, max = 20, value = 5, step = 0.5),
+                                         sliderInput("umapDotOpacityATAC", "Opacity:", min = 0, max = 1, value = 1, step = 0.1),
+                                         sliderInput("umapDotBorderATAC", "Border width:", min = 0, max = 10, value = 0.5, step = 0.1),
+                                         actionButton(inputId = "umapConfirmATAC", label = "Display plot")
+                                     ),
+                                     
+                                     box(width = 9, status = "info", solidHeader = TRUE, title = "Plot", height = "1200px",
+                                         div(class="ldBar", id="dim_red4_loader", "data-preset"="circle"),
+                                         plotlyOutput(outputId = "umapPlotATAC", height = "1100px")
+                                     )
+                                   )
+                          )
               )
       ),
       #ATAC
