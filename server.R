@@ -1657,6 +1657,50 @@ observeEvent(input$findMarkersViolinConfirm, {
   } else session$sendCustomMessage("handler_alert", "Please upload some data first.")
 })
   
+observeEvent(input$findMarkersConfirmATAC, {
+  markers_cluster <- getMarkerFeatures(
+    ArchRProj = proj_default,
+    useMatrix = "GeneScoreMatrix",
+    groupBy = "Clusters",
+    bias = c("TSSEnrichment", "log10(nFrags)"),
+    testMethod = input$findMarkersTestATAC
+  )
+  
+  markers_clusterList <- getMarkers(markers_cluster, cutOff = paste0("FDR <= ",input$findMarkersFDRATAC," & Log2FC >= ",input$findMarkersLogFCATAC))
+  markers_clusters_all <- as.data.frame(unlist(markers_clusterList))
+  markers_clusters_all$Clusters <- rownames(markers_clusters_all)
+  markers_clusters_all$Clusters <- gsub(pattern = "[.][0-9]+", replacement = "", x = markers_clusters_all$Clusters)
+  rownames(markers_clusters_all) <- NULL
+  
+  proj_default <<- addImputeWeights(proj_default,sampleCells = 5000)
+  updateSelectizeInput(session, "findMarkersGeneSelectATAC", choices = unique(proj_default@geneAnnotation$genes$symbol), server = T)
+  
+  output$findMarkersGenesTableATAC <- renderDataTable(expr = markers_clusters_all, filter = 'top', rownames = FALSE)
+  
+  #heatmap top10
+  markers_clusterList10 <- unlist(getMarkers(markers_cluster, cutOff = paste0("FDR <= ",input$findMarkersFDRATAC," & Log2FC >= ",input$findMarkersLogFCATAC), n = 10))
+  heatmap_matrix <- plotMarkerHeatmap(
+     seMarker = markers_cluster,
+     cutOff = paste0("FDR <= ",input$findMarkersFDRATAC," & Log2FC >= ",input$findMarkersLogFCATAC),
+     labelMarkers = NULL,
+     transpose = TRUE,
+     returnMatrix = TRUE
+   )
+  output$findMarkersGenesHeatmapATAC <- renderPlotly(expr = heatmaply(heatmap_matrix[, markers_clusterList10$name])) 
+})
+
+observeEvent(input$findMarkersFPConfirmATAC, {
+    p <- plotEmbedding(
+      ArchRProj = proj_default, 
+      colorBy = "GeneScoreMatrix", 
+      name = input$findMarkersGeneSelectATAC, 
+      embedding = input$findMarkersReductionTypeATAC,
+      imputeWeights = getImputeWeights(proj_default)
+    )
+    
+    output$findMarkersFeaturePlotATAC <- renderPlot(expr = p)
+})
+
   #------------------Cell cycle tab------------------------------------------
   observeEvent(input$cellCycleRun, { # observe selectInput cellCycleReduction instead of cellCycleRun actionButton
     session$sendCustomMessage("handler_startLoader", c("CC1_loader", 10))

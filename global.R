@@ -78,19 +78,83 @@ js.enrich <- "
 "
 
 
-# #
+
 # proj_default <<- loadArchRProject(path = "default/")
 # 
 # proj_default <<- addIterativeLSI(ArchRProj = proj_default, useMatrix = "TileMatrix", name = "IterativeLSI",
 #                                  iterations = 1, varFeatures = 25000,
 #                                  clusterParams = list( resolution = 0.8, sampleCells = 10000, n.start = 10),dimsToUse=1:30, force = T)
 # 
-# proj_default <<- addClusters(input = proj_default, reducedDims = "IterativeLSI", method = "Seurat", neme = "Clusters", #name = paste0("Clusters_res_", input$clusterResATAC), 
+# proj_default <<- addClusters(input = proj_default, reducedDims = "IterativeLSI", method = "Seurat", neme = "Clusters", #name = paste0("Clusters_res_", input$clusterResATAC),
 #                              resolution = 0.8, dimsToUse = 1:30, force = T)
 # 
-# proj_default <<- addUMAP(ArchRProj = proj_default, reducedDims = "IterativeLSI", name = "umap", nNeighbors = 30, minDist = 0.5, metric = "cosine", 
+# proj_default <<- addUMAP(ArchRProj = proj_default, reducedDims = "IterativeLSI", name = "umap", nNeighbors = 30, minDist = 0.5, metric = "cosine",
 #                          force = T, n_components = 3, dimsToUse = 1:30)
 # 
+# markers_cluster <- getMarkerFeatures(
+#   ArchRProj = proj_default,
+#   useMatrix = "GeneScoreMatrix",
+#   groupBy = "Clusters",
+#   bias = c("TSSEnrichment", "log10(nFrags)"),
+#   testMethod = "wilcoxon"
+# )
+# 
+# 
+# heatmap_matrix <- plotMarkerHeatmap(
+#   seMarker = markers_cluster,
+#   cutOff = "FDR <= 0.01 & Log2FC >= 0.36",
+#   labelMarkers = NULL,
+#   transpose = TRUE,
+#   returnMatrix = TRUE
+# )
+# 
+# markers_clusterList <- unlist(getMarkers(markers_cluster, cutOff = paste0("FDR <= ",0.01," & Log2FC >= ",0.35), n = 5))
+# markers_clusterList$name
+# heatmaply(t(heatmap_matrix[1:10, markers_clusterList$name]))
+
+# 
+#  proj_default <<- addImputeWeights(proj_default,sampleCells = 5000)
+#  
+#  p <- plotEmbedding(
+#    ArchRProj = proj_default, 
+#    colorBy = "GeneScoreMatrix", 
+#    name = "Prg4", 
+#    embedding = "umap",
+#    imputeWeights = getImputeWeights(proj_default)
+#  )
+#  p
+#  
+#  p$data
+# # ggplotly(p)
+# 
+# p_mat <- getMatrixFromProject(
+#   ArchRProj = proj_default,
+#   useMatrix = "GeneScoreMatrix",
+#   useSeqnames = NULL,
+#   verbose = TRUE,
+#   binarize = FALSE,
+#   threads = 1,
+#   logFile = createLogFile("getMatrixFromProject")
+# )
+# perCellGeneScore<-as.data.frame(assays(p_mat)$GeneScoreMatrix)
+# perCellGeneScore$Gene_name <- p_mat@elementMetadata@listData$name
+# 
+# # mat <- p_mat@assays$GeneScoreMatrix
+#  
+#  imp_matrix
+# 
+# p <- plotBrowserTrack(
+#   ArchRProj = proj_default, 
+#   groupBy = "Clusters", 
+#   geneSymbol = "Prg4", 
+#   upstream = 50000,
+#   downstream = 50000
+# )
+# p
+# 
+# grid::grid.newpage()
+# grid::grid.draw(p$Prg4)
+
 # #---
 # meta <- as.data.frame(getCellColData(proj_default))
 # meta$Cell_id <- rownames(meta)

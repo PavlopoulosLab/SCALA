@@ -504,160 +504,221 @@ ui <- dashboardPage(
       
       #DEA tab
       tabItem(tabName = "findMarkers", 
-             fluidRow(
-                box(width = 3, status = "info", solidHeader = TRUE,
-                    title = "Differential Expression Analysis options", 
-                    selectInput("findMarkersTest", "Test used:",
-                                c("Wilcoxon rank sum test" = "wilcox",
-                                  "Likelihood-ratio test for single cell feature expression" = "bimod",
-                                  "Standard AUC classifier" = "roc",
-                                  "Student's t-test" = "t",
-                                  "MAST" = "MAST",
-                                  "DESeq2" = "DESeq2"
-                                  )),
-                    radioButtons("findMarkersLogBase", label = "Base used for average logFC calculation: ",
-                                 choices = list("log(e)" = "avg_logFC", 
-                                                "log(2)" = "avg_log2FC"
-                                 ), 
-                                 selected = "avg_logFC"),
-                    #textInput(inputId = "findMarkersMinPct", label = "Only test genes that are detected in a minimum fraction of cells in either of the two populations :", value = "0.1"),
-                    sliderInput(inputId = "findMarkersMinPct", label = "Only test genes that are detected in a minimum fraction of cells in either of the two populations :", min = 0, max = 1, value = 0.1, step = 0.05),
-                    #textInput(inputId = "findMarkersLogFC", label = "Limit testing to genes which show, on average, at least X-fold difference (log-scale) between the two groups of cells :", value = "0.25"),
-                    sliderInput(inputId = "findMarkersLogFC", label = "Limit testing to genes which show, on average, at least X-fold difference (log-scale) between the two groups of cells :", min = 0, max = 3, value = 0.25, step = 0.05),
-                    #textInput(inputId = "findMarkersPval", label = "Only return markers that have a p-value < slected threshold, or a power > selected threshold (if the test is ROC) :", value = "0.01"),
-                    sliderInput(inputId = "findMarkersPval", label = "Only return markers that have a p-value < slected threshold, or a power > selected threshold (if the test is ROC) :", min = 0, max = 1, value = 0.01, step = 0.01),
-                    actionButton(inputId = "findMarkersConfirm", label = "OK")
-                ),
-                
-                box(
-                  width = 9, status = "info", solidHeader = TRUE, title = "DEA results", height = "1500px",
-                  tabsetPanel(type = "tabs",
-                              tabPanel("Marker genes", 
-                                       div(class="ldBar", id="DEA1_loader", "data-preset"="circle"),
-                                       dataTableOutput(outputId="findMarkersTable", height = "1300px")),
-                              tabPanel("Heatmap", 
-                                       div(class="ldBar", id="DEA2_loader", "data-preset"="circle"),
-                                       plotlyOutput(outputId = "findMarkersHeatmap", height = "1300px")),
-                              
-                              tabPanel("Dotplot", 
-                                       div(class="ldBar", id="DEA3_loader", "data-preset"="circle"),
-                                       plotlyOutput(outputId = "findMarkersDotplot", height = "1300px")),
-                              
-                              tabPanel("Feature plot", fluidRow(
-                                box(width = 3, status = "info", solidHeader = TRUE, title = "Options",
-                                    radioButtons("findMarkersFeatureSignature", label = "Select between gene or signature: ",
-                                                 choices = list("Gene" = "gene", 
-                                                                "Gene signature" = "signature"
-                                                 ), 
-                                                 selected = "gene"),
-                                    selectizeInput(inputId = 'findMarkersGeneSelect',
-                                                   label = 'Select a gene:',
-                                                   choices = NULL,
-                                                   selected = NULL,
-                                                   multiple = FALSE),
-                                    selectizeInput(inputId = 'findMarkersSignatureSelect',
-                                                   label = 'Select signature/numeric variable:',
-                                                   choices = "-",
-                                                   selected = "-",
-                                                   multiple = FALSE),
-                                    selectInput("findMarkersReductionType", "Plot type:",
-                                                c("-" = "-")
-                                                ),
-                                    radioButtons("findMarkersLabels", label = "Show cluster labels: ",
-                                                 choices = list("Yes" = TRUE, 
-                                                                "No" = FALSE)
-                                                 ),
-                                    radioButtons("findMarkersOrder", label = "Prioritize expressing cells: ",
-                                                 choices = list("Yes" = TRUE, 
-                                                                "No" = FALSE)
-                                                ),
-                                    sliderInput("findMarkersMaxCutoff", "Set max expression value: (quantile)", min = 0, max = 99, value = 99, step = 1),
-                                    sliderInput("findMarkersMinCutoff", "Set minimum expression value: (quantile)", min = 0, max = 99, value = 0, step = 1),
-                                    actionButton(inputId = "findMarkersFPConfirm", label = "Display plot"),
-                                    tags$hr(),
-                                    tags$h3("Add a new signature"),
-                                    textInput(inputId = "findMarkersSignatureName", label = "Gene signature name :", value = "Signature1"),
-                                    textAreaInput(inputId = "findMarkersSignatureMembers", label = "Paste a list of genes", cols = 80, rows = 15, placeholder = "Prg4\nTspan15\nCol22a1\nHtra4"),
-                                    actionButton(inputId = "findMarkersSignatureAdd", label = "Calculate signature score")
-                                    ),
-                                box(width = 9, status = "info", solidHeader = TRUE, title = "Plot",
-                                    #div(class="ldBar", id="DEA4_loader", "data-preset"="circle"),
-                                    plotlyOutput(outputId = "findMarkersFeaturePlot", height = "1300px")
-                                    )
-                              )),
-                              tabPanel("Gene-pair expression", fluidRow(
-                                box(width=3, status="info", solidHeader=T, title="Options",
-                                    selectizeInput(inputId = 'findMarkersFeaturePair1',
-                                                   label = 'Select 1st feature:',
-                                                   choices = NULL,
-                                                   selected = NULL,
-                                                   multiple = FALSE),
-                                    selectizeInput(inputId = 'findMarkersFeaturePair2',
-                                                   label = 'Select 2nd Feature:',
-                                                   choices = NULL,
-                                                   selected = NULL,
-                                                   multiple = FALSE),
-                                    sliderInput("findMarkersBlendThreshold", "Select threshold for blending:", min = 0, max = 1, value = 0.5, step = 0.1),
-                                    selectInput("findMarkersFeaturePairReductionType", "Plot type:",
-                                                c("-" = "-")
-                                                ),
-                                    radioButtons("findMarkersFeaturePairLabels", label = "Show cluster labels: ",
-                                                 choices = list("Yes" = TRUE, 
-                                                                "No" = FALSE)
-                                    ),
-                                    radioButtons("findMarkersFeaturePairOrder", label = "Prioritize expressing cells: ",
-                                                 choices = list("Yes" = TRUE, 
-                                                                "No" = FALSE)
-                                    ),
-                                    sliderInput("findMarkersFeaturePairMaxCutoff", "Set max expression value: (quantile)", min = 0, max = 99, value = 99, step = 1),
-                                    sliderInput("findMarkersFeaturePairMinCutoff", "Set minimum expression value: (quantile)", min = 0, max = 99, value = 0, step = 1),
-                                    actionButton(inputId = "findMarkersFeaturePairConfirm", label = "Display plot")
-                                    ),
-                                box(width=9, status="info", solidHeader=TRUE, title="Plot",
-                                    div(
-                                    column(plotlyOutput(outputId="findMarkersFPfeature1", height = "650px"), width = 6),
-                                    column(plotlyOutput(outputId="findMarkersFPfeature2", height = "650px"), width = 6),
-                                    column(plotlyOutput(outputId="findMarkersFPfeature1_2", height = "650px"), width = 6),
-                                    column(plotlyOutput(outputId="findMarkersFPcolorbox", height = "650px"), width = 6),
-                                    )
-                                )
-                              )
-                              ),
-                              tabPanel("Violin plot", fluidRow(
-                                box(width = 3, status = "info", solidHeader = TRUE, title = "Options",
-                                    #textInput(inputId = "findMarkersGeneSelect", label = "Search for gene:", value = "Actb"),
-                                    radioButtons("findMarkersViolinFeaturesSignature", label = "Select between gene or signature: ",
-                                                 choices = list("Gene" = "gene", 
-                                                                "Gene signature" = "signature"
-                                                 ), 
-                                                 selected = "gene"),
-                                    selectizeInput(inputId = 'findMarkersGeneSelect2',
-                                                label = 'Search for gene:',
-                                                choices = NULL,
-                                                selected = NULL,
-                                                multiple = FALSE), # allow for multiple inputs
-                                    selectizeInput(inputId = 'findMarkersViolinSignatureSelect',
-                                                   label = 'Select signature/numeric variable:',
-                                                   choices = "-",
-                                                   selected = "-",
-                                                   multiple = FALSE),
-                                    actionButton(inputId = "findMarkersViolinConfirm", label = "Display plot")
-                                ),
-                                box(width = 9, status = "info", solidHeader = TRUE, title = "Plot",
-                                    #div(class="ldBar", id="DEA5_loader", "data-preset"="circle"),
-                                    plotlyOutput(outputId = "findMarkersViolinPlot", height = "1300px")
-                                )
-                              )),
-                              tabPanel("VolcanoPlot", fluidRow(
-                                box(width = 3, status = "info", solidHeader = TRUE, title = "Cluster selection",
-                                    textInput(inputId = "findMarkersClusterSelect", label = "Cluster:", value = "0")),
-                                box(width = 9, status = "info", solidHeader = TRUE, title = "Volcano plot",
-                                    div(class="ldBar", id="DEA6_loader", "data-preset"="circle"),
-                                    plotlyOutput(outputId = "findMarkersVolcanoPlot", height = "1300px"))
-                              ))
-                      )
-                )
-             )
+              tabsetPanel(type = "tabs",
+                          tabPanel("scRNA-seq",
+                                   fluidRow(
+                                     box(width = 3, status = "info", solidHeader = TRUE,
+                                         title = "Differential Expression Analysis options", 
+                                         selectInput("findMarkersTest", "Test used:",
+                                                     c("Wilcoxon rank sum test" = "wilcox",
+                                                       "Likelihood-ratio test for single cell feature expression" = "bimod",
+                                                       "Standard AUC classifier" = "roc",
+                                                       "Student's t-test" = "t",
+                                                       "MAST" = "MAST",
+                                                       "DESeq2" = "DESeq2"
+                                                     )),
+                                         radioButtons("findMarkersLogBase", label = "Base used for average logFC calculation: ",
+                                                      choices = list("log(e)" = "avg_logFC", 
+                                                                     "log(2)" = "avg_log2FC"
+                                                      ), 
+                                                      selected = "avg_logFC"),
+                                         #textInput(inputId = "findMarkersMinPct", label = "Only test genes that are detected in a minimum fraction of cells in either of the two populations :", value = "0.1"),
+                                         sliderInput(inputId = "findMarkersMinPct", label = "Only test genes that are detected in a minimum fraction of cells in either of the two populations :", min = 0, max = 1, value = 0.1, step = 0.05),
+                                         #textInput(inputId = "findMarkersLogFC", label = "Limit testing to genes which show, on average, at least X-fold difference (log-scale) between the two groups of cells :", value = "0.25"),
+                                         sliderInput(inputId = "findMarkersLogFC", label = "Limit testing to genes which show, on average, at least X-fold difference (log-scale) between the two groups of cells :", min = 0, max = 3, value = 0.25, step = 0.05),
+                                         #textInput(inputId = "findMarkersPval", label = "Only return markers that have a p-value < slected threshold, or a power > selected threshold (if the test is ROC) :", value = "0.01"),
+                                         sliderInput(inputId = "findMarkersPval", label = "Only return markers that have a p-value < slected threshold, or a power > selected threshold (if the test is ROC) :", min = 0, max = 1, value = 0.01, step = 0.01),
+                                         actionButton(inputId = "findMarkersConfirm", label = "OK")
+                                     ),
+                                     
+                                     box(
+                                       width = 9, status = "info", solidHeader = TRUE, title = "DEA results", height = "1500px",
+                                       tabsetPanel(type = "tabs",
+                                                   tabPanel("Marker genes", 
+                                                            div(class="ldBar", id="DEA1_loader", "data-preset"="circle"),
+                                                            dataTableOutput(outputId="findMarkersTable", height = "1300px")),
+                                                   tabPanel("Heatmap", 
+                                                            div(class="ldBar", id="DEA2_loader", "data-preset"="circle"),
+                                                            plotlyOutput(outputId = "findMarkersHeatmap", height = "1300px")),
+                                                   
+                                                   tabPanel("Dotplot", 
+                                                            div(class="ldBar", id="DEA3_loader", "data-preset"="circle"),
+                                                            plotlyOutput(outputId = "findMarkersDotplot", height = "1300px")),
+                                                   
+                                                   tabPanel("Feature plot", fluidRow(
+                                                     box(width = 3, status = "info", solidHeader = TRUE, title = "Options",
+                                                         radioButtons("findMarkersFeatureSignature", label = "Select between gene or signature: ",
+                                                                      choices = list("Gene" = "gene", 
+                                                                                     "Gene signature" = "signature"
+                                                                      ), 
+                                                                      selected = "gene"),
+                                                         selectizeInput(inputId = 'findMarkersGeneSelect',
+                                                                        label = 'Select a gene:',
+                                                                        choices = NULL,
+                                                                        selected = NULL,
+                                                                        multiple = FALSE),
+                                                         selectizeInput(inputId = 'findMarkersSignatureSelect',
+                                                                        label = 'Select signature/numeric variable:',
+                                                                        choices = "-",
+                                                                        selected = "-",
+                                                                        multiple = FALSE),
+                                                         selectInput("findMarkersReductionType", "Plot type:",
+                                                                     c("-" = "-")
+                                                         ),
+                                                         radioButtons("findMarkersLabels", label = "Show cluster labels: ",
+                                                                      choices = list("Yes" = TRUE, 
+                                                                                     "No" = FALSE)
+                                                         ),
+                                                         radioButtons("findMarkersOrder", label = "Prioritize expressing cells: ",
+                                                                      choices = list("Yes" = TRUE, 
+                                                                                     "No" = FALSE)
+                                                         ),
+                                                         sliderInput("findMarkersMaxCutoff", "Set max expression value: (quantile)", min = 0, max = 99, value = 99, step = 1),
+                                                         sliderInput("findMarkersMinCutoff", "Set minimum expression value: (quantile)", min = 0, max = 99, value = 0, step = 1),
+                                                         actionButton(inputId = "findMarkersFPConfirm", label = "Display plot"),
+                                                         tags$hr(),
+                                                         tags$h3("Add a new signature"),
+                                                         textInput(inputId = "findMarkersSignatureName", label = "Gene signature name :", value = "Signature1"),
+                                                         textAreaInput(inputId = "findMarkersSignatureMembers", label = "Paste a list of genes", cols = 80, rows = 15, placeholder = "Prg4\nTspan15\nCol22a1\nHtra4"),
+                                                         actionButton(inputId = "findMarkersSignatureAdd", label = "Calculate signature score")
+                                                     ),
+                                                     box(width = 9, status = "info", solidHeader = TRUE, title = "Plot",
+                                                         #div(class="ldBar", id="DEA4_loader", "data-preset"="circle"),
+                                                         plotlyOutput(outputId = "findMarkersFeaturePlot", height = "1300px")
+                                                     )
+                                                   )),
+                                                   tabPanel("Gene-pair expression", fluidRow(
+                                                     box(width=3, status="info", solidHeader=T, title="Options",
+                                                         selectizeInput(inputId = 'findMarkersFeaturePair1',
+                                                                        label = 'Select 1st feature:',
+                                                                        choices = NULL,
+                                                                        selected = NULL,
+                                                                        multiple = FALSE),
+                                                         selectizeInput(inputId = 'findMarkersFeaturePair2',
+                                                                        label = 'Select 2nd Feature:',
+                                                                        choices = NULL,
+                                                                        selected = NULL,
+                                                                        multiple = FALSE),
+                                                         sliderInput("findMarkersBlendThreshold", "Select threshold for blending:", min = 0, max = 1, value = 0.5, step = 0.1),
+                                                         selectInput("findMarkersFeaturePairReductionType", "Plot type:",
+                                                                     c("-" = "-")
+                                                         ),
+                                                         radioButtons("findMarkersFeaturePairLabels", label = "Show cluster labels: ",
+                                                                      choices = list("Yes" = TRUE, 
+                                                                                     "No" = FALSE)
+                                                         ),
+                                                         radioButtons("findMarkersFeaturePairOrder", label = "Prioritize expressing cells: ",
+                                                                      choices = list("Yes" = TRUE, 
+                                                                                     "No" = FALSE)
+                                                         ),
+                                                         sliderInput("findMarkersFeaturePairMaxCutoff", "Set max expression value: (quantile)", min = 0, max = 99, value = 99, step = 1),
+                                                         sliderInput("findMarkersFeaturePairMinCutoff", "Set minimum expression value: (quantile)", min = 0, max = 99, value = 0, step = 1),
+                                                         actionButton(inputId = "findMarkersFeaturePairConfirm", label = "Display plot")
+                                                     ),
+                                                     box(width=9, status="info", solidHeader=TRUE, title="Plot",
+                                                         div(
+                                                           column(plotlyOutput(outputId="findMarkersFPfeature1", height = "650px"), width = 6),
+                                                           column(plotlyOutput(outputId="findMarkersFPfeature2", height = "650px"), width = 6),
+                                                           column(plotlyOutput(outputId="findMarkersFPfeature1_2", height = "650px"), width = 6),
+                                                           column(plotlyOutput(outputId="findMarkersFPcolorbox", height = "650px"), width = 6),
+                                                         )
+                                                     )
+                                                   )
+                                                   ),
+                                                   tabPanel("Violin plot", fluidRow(
+                                                     box(width = 3, status = "info", solidHeader = TRUE, title = "Options",
+                                                         #textInput(inputId = "findMarkersGeneSelect", label = "Search for gene:", value = "Actb"),
+                                                         radioButtons("findMarkersViolinFeaturesSignature", label = "Select between gene or signature: ",
+                                                                      choices = list("Gene" = "gene", 
+                                                                                     "Gene signature" = "signature"
+                                                                      ), 
+                                                                      selected = "gene"),
+                                                         selectizeInput(inputId = 'findMarkersGeneSelect2',
+                                                                        label = 'Search for gene:',
+                                                                        choices = NULL,
+                                                                        selected = NULL,
+                                                                        multiple = FALSE), # allow for multiple inputs
+                                                         selectizeInput(inputId = 'findMarkersViolinSignatureSelect',
+                                                                        label = 'Select signature/numeric variable:',
+                                                                        choices = "-",
+                                                                        selected = "-",
+                                                                        multiple = FALSE),
+                                                         actionButton(inputId = "findMarkersViolinConfirm", label = "Display plot")
+                                                     ),
+                                                     box(width = 9, status = "info", solidHeader = TRUE, title = "Plot",
+                                                         #div(class="ldBar", id="DEA5_loader", "data-preset"="circle"),
+                                                         plotlyOutput(outputId = "findMarkersViolinPlot", height = "1300px")
+                                                     )
+                                                   )),
+                                                   tabPanel("VolcanoPlot", fluidRow(
+                                                     box(width = 3, status = "info", solidHeader = TRUE, title = "Cluster selection",
+                                                         textInput(inputId = "findMarkersClusterSelect", label = "Cluster:", value = "0")),
+                                                     box(width = 9, status = "info", solidHeader = TRUE, title = "Volcano plot",
+                                                         div(class="ldBar", id="DEA6_loader", "data-preset"="circle"),
+                                                         plotlyOutput(outputId = "findMarkersVolcanoPlot", height = "1300px"))
+                                                   ))
+                                       )
+                                     )
+                                   )
+                          ),
+                          tabPanel("scATAC-seq",
+                                   fluidRow(
+                                     box(width = 3, status = "info", solidHeader = TRUE,
+                                         title = "Marker genes/peaks detection options (scATAC-seq)", 
+                                         tags$h3("Marker genes"),
+                                         tags$hr(),
+                                         selectInput("findMarkersTestATAC", "Test used:",
+                                                     c("Wilcoxon" = "wilcoxon",
+                                                       "Binomial" = "binomial",
+                                                       "T-test" = "ttest"
+                                                     )),
+                                         sliderInput(inputId = "findMarkersLogFCATAC", label = "Log2FC threshold:", min = 0, max = 3, value = 0.25, step = 0.05),
+                                         
+                                         sliderInput(inputId = "findMarkersFDRATAC", label = "FDR threshold:", min = 0, max = 1, value = 0.01, step = 0.01),
+                                         actionButton(inputId = "findMarkersConfirmATAC", label = "OK"),
+                                         
+                                         tags$h3("Marker peaks"),
+                                         tags$hr()
+                                     ),
+                                     
+                                     box(
+                                       tabsetPanel(type = "tabs",
+                                                   tabPanel("Marker genes table (ATAC)", fluidRow(
+                                                     div(class="ldBar", id="DEA7_loader", "data-preset"="circle"),
+                                                     dataTableOutput(outputId="findMarkersGenesTableATAC", height = "650px"),
+                                                     tags$hr(),
+                                                     plotlyOutput(outputId = "findMarkersGenesHeatmapATAC", height = "650px")
+                                                    ) 
+                                                   ),
+                                                   tabPanel("Marker peaks table (ATAC)", fluidRow(
+                                                     div(class="ldBar", id="DEA8_loader", "data-preset"="circle"),
+                                                     dataTableOutput(outputId="findMarkersPeaksTableATAC", height = "1300px")
+                                                    ) 
+                                                   ),
+                                                   tabPanel("Gene-score plot", fluidRow(
+                                                     box(width = 3, status = "info", solidHeader = TRUE, title = "Options",
+                                                         selectizeInput(inputId = 'findMarkersGeneSelectATAC',
+                                                                        label = 'Select a gene:',
+                                                                        choices = NULL,
+                                                                        selected = NULL,
+                                                                        multiple = FALSE),
+                                                         selectInput("findMarkersReductionTypeATAC", "Plot type:",
+                                                                     c("UMAP" = "umap",
+                                                                       "tSNE" = "tsne")
+                                                         ),
+                                                         actionButton(inputId = "findMarkersFPConfirmATAC", label = "Display plot"),
+                                                     ),
+                                                     box(width = 9, status = "info", solidHeader = TRUE, title = "Plot",
+                                                         div(class="ldBar", id="DEA9_loader", "data-preset"="circle"),
+                                                         plotOutput(outputId = "findMarkersFeaturePlotATAC", height = "1300px")
+                                                     )
+                                                   )
+                                                  )
+                                       )
+                                     )
+                                   )
+                          )
+              )	
       ),
       
       #Cell cycle phase analysis
