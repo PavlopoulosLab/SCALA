@@ -2,7 +2,7 @@ server <- function(input, output, session) {
   options(shiny.maxRequestSize=3*1024^3) #increase upload limit
   source("global.R", local=TRUE)
   
-  session$sendCustomMessage("handler_disableTabs", "sidebarMenu") # disable all tab panels (except Data Input) until files are uploaded
+  #session$sendCustomMessage("handler_disableTabs", "sidebarMenu") # disable all tab panels (except Data Input) until files are uploaded
   metaD <- reactiveValues(my_project_name="-", all_lin="0")
   
   #------------------Upload tab--------------------------------
@@ -1674,8 +1674,9 @@ observeEvent(input$findMarkersConfirmATAC, {
   
   proj_default <<- addImputeWeights(proj_default,sampleCells = 5000)
   updateSelectizeInput(session, "findMarkersGeneSelectATAC", choices = unique(proj_default@geneAnnotation$genes$symbol), server = T)
+  updateSelectizeInput(session, "visualizeTracksGene", choices = unique(proj_default@geneAnnotation$genes$symbol), server = T)
   
-  output$findMarkersGenesTableATAC <- renderDataTable(expr = markers_clusters_all, filter = 'top', rownames = FALSE)
+  output$findMarkersGenesTableATAC <- renderDataTable(expr = markers_clusters_all, filter = 'top', rownames = FALSE, options = list(pageLength = 10))
   
   #heatmap top10
   markers_clusterList10 <- unlist(getMarkers(markers_cluster, cutOff = paste0("FDR <= ",input$findMarkersFDRATAC," & Log2FC >= ",input$findMarkersLogFCATAC), n = 10))
@@ -1687,6 +1688,43 @@ observeEvent(input$findMarkersConfirmATAC, {
      returnMatrix = TRUE
    )
   output$findMarkersGenesHeatmapATAC <- renderPlotly(expr = heatmaply(heatmap_matrix[, markers_clusterList10$name])) 
+  
+  session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " FUNCTIONAL ENRICHMENT\nANALYSIS", " TRACKS"))
+})
+
+observeEvent(input$findMarkersPeaksConfirmATAC, {
+  proj_default <- addGroupCoverages(ArchRProj = proj_default, groupBy = "Clusters", force = T)
+  #pathToMacs2 <- findMacs2()   
+  
+  proj_default <- addReproduciblePeakSet(
+    ArchRProj = proj_default, 
+    groupBy = "Clusters", 
+    peakMethod = "Tiles", 
+    force = T
+  )
+  print("Peaks with tiles")
+  proj_default <- addPeakMatrix(proj_default)
+  
+  markersPeaks <- getMarkerFeatures(
+    ArchRProj = proj_default, 
+    useMatrix = "PeakMatrix", 
+    groupBy = "Clusters",
+    bias = c("TSSEnrichment", "log10(nFrags)"),
+    testMethod = "wilcoxon"
+  )
+  
+  markerList <- getMarkers(markersPeaks, cutOff = "FDR <= 0.01 & Log2FC >= 1", n = 10)
+  top10peaks <- as.data.frame(unlist(markerList))
+  top10peaks$names <- paste0(top10peaks$seqnames, ":", top10peaks$start,"-",top10peaks$end)
+  
+  markerListheatmapPeaks <- plotMarkerHeatmap(
+    seMarker = markersPeaks, 
+    cutOff = "FDR <= 0.1 & Log2FC >= 1", returnMatrix = T,
+    transpose = TRUE
+  )
+  to_plot <- markerListheatmapPeaks[, top10peaks$names]
+  
+  findMarkersPeaksHeatmapATAC <- renderPlotly(expr = heatmaply(t(to_plot)))  
 })
 
 observeEvent(input$findMarkersFPConfirmATAC, {
@@ -2282,6 +2320,22 @@ observeEvent(input$sendToFlame, {
       session$sendCustomMessage("handler_enableButton", "ligandReceptorConfirm")
     })
   })
+  
+  #---------------------------Tracks tab----------------------------------------
+  observeEvent(input$visualizeTracksConfirm, {
+    p <- plotBrowserTrack(
+      ArchRProj = proj_default,
+      groupBy = "Clusters",
+      geneSymbol = input$visualizeTracksGene,
+      upstream = as.numeric(input$visualizeTracksBPupstream),
+      downstream = as.numeric(input$visualizeTracksBPdownstream),
+      baseSize = 15, 
+      facetbaseSize = 10, 
+      sizes = c(10, 4, 3, 4)
+    )
+    output$visualizeTracksOutput <- renderPlot({ plot(p[[input$visualizeTracksGene]]) })
+  })
+  
   
   #updates on UI elements ----------
   updateClusterTabe <- function()

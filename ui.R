@@ -42,7 +42,8 @@ ui <- dashboardPage(
       menuItem(text = "TRAJECTORY ANALYSIS", tabName = "trajectory", icon = icon("route")),
       menuItem(tags$div("LIGAND - RECEPTOR",
                         tags$br(),
-                        "ANALYSIS", class = "menu_item_div"), tabName = "ligandReceptor", icon = icon("satellite-dish")), #icon("satellite-dish"))
+                        "ANALYSIS", class = "menu_item_div"), tabName = "ligandReceptor", icon = icon("satellite-dish")), #icon("satellite-dish")),
+      menuItem(text = "TRACKS", tabName = "visualizeTracks", icon = icon("compact-disc")),
       tags$hr(),
       menuItem(text = "Help", tabName = "help", icon = icon("question")),
       menuItem(text = "About", tabName = "about", icon = icon("info"))
@@ -678,7 +679,16 @@ ui <- dashboardPage(
                                          actionButton(inputId = "findMarkersConfirmATAC", label = "OK"),
                                          
                                          tags$h3("Marker peaks"),
-                                         tags$hr()
+                                         tags$hr(),
+                                         selectInput("findMarkersPeaksTestATAC", "Test used:",
+                                                     c("Wilcoxon" = "wilcoxon",
+                                                       "Binomial" = "binomial",
+                                                       "T-test" = "ttest"
+                                                     )),
+                                         sliderInput(inputId = "findMarkersPeaksLogFCATAC", label = "Log2FC threshold:", min = 0, max = 3, value = 0.25, step = 0.05),
+                                         
+                                         sliderInput(inputId = "findMarkersPeaksFDRATAC", label = "FDR threshold:", min = 0, max = 1, value = 0.01, step = 0.01),
+                                         actionButton(inputId = "findMarkersPeaksConfirmATAC", label = "OK"),
                                      ),
                                      
                                      box(
@@ -692,7 +702,9 @@ ui <- dashboardPage(
                                                    ),
                                                    tabPanel("Marker peaks table (ATAC)", fluidRow(
                                                      div(class="ldBar", id="DEA8_loader", "data-preset"="circle"),
-                                                     dataTableOutput(outputId="findMarkersPeaksTableATAC", height = "1300px")
+                                                     dataTableOutput(outputId="findMarkersPeaksTableATAC", height = "650px"),
+                                                     tags$hr(),
+                                                     plotlyOutput(outputId = "findMarkersPeaksHeatmapATAC", height = "650px")
                                                     ) 
                                                    ),
                                                    tabPanel("Gene-score plot", fluidRow(
@@ -907,6 +919,27 @@ ui <- dashboardPage(
                  )
                )
       ),
+      
+      #ATAC-seq tracks
+      tabItem(tabName = "visualizeTracks", 
+              fluidRow(
+                box(width = 3, status = "info", solidHeader = TRUE,
+                    title = "scATAC-seq tracks options",
+                    selectizeInput(inputId = 'visualizeTracksGene',
+                                   label = 'Select a gene:',
+                                   choices = NULL,
+                                   selected = NULL,
+                                   multiple = FALSE),
+                    sliderInput("visualizeTracksBPupstream", "BP upstream :", min = 100, max = 100000, value = 50000, step = 1000),
+                    sliderInput("visualizeTracksBPdownstream", "BP downstream :", min = 100, max = 100000, value = 50000, step = 1000),
+                    actionButton(inputId = "visualizeTracksConfirm", label = "OK")
+                    ),
+                box(width = 9, status = "info", solidHeader = TRUE,
+                    title = "scATAC-seq tracks",
+                    plotOutput(outputId="visualizeTracksOutput", height = "1100px")
+                )
+              )
+            ),
       
       tabItem(tabName = "help",
               fluidRow(

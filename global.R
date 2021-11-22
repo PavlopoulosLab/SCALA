@@ -27,6 +27,7 @@ library(phateR) #pip install phate //\\ #install.packages("phateR") //\\ *devtoo
 #ATAC libraries
 library(ArchR)
 library(pheatmap)
+#library(DelayedMatrixStats) #BiocManager::install("DelayedMatrixStats")
 
 #Global variables
 
@@ -91,6 +92,59 @@ js.enrich <- "
 # proj_default <<- addUMAP(ArchRProj = proj_default, reducedDims = "IterativeLSI", name = "umap", nNeighbors = 30, minDist = 0.5, metric = "cosine",
 #                          force = T, n_components = 3, dimsToUse = 1:30)
 # 
+# cluster_names <- unique(proj_default$Clusters)
+# 
+# proj_default <- addGroupCoverages(ArchRProj = proj_default, groupBy = "Clusters")
+# 
+# proj_default <- addSlingShotTrajectories(
+#   ArchRProj = proj_default,
+#   groupBy = "Clusters",
+#   name = "SlingS5",
+#   useGroups = c("C9","C5","C6","C10","C7","C8","C4","C2","C1","C3" ),
+#   principalGroup = "C1",
+#   embedding = "umap",
+#   force=TRUE
+# )
+# p <- plotTrajectory(proj_default, trajectory = "SlingS5.Curve1", colorBy = "cellColData", name = "SlingS5.Curve1", embedding = "umap")
+# df_traj <- proj_default@projectMetadata@metadata
+# 
+# fibro6a_Co_NEW_tg <- addTrajectory(
+#   ArchRProj = proj_default,
+#   name = "Archr_backbone",
+#   groupBy = "Clusters",
+#   trajectory = c("C1", "C2","C5","C7","C9"),
+#   embedding = "umap",
+#   force = TRUE
+# )
+# 
+# plotTrajectory(fibro6a_Co_NEW_tg, trajectory = "Archr_backbone", colorBy = "cellColData", name = "Archr_backbone", embedding = "umap")
+# 
+# addMonocleTrajectory(
+#   ArchRProj = NULL,
+#   name = "Trajectory",
+#   useGroups = NULL,
+#   groupBy = "Clusters",
+#   monocleCDS = NULL,
+#   force = FALSE
+# )
+# 
+# p <- plotBrowserTrack(
+#   ArchRProj = proj_default,
+#   groupBy = "Clusters",
+#   geneSymbol = "Thy1",
+#   upstream = 50000,
+#   downstream = 50000, 
+#   baseSize = 15, 
+#   facetbaseSize = 10, 
+#   sizes = c(10, 4, 3, 4)
+# )
+# plot(p[["Thy1"]])
+# 
+# 
+# grid::grid.newpage()
+# grid::grid.draw(p$Prg4)
+
+# 
 # markers_cluster <- getMarkerFeatures(
 #   ArchRProj = proj_default,
 #   useMatrix = "GeneScoreMatrix",
@@ -143,17 +197,6 @@ js.enrich <- "
 #  
 #  imp_matrix
 # 
-# p <- plotBrowserTrack(
-#   ArchRProj = proj_default, 
-#   groupBy = "Clusters", 
-#   geneSymbol = "Prg4", 
-#   upstream = 50000,
-#   downstream = 50000
-# )
-# p
-# 
-# grid::grid.newpage()
-# grid::grid.draw(p$Prg4)
 
 # #---
 # meta <- as.data.frame(getCellColData(proj_default))
