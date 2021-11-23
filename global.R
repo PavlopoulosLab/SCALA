@@ -92,7 +92,58 @@ js.enrich <- "
 # proj_default <<- addUMAP(ArchRProj = proj_default, reducedDims = "IterativeLSI", name = "umap", nNeighbors = 30, minDist = 0.5, metric = "cosine",
 #                          force = T, n_components = 3, dimsToUse = 1:30)
 # 
+# proj_default <<- addUMAP(ArchRProj = proj_default, reducedDims = "IterativeLSI", name = "UMAP", nNeighbors = 30, minDist = 0.5, metric = "cosine",
+#                          force = T, n_components = 2, dimsToUse = 1:30)
+# 
 # cluster_names <- unique(proj_default$Clusters)
+# 
+# #-----Trajectory
+# proj_default <<- addSlingShotTrajectories(
+#   ArchRProj = proj_default,
+#   groupBy = "Clusters",
+#   name = "Slingshot",
+#   useGroups = c("C1", "C2", "C3"),#cluster_names,
+#   principalGroup = "C1",
+#   embedding = "UMAP",
+#   force=TRUE
+# )
+# p <- plotTrajectory(proj_default, trajectory = "Slingshot.Curve1", colorBy = "cellColData", name = "Slingshot.Curve1", embedding = "UMAP")
+# plot(p[[1]])
+# 
+# if(length(colnames(proj_default@cellColData)[grep(pattern = "Slingshot", colnames(proj_default@cellColData))]) != 0)
+# {
+#   #delete
+#   proj_default@cellColData <- proj_default@cellColData[, -grep(pattern = "Slingshot", colnames(proj_default@cellColData))]
+# }
+# 
+# plotEmbedding(proj_default, embedding = "UMAP", colorBy = "cellColData", name = "Clusters")
+# 
+# meta <- as.data.frame(getCellColData(proj_default))
+# meta$Cell_id <- rownames(meta)
+# reduc_data <- data.frame()
+# 
+# #prepare colors
+# cols = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(meta[, "Clusters"])))
+# 
+# #for all reductions
+# archr_object_reduc <- proj_default@embeddings[["UMAP"]]$df #as.data.frame(seurat_object@reductions[[input$umapType]]@cell.embeddings)
+# archr_object_reduc <- archr_object_reduc[, c(1:ncol(archr_object_reduc))]
+# archr_object_reduc$Cell_id <- rownames(archr_object_reduc)
+# reduc_data <- left_join(archr_object_reduc, meta)
+# print(head(reduc_data))
+# reduc_data$Clusters <- factor(reduc_data$Clusters, levels = sort(unique(reduc_data$Clusters))) 
+# 
+# fibro6a_Co_NEW_tg <- addTrajectory(
+#   ArchRProj = proj_default,
+#   name = "Archr_backbone",
+#   groupBy = "Clusters",
+#   trajectory = c("C2", "C1","C5","C6","C4"),
+#   embedding = "UMAP",
+#   force = TRUE
+# )
+# p <- plotTrajectory(fibro6a_Co_NEW_tg, trajectory = "Archr_backbone", colorBy = "cellColData", name = "Archr_backbone", embedding = "UMAP")
+# plot(p[[1]])
+
 # 
 # proj_default <- addGroupCoverages(ArchRProj = proj_default, groupBy = "Clusters")
 # 
@@ -132,10 +183,10 @@ js.enrich <- "
 #   ArchRProj = proj_default,
 #   groupBy = "Clusters",
 #   geneSymbol = "Thy1",
-#   upstream = 50000,
-#   downstream = 50000, 
-#   baseSize = 15, 
-#   facetbaseSize = 10, 
+#   upstream = 1000,
+#   downstream = 1000,
+#   baseSize = 15,
+#   facetbaseSize = 10,
 #   sizes = c(10, 4, 3, 4)
 # )
 # plot(p[["Thy1"]])
