@@ -2,7 +2,7 @@ server <- function(input, output, session) {
   options(shiny.maxRequestSize=3*1024^3) #increase upload limit
   source("global.R", local=TRUE)
   
-  #session$sendCustomMessage("handler_disableTabs", "sidebarMenu") # disable all tab panels (except Data Input) until files are uploaded
+  session$sendCustomMessage("handler_disableTabs", "sidebarMenu") # disable all tab panels (except Data Input) until files are uploaded
   metaD <- reactiveValues(my_project_name="-", all_lin="0")
   
   #------------------Upload tab--------------------------------
@@ -237,7 +237,7 @@ server <- function(input, output, session) {
       df_meta_data <- as.data.frame(getCellColData(proj_default))
       df_meta_data$cell_id <- rownames(df_meta_data)
       rownames(df_meta_data) <- NULL
-      output$metadataTableATAC <- renderDataTable(df_meta_data, options = list(pageLength = 10))
+      output$metadataTableATAC <- renderDataTable(df_meta_data[, c(1:11)], options = list(pageLength = 10), rownames=F)
       cleanAllPlots(T) # fromDataInput -> TRUE
       session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " QUALITY CONTROL", " UTILITY OPTIONS"))
       # }, warning = function(w) {

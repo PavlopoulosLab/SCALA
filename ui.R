@@ -130,7 +130,7 @@ ui <- dashboardPage(
                               tabPanel("scRNA-seq",
                                        dataTableOutput("metadataTable", width = "100%", height = "100%")),
                               tabPanel("scATAC-seq",
-                                       dataTableOutput("metadataTableATAC", width = "100%", height = "100%"))
+                                       dataTableOutput("metadataTableATAC"))
                               )
                 )
               ),
@@ -695,16 +695,16 @@ ui <- dashboardPage(
                                        tabsetPanel(type = "tabs",
                                                    tabPanel("Marker genes table (ATAC)", fluidRow(
                                                      div(class="ldBar", id="DEA7_loader", "data-preset"="circle"),
-                                                     dataTableOutput(outputId="findMarkersGenesTableATAC", height = "650px"),
+                                                     dataTableOutput(outputId="findMarkersGenesTableATAC", height = "800px"),
                                                      tags$hr(),
-                                                     plotlyOutput(outputId = "findMarkersGenesHeatmapATAC", height = "650px")
+                                                     plotlyOutput(outputId = "findMarkersGenesHeatmapATAC", height = "800px")
                                                     ) 
                                                    ),
                                                    tabPanel("Marker peaks table (ATAC)", fluidRow(
                                                      div(class="ldBar", id="DEA8_loader", "data-preset"="circle"),
-                                                     dataTableOutput(outputId="findMarkersPeaksTableATAC", height = "650px"),
+                                                     dataTableOutput(outputId="findMarkersPeaksTableATAC", height = "800px"),
                                                      tags$hr(),
-                                                     plotlyOutput(outputId = "findMarkersPeaksHeatmapATAC", height = "650px")
+                                                     plotlyOutput(outputId = "findMarkersPeaksHeatmapATAC", height = "800px")
                                                     ) 
                                                    ),
                                                    tabPanel("Gene-score plot", fluidRow(
@@ -859,40 +859,69 @@ ui <- dashboardPage(
       
       #Trajectory analysis
       tabItem(tabName = "trajectory",
-              fluidRow(
-                box(
-                  width = 3, status = "info", solidHeader = TRUE,
-                  title = "Trajectory parameters",
-                  selectInput("trajectoryReduction", "Dimensionality reduction method:", choices=c("PCA"="pca","UMAP"="umap", "tSNE"="tsne", "Diffusion Map"="dfm"), selected = "PCA",
-                              multiple = FALSE,selectize = TRUE, width = NULL, size = NULL),
-                  sliderInput("trajectorySliderDimensions", "Number of dimensions to use :", min = 0, max = 100, value = 10, step = 1),
-                  selectInput("trajectoryStart", "Initial state:", choices=c("0"="0"), selected = "0", multiple = F, selectize = F),
-                  selectInput("trajectoryEnd", "Final state:", choices=c("0"="0"), selected = "0", multiple = F, selectize = F),
-                  actionButton(inputId = "trajectoryConfirm", label = "OK")
+              tabsetPanel(type="tabs",
+                          tabPanel("scRNA-seq", 
+                                   fluidRow(
+                                     box(
+                                       width = 3, status = "info", solidHeader = TRUE,
+                                       title = "Trajectory parameters",
+                                       selectInput("trajectoryReduction", "Dimensionality reduction method:", choices=c("PCA"="pca","UMAP"="umap", "tSNE"="tsne", "Diffusion Map"="dfm"), selected = "PCA",
+                                                   multiple = FALSE,selectize = TRUE, width = NULL, size = NULL),
+                                       sliderInput("trajectorySliderDimensions", "Number of dimensions to use :", min = 0, max = 100, value = 10, step = 1),
+                                       selectInput("trajectoryStart", "Initial state:", choices=c("0"="0"), selected = "0", multiple = F, selectize = F),
+                                       selectInput("trajectoryEnd", "Final state:", choices=c("0"="0"), selected = "0", multiple = F, selectize = F),
+                                       actionButton(inputId = "trajectoryConfirm", label = "OK")
+                                     ),
+                                   box(
+                                     width = 9, status = "info", solidHeader = TRUE, title = "Trajectory analysis results",
+                                     tabsetPanel(type = "tabs",
+                                                 tabPanel("Structure overview", 
+                                                          div(class="ldBar", id="traj1_loader", "data-preset"="circle"),
+                                                          plotOutput(outputId="trajectoryPlot", height = "1100px"),
+                                                          verbatimTextOutput(outputId="trajectoryText")),
+                                                 tabPanel("Lineage-Pseudotime view", fluidRow(
+                                                   box(width = 3, status = "info", solidHeader = TRUE, title = "Options",
+                                                       selectInput(inputId = 'trajectoryLineageSelect', # TODO observe this instead of action button below, default = "-" and handle it
+                                                                   label = 'Select lineage:',
+                                                                   choices = c("Lineage1"),
+                                                                   selected = "Lineage1",
+                                                                   multiple = FALSE),
+                                                       actionButton(inputId = "trajectoryConfirmLineage", label = "ok") # TODO remove this and observe selectbox above
+                                                   ),
+                                                   box(width = 9, status = "info", solidHeader = TRUE, title = "Pseudotime plot",
+                                                       div(class="ldBar", id="traj2_loader", "data-preset"="circle"),
+                                                       plotOutput(outputId = "trajectoryPseudotimePlot", height = "1100px"))
+                                                 )
+                                                )
+                                   )
+                          )
+                  )
                 ),
-                box(
-                  width = 9, status = "info", solidHeader = TRUE, title = "Trajectory analysis results",
-                  tabsetPanel(type = "tabs",
-                              tabPanel("Structure overview", 
-                                       div(class="ldBar", id="traj1_loader", "data-preset"="circle"),
-                                       plotOutput(outputId="trajectoryPlot", height = "1100px"),
-                                       verbatimTextOutput(outputId="trajectoryText")),
-                              tabPanel("Lineage-Pseudotime view", fluidRow(
-                                box(width = 3, status = "info", solidHeader = TRUE, title = "Options",
-                                    selectInput(inputId = 'trajectoryLineageSelect', # TODO observe this instead of action button below, default = "-" and handle it
-                                                label = 'Select lineage:',
-                                                choices = c("Lineage1"),
-                                                selected = "Lineage1",
-                                                multiple = FALSE),
-                                    actionButton(inputId = "trajectoryConfirmLineage", label = "ok") # TODO remove this and observe selectbox above
-                                ),
-                                box(width = 9, status = "info", solidHeader = TRUE, title = "Pseudotime plot",
-                                    div(class="ldBar", id="traj2_loader", "data-preset"="circle"),
-                                    plotOutput(outputId = "trajectoryPseudotimePlot", height = "1100px"))
-                              ))
-                  ),
+                tabPanel("scATAC-seq",
+                         fluidRow(
+                           box(
+                             width = 3, status = "info", solidHeader = TRUE,
+                             title = "Trajectory parameters",
+                             sliderInput("trajectorySliderDimensionsATAC", "Number of UMAP dimensions to use :", min = 0, max = 100, value = 10, step = 1),
+                             selectInput("trajectoryStartATAC", "Initial state:", choices=c("C1"="C1"), selected = "C1", multiple = F, selectize = F),
+                             selectInput("trajectoryEndATAC", "Final state:", choices=c("C1"="C1"), selected = "C1", multiple = F, selectize = F),
+                             actionButton(inputId = "trajectoryConfirmATAC", label = "OK")
+                           ),
+                           box(
+                             width = 9, status = "info", solidHeader = TRUE, 
+                             title = "Pseudotime plot",
+                             selectInput(inputId = 'trajectoryLineageSelectATAC', # TODO observe this instead of action button below, default = "-" and handle it
+                                         label = 'Select lineage:',
+                                         choices = c("Lineage1"),
+                                         selected = "Lineage1",
+                                         multiple = FALSE),
+                             plotOutput(outputId = "trajectoryPseudotimePlotATAC", height = "1100px"),
+                             verbatimTextOutput(outputId="trajectoryTextATAC")
+                           )
+                         )
                 )
               )
+             
       ),
       
       #L-R analysis
