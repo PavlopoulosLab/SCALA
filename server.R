@@ -9,7 +9,7 @@ server <- function(input, output, session) {
   observeEvent(input$uploadCountMatrixConfirm, { #TODO one dataset per session, deactivate options from other modality
     session$sendCustomMessage("handler_disableTabs", "sidebarMenu") # disable all tab panels (except Data Input) until files are uploaded
     session$sendCustomMessage("handler_startLoader", c("input_loader", 10))
-    session$sendCustomMessage("handler_disableButton", "uploadCountMatrixConfirm")
+    session$sendCustomMessage("handler_disableButton", "uploadCountMatrixConfirm") 
     tryCatch({
       # Create the user directory for the input and output of the analysis
       metaD$my_project_name <- input$uploadCountMatrixprojectID
@@ -80,15 +80,15 @@ server <- function(input, output, session) {
       minimum_cells <<- input$upload10xRNAminCells
       minimum_features <<- input$upload10xRNAminFeatures
       organism <<- input$upload10xRNARadioSpecies
-      #  userId <- "User1_"
-      #  user_dir <- paste0("D:\\BSRC_Fleming\\aaa_PhD_template\\", userId, metaD$my_project_name) #TODO remove 2 random barcodes, does it crash?
-      #  dir.create(user_dir)
-      #  file.copy(from = input$matrix$datapath, to = paste0(user_dir, "\\", input$matrix$name), overwrite = TRUE)
-      #  file.copy(from = input$barcodes$datapath, to = paste0(user_dir, "\\", input$barcodes$name), overwrite = TRUE)
-      #  file.copy(from = input$genes$datapath, to = paste0(user_dir, "\\", input$genes$name), overwrite = TRUE)
-      #
-      #   seurat_data <- Read10X(user_dir)
-      seurat_data <- Read10X("User1_Tg4w/")#"hg19/"
+        userId <- "User1_"
+        user_dir <- paste0("D:\\BSRC_Fleming\\aaa_PhD_template\\", userId, metaD$my_project_name, gsub(pattern = "[ ]|[:]", replacement = "_", x = paste0("_", Sys.time()))) #TODO remove 2 random barcodes, does it crash?
+        dir.create(user_dir)
+        file.copy(from = input$matrix$datapath, to = paste0(user_dir, "\\", input$matrix$name), overwrite = TRUE)
+        file.copy(from = input$barcodes$datapath, to = paste0(user_dir, "\\", input$barcodes$name), overwrite = TRUE)
+        file.copy(from = input$genes$datapath, to = paste0(user_dir, "\\", input$genes$name), overwrite = TRUE)
+      
+         seurat_data <- Read10X(user_dir)
+      #seurat_data <- Read10X("User1_Tg4w/")#"hg19/"
       seurat_object <<- CreateSeuratObject(counts = seurat_data, project = metaD$my_project_name, min.cells = as.numeric(minimum_cells), min.features = as.numeric(minimum_features))
         
       init_seurat_object <<- CreateSeuratObject(counts = seurat_data, project = metaD$my_project_name, min.cells = as.numeric(minimum_cells), min.features = as.numeric(minimum_features))

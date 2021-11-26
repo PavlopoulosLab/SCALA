@@ -1,4 +1,5 @@
 # TODO add loading bar divs and source js file
+# TODO version2 add all additional parameters per function
 source("help.R", local=TRUE)
 library(bsplus)
 
