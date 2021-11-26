@@ -56,7 +56,7 @@ ui <- dashboardPage(
     tags$head(tags$link(rel = "stylesheet", type = "text/css", href="loading-bar.css")), # loading bar CSS
     tags$head(tags$script(src = "rshiny_handlers.js")), # R to JS
     tags$head(tags$script(src = "loading-bar.js")), # loading bar JS
-    tags$head(tags$script(src = "sliderfix.js")),
+    #tags$head(tags$script(src = "sliderfix.js")),
     useShinyjs(),
     extendShinyjs(text = js.enrich, functions = c("Enrich")),
     tabItems(
@@ -873,6 +873,7 @@ ui <- dashboardPage(
                                        selectInput("trajectoryEnd", "Final state:", choices=c("0"="0"), selected = "0", multiple = F, selectize = F),
                                        actionButton(inputId = "trajectoryConfirm", label = "OK")
                                      ),
+
                                    box(
                                      width = 9, status = "info", solidHeader = TRUE, title = "Trajectory analysis results",
                                      tabsetPanel(type = "tabs",
@@ -922,7 +923,6 @@ ui <- dashboardPage(
                          )
                 )
               )
-             
       ),
       
       #L-R analysis

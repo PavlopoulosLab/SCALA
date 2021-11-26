@@ -237,7 +237,9 @@ server <- function(input, output, session) {
       df_meta_data <- as.data.frame(getCellColData(proj_default))
       df_meta_data$cell_id <- rownames(df_meta_data)
       rownames(df_meta_data) <- NULL
-      output$metadataTableATAC <- renderDataTable(df_meta_data[, c(1:11)], options = list(pageLength = 10), rownames=F)
+
+      output$metadataTableATAC <- renderDataTable(df_meta_data, options = list(pageLength = 10), rownames = F)
+
       cleanAllPlots(T) # fromDataInput -> TRUE
       session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " QUALITY CONTROL", " UTILITY OPTIONS"))
       # }, warning = function(w) {
@@ -2202,6 +2204,10 @@ observeEvent(input$sendToFlame, {
       session$sendCustomMessage("handler_finishLoader", "traj2_loader")
       session$sendCustomMessage("handler_enableButton", "trajectoryConfirmLineage")
     })
+  })
+  
+  observeEvent(input$trajectoryConfirmLineageATAC, {
+    
   })
   
   #--------------------Ligand Receptor tab---------------------------
