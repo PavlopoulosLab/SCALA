@@ -917,6 +917,7 @@ ui <- dashboardPage(
                                          choices = c("Lineage1"),
                                          selected = "Lineage1",
                                          multiple = FALSE),
+                             actionButton(inputId = "trajectoryConfirmLineageATAC", label = "OK"),
                              plotOutput(outputId = "trajectoryPseudotimePlotATAC", height = "1100px"),
                              verbatimTextOutput(outputId="trajectoryTextATAC")
                            )

@@ -97,6 +97,16 @@ js.enrich <- "
 # 
 # cluster_names <- unique(proj_default$Clusters)
 # 
+# rD <- getEmbedding(ArchRProj = proj_default, embedding = "umap")
+# groups <- getCellColData(ArchRProj = proj_default, select = "Clusters")
+# sds <- slingshot(
+#   data = rD[, 1:3], 
+#   clusterLabels = groups[rownames(rD), ], 
+#   start.clus = "C1", end.clus = "C7"
+# )
+# 
+# names(sds@lineages)
+
 # #-----Trajectory
 # proj_default <<- addSlingShotTrajectories(
 #   ArchRProj = proj_default,

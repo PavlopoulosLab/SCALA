@@ -273,7 +273,7 @@ server <- function(input, output, session) {
       updateInputLRclusters()
       updateInpuTrajectoryClusters()
       output$metadataTable <- renderDataTable(seurat_object@meta.data, options = list(pageLength = 20))
-      updateClusterTabe()
+      updateClusterTab()
       cleanModesAfterClusterEdits()
     }
   })
@@ -287,7 +287,7 @@ server <- function(input, output, session) {
       updateInputLRclusters()
       updateInpuTrajectoryClusters()
       output$metadataTable <- renderDataTable(seurat_object@meta.data, options = list(pageLength = 20))
-      updateClusterTabe()
+      updateClusterTab()
       cleanModesAfterClusterEdits()
     }
   })
@@ -1048,6 +1048,7 @@ server <- function(input, output, session) {
     output$clusterBarplotATAC <- renderPlotly({print(gp)})
     
     updateSelInpColorATAC()
+    updateInpuTrajectoryClustersATAC()
     session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " ADDITIONAL DIMENSIONALITY\nREDUCTION METHODS", " TRAJECTORY ANALYSIS",
                                                       " MARKERS' IDENTIFICATION"))
     session$sendCustomMessage("handler_disableButton", "umapConfirmATAC")
@@ -1075,6 +1076,13 @@ server <- function(input, output, session) {
         ## Dimensionality Reduction ##
         proj_default <<- addUMAP(ArchRProj = proj_default, reducedDims = "IterativeLSI", name = "umap", nNeighbors = 30, minDist = 0.5, metric = "cosine", 
                                  force = T, n_components = as.numeric(input$umapOutComponentsATAC), dimsToUse = 1:as.numeric(input$umapDimensionsATAC))
+        
+        #UMAP is used in Trajectory tab only
+        proj_default <<- addUMAP(ArchRProj = proj_default, reducedDims = "IterativeLSI", name = "UMAP", nNeighbors = 30, minDist = 0.5, metric = "cosine",
+                                 force = T, n_components = 3, dimsToUse = 1:30) #3D-->2
+        df_2d <- proj_default@embeddings$UMAP$df[, 1:2]
+        proj_default@embeddings$UMAP$df <- df_2d
+        
         session$sendCustomMessage("handler_startLoader", c("dim_red3_loader", 50))
         proj_default <<- addTSNE(ArchRProj = proj_default, reducedDims = "IterativeLSI", name = "tsne", perplexity = 30, force = T, 
                                  n_components = as.numeric(input$umapOutComponentsATAC), dimsToUse = 1:as.numeric(input$umapDimensionsATAC))
@@ -2206,8 +2214,51 @@ observeEvent(input$sendToFlame, {
     })
   })
   
-  observeEvent(input$trajectoryConfirmLineageATAC, {
+  observeEvent(input$trajectoryConfirmATAC, {
+    #delete older trajectories 
+    cols_to_delete <- grep(pattern = "^Lineage", x = colnames(getCellColData(proj_default)))
+    if(length(cols_to_delete) != 0)
+    {
+      metadata_copy <- getCellColData(proj_default)
+      metadata_copy[cols_to_delete] <- NULL
+      proj_default@cellColData <- metadata_copy
+    }
     
+    #run slingshot
+    rD <- getEmbedding(ArchRProj = proj_default, embedding = "umap")
+    groups <- getCellColData(ArchRProj = proj_default, select = "Clusters")
+    
+    maxDims <- input$trajectorySliderDimensionsATAC
+    starCl <- input$trajectoryStartATAC
+    endCl <- input$trajectoryEndATAC
+    
+    sds <- slingshot(
+      data = rD[, 1:maxDims], 
+      clusterLabels = groups[rownames(rD), ], 
+      start.clus = starCl, end.clus = endCl
+    )
+    
+    #add lineages to the object
+    for(i in 1:length(sds@lineages))
+    {
+      current_lineage <- sds@lineages[[i]]
+      current_name <- paste0("Lineage", i)
+      proj_default <<- addTrajectory(proj_default, trajectory = current_lineage, groupBy = "Clusters", name = current_name, force = T)
+    }
+    
+    #for verbatim text
+    output$trajectoryTextATAC <- renderPrint({ print(sds@lineages) })
+    
+    #plot Lineage1
+    p <- plotTrajectory(proj_default, trajectory = "Lineage1", colorBy = "cellColData", name = "Lineage1", embedding = "UMAP")
+    output$trajectoryPseudotimePlotATAC <- renderPlot({ plot(p[[1]]) })
+    
+    updateSelectInput(session, "trajectoryLineageSelectATAC", choices = names(sds@lineages))
+  }) 
+  
+  observeEvent(input$trajectoryConfirmLineageATAC, {
+    p <- plotTrajectory(proj_default, trajectory = input$trajectoryLineageSelectATAC, colorBy = "cellColData", name = input$trajectoryLineageSelectATAC, embedding = "UMAP")
+    output$trajectoryPseudotimePlotATAC <- renderPlot({ plot(p[[1]]) })
   })
   
   #--------------------Ligand Receptor tab---------------------------
@@ -2344,7 +2395,7 @@ observeEvent(input$sendToFlame, {
   
   
   #updates on UI elements ----------
-  updateClusterTabe <- function()
+  updateClusterTab <- function()
   {
     #****
     cluster_df <- as.data.frame(table(Idents(seurat_object)))
@@ -2860,6 +2911,14 @@ observeEvent(input$sendToFlame, {
     factors_and_chars <- colnames(tableMeta)[which(selected==T)]
     print(factors_and_chars)
     updateSelectInput(session, "umapColorByATAC", choices = factors_and_chars)
+  }
+  
+  #update trajectory clusters
+  updateInpuTrajectoryClustersATAC <- function()
+  {
+    cluster_names <- unique(proj_default$Clusters)
+    updateSelectInput(session, "trajectoryStartATAC", choices = cluster_names)
+    updateSelectInput(session, "trajectoryEndATAC", choices = cluster_names)
   }
 }
 
