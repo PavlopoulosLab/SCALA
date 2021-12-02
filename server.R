@@ -2,7 +2,7 @@ server <- function(input, output, session) {
   options(shiny.maxRequestSize=3*1024^3) #increase upload limit
   source("global.R", local=TRUE)
   
-  session$sendCustomMessage("handler_disableTabs", "sidebarMenu") # disable all tab panels (except Data Input) until files are uploaded
+  #session$sendCustomMessage("handler_disableTabs", "sidebarMenu") # disable all tab panels (except Data Input) until files are uploaded
   metaD <- reactiveValues(my_project_name="-", all_lin="0")
   
   #------------------Upload tab--------------------------------
@@ -179,7 +179,7 @@ server <- function(input, output, session) {
   })
   
   observeEvent(input$upload10xATACConfirm, {
-    session$sendCustomMessage("handler_disableTabs", "sidebarMenu") # disable all tab panels (except Data Input) until files are uploaded
+    #session$sendCustomMessage("handler_disableTabs", "sidebarMenu") # disable all tab panels (except Data Input) until files are uploaded
     session$sendCustomMessage("handler_startLoader", c("input_loader", 10))
     session$sendCustomMessage("handler_disableButton", "upload10xATACConfirm")
     tryCatch({
@@ -1704,17 +1704,17 @@ observeEvent(input$findMarkersConfirmATAC, {
 
 observeEvent(input$findMarkersPeaksConfirmATAC, {
   addArchRThreads(threads = 1)
-  # proj_default <- addGroupCoverages(ArchRProj = proj_default, groupBy = "Clusters", force = T)
-  # 
-  # proj_default <- addReproduciblePeakSet(
-  #   ArchRProj = proj_default, 
-  #   groupBy = "Clusters", 
-  #   pathToMacs2 = input$pathToMacs2, #"/home/user/anaconda3/bin/macs2", 
-  #   force = T
-  # )
-  # print("Peakset finished")
-  # proj_default <- addPeakMatrix(proj_default)
-  # 
+  proj_default <- addGroupCoverages(ArchRProj = proj_default, groupBy = "Clusters", force = T)
+
+  proj_default <- addReproduciblePeakSet(
+    ArchRProj = proj_default,
+    groupBy = "Clusters",
+    pathToMacs2 = input$pathToMacs2, #"/home/user/anaconda3/bin/macs2",
+    force = T
+  )
+  print("Peakset finished")
+  proj_default <- addPeakMatrix(proj_default)
+
   markersPeaks <- getMarkerFeatures(
     ArchRProj = proj_default,
     useMatrix = "PeakMatrix",
@@ -1744,6 +1744,7 @@ observeEvent(input$findMarkersPeaksConfirmATAC, {
   
   output$findMarkersPeaksHeatmapATAC <- renderPlotly(expr = heatmaply(to_plot)) 
   addArchRThreads(threads = as.numeric(input$upload10xATACThreads))
+  session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " FUNCTIONAL ENRICHMENT\nANALYSIS", " TRACKS"))
 })
 
 observeEvent(input$findMarkersFPConfirmATAC, {
@@ -2039,7 +2040,41 @@ observeEvent(input$sendToFlame, {
     session$sendCustomMessage("handler_alert", "There was an error with the Enrichment Analysis.")
   })
 })
+
+observeEvent(input$findMotifsConfirmATAC, {
   
+  markersPeaks <- getMarkerFeatures(
+    ArchRProj = proj_default,
+    useMatrix = "PeakMatrix",
+    groupBy = "Clusters",
+    bias = c("TSSEnrichment", "log10(nFrags)"),
+    testMethod = "wilcoxon"
+  )
+  heatmapPeaks <- markerHeatmap(
+    seMarker = markersPeaks, 
+    cutOff = "FDR <= 0.1 & Log2FC >= 0.5",
+    transpose = TRUE
+  )
+  proj_default <<- addMotifAnnotations(ArchRProj = proj_default, motifSet = "cisbp", name = "Motif", force = T)
+  print("afterAddMotifAnno")
+  enrichMotifs <- peakAnnoEnrichment(
+    seMarker = markersPeaks,
+    ArchRProj = proj_default,
+    peakAnnotation = "Motif",
+    cutOff = "FDR <= 0.1 & Log2FC >= 0.5"
+  )
+  
+  print("afterPeakAno")
+   
+   heatmapEM <- plotEnrichHeatmap(enrichMotifs, n = 10, transpose = TRUE, returnMatrix = T)
+   print(head(heatmapEM))
+   full_motif_table <- t(plotEnrichHeatmap(enrichMotifs, transpose = TRUE, returnMatrix = T))
+   print(head(full_motif_table))
+  # output$findMotifsTableATAC <- renderDataTable(expr = full_motif_table, filter = 'top', options = list(pageLength = 10))
+  # 
+  # output$findMotifsHeatmapATAC <- renderPlotly(expr = heatmaply(heatmapEM))
+})  
+
   #------------------CIPR tab-----------------------------------------------
   observeEvent(input$annotateClustersConfirm, {
     session$sendCustomMessage("handler_startLoader", c("annot1_loader", 10))

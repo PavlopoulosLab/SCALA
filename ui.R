@@ -758,59 +758,88 @@ ui <- dashboardPage(
       
       #Enrichment analysis -gProfiler
       tabItem(tabName = "gProfiler", 
-              fluidRow(
-                box(width = 2, status = "info", solidHeader = TRUE,
-                    title = "gProfiler options",
-                    tags$h3("1. Options for input list"),
-                    tags$hr(),
-                    selectInput("gProfilerList", "Input list of genes:",
-                                c("-" = "-")),
-                    radioButtons("gprofilerRadio", label = "Sigificance threshold : ",
-                                 choices = list("P-value" = "p_val", 
-                                                "Adjusted P-value" = "p_val_adj",
-                                                "Power" = "power"
-                                 ), 
-                                 selected = "p_val"),
-                    sliderInput("gProfilerSliderSignificance", "", min = 0, max = 1, value = 0.01, step = 0.01),
-                    radioButtons("gProfilerLFCRadio", label = "Direction of deregulation : ",
-                                 choices = list("Up-regulated" = "Up",
-                                                "Down-regulated" = "Down"),
-                                 selected = "Up"
-                                 ),
-                    sliderInput("gProfilerSliderLogFC", "Log FC threshold:", min = 0, max = 3, value = 0.25, step = 0.05),
-                    tags$h3("2. Options for enrichment analysis"),
-                    tags$hr(),
-                    selectInput("gProfilerDatasources", "Select datasources", list('Gene Ontology'=list("Gene Ontology-Molecular Function (GO:MF)"="GO:MF", "Gene Ontology-Cellular Component (GO:CC)"= "GO:CC", "Gene Ontology-Biological Process (GO:BP)"="GO:BP"),
-                                                                          'Biological Pathways'= list("KEGG PATHWAY"="KEGG", "Reactome"="REAC", "WikiPathways"="WP"),
-                                                                          'Regulatory motifs in DNA'= list("TRANSFAC"= "TF","miRTarBase"= "MIRNA"),
-                                                                          'Protein Databases'=list("CORUM"= "CORUM", "Human Protein Atlas (HPA)"="HPA"),
-                                                                          'Human Phenotype Ontology' =list("Human Phenotype Ontology"= "HP")),
-                                selected = list("GO:MF", "GO:CC", "GO:BP", "KEGG"),
-                                multiple = TRUE, selectize = TRUE, width = NULL, size = NULL),
-                    selectInput("gProfilerOrganism", "Select organism", choices=c("Homo sapiens (Human)"="hsapiens","Mus musculus (Mouse)"="mmusculus"), selected = NULL, multiple = FALSE,selectize = TRUE, width = NULL, size = NULL),
-                    radioButtons("gprofilerRadioCorrection", label = "Correction method for multiple testing : ",
-                                 choices = list("Analytical(g:SCS)" = "gSCS", 
-                                                "Benjamini-Hochberg false discovery rate" = "fdr",
-                                                "Bonferroni correction" = "bonferroni"
-                                 ),
-                                 selected = "bonferroni"
-                                 ), 
-                    sliderInput("gProfilerSliderSignificanceTerms", "Significance for enriched terms :", min = 0, max = 1, value = 0.05, step = 0.01),
-                    actionButton(inputId = "gProfilerConfirm", label = "OK"),
-                    actionButton(inputId = "sendToFlame", label = "Send to Flame")
-                ),
-                box(
-                  width = 10, status = "info", solidHeader = TRUE, title = "gProfiler results",
-                  tabsetPanel(type = "tabs",
-                              tabPanel("Table of functional terms", 
-                                       div(class="ldBar", id="gprof1_loader", "data-preset"="circle"),
-                                       dataTableOutput(outputId = "gProfilerTable")),
-                              tabPanel("Manhatan plot", 
-                                       div(class="ldBar", id="gprof2_loader", "data-preset"="circle"),
-                                       plotlyOutput(outputId = "gProfilerManhatan"))
-                  )
-                )
-              )
+              tabsetPanel(type = "tabs",
+                          tabPanel("scRNA-seq",
+                                   fluidRow(
+                                     box(width = 2, status = "info", solidHeader = TRUE,
+                                         title = "gProfiler options",
+                                         tags$h3("1. Options for input list"),
+                                         tags$hr(),
+                                         selectInput("gProfilerList", "Input list of genes:",
+                                                     c("-" = "-")),
+                                         radioButtons("gprofilerRadio", label = "Sigificance threshold : ",
+                                                      choices = list("P-value" = "p_val", 
+                                                                     "Adjusted P-value" = "p_val_adj",
+                                                                     "Power" = "power"
+                                                      ), 
+                                                      selected = "p_val"),
+                                         sliderInput("gProfilerSliderSignificance", "", min = 0, max = 1, value = 0.01, step = 0.01),
+                                         radioButtons("gProfilerLFCRadio", label = "Direction of deregulation : ",
+                                                      choices = list("Up-regulated" = "Up",
+                                                                     "Down-regulated" = "Down"),
+                                                      selected = "Up"
+                                         ),
+                                         sliderInput("gProfilerSliderLogFC", "Log FC threshold:", min = 0, max = 3, value = 0.25, step = 0.05),
+                                         tags$h3("2. Options for enrichment analysis"),
+                                         tags$hr(),
+                                         selectInput("gProfilerDatasources", "Select datasources", list('Gene Ontology'=list("Gene Ontology-Molecular Function (GO:MF)"="GO:MF", "Gene Ontology-Cellular Component (GO:CC)"= "GO:CC", "Gene Ontology-Biological Process (GO:BP)"="GO:BP"),
+                                                                                                        'Biological Pathways'= list("KEGG PATHWAY"="KEGG", "Reactome"="REAC", "WikiPathways"="WP"),
+                                                                                                        'Regulatory motifs in DNA'= list("TRANSFAC"= "TF","miRTarBase"= "MIRNA"),
+                                                                                                        'Protein Databases'=list("CORUM"= "CORUM", "Human Protein Atlas (HPA)"="HPA"),
+                                                                                                        'Human Phenotype Ontology' =list("Human Phenotype Ontology"= "HP")),
+                                                     selected = list("GO:MF", "GO:CC", "GO:BP", "KEGG"),
+                                                     multiple = TRUE, selectize = TRUE, width = NULL, size = NULL),
+                                         selectInput("gProfilerOrganism", "Select organism", choices=c("Homo sapiens (Human)"="hsapiens","Mus musculus (Mouse)"="mmusculus"), selected = NULL, multiple = FALSE,selectize = TRUE, width = NULL, size = NULL),
+                                         radioButtons("gprofilerRadioCorrection", label = "Correction method for multiple testing : ",
+                                                      choices = list("Analytical(g:SCS)" = "gSCS", 
+                                                                     "Benjamini-Hochberg false discovery rate" = "fdr",
+                                                                     "Bonferroni correction" = "bonferroni"
+                                                      ),
+                                                      selected = "bonferroni"
+                                         ), 
+                                         sliderInput("gProfilerSliderSignificanceTerms", "Significance for enriched terms :", min = 0, max = 1, value = 0.05, step = 0.01),
+                                         actionButton(inputId = "gProfilerConfirm", label = "OK"),
+                                         actionButton(inputId = "sendToFlame", label = "Send to Flame")
+                                     ),
+                                     box(
+                                       width = 10, status = "info", solidHeader = TRUE, title = "gProfiler results",
+                                       tabsetPanel(type = "tabs",
+                                                   tabPanel("Table of functional terms", 
+                                                            div(class="ldBar", id="gprof1_loader", "data-preset"="circle"),
+                                                            dataTableOutput(outputId = "gProfilerTable")),
+                                                   tabPanel("Manhatan plot", 
+                                                            div(class="ldBar", id="gprof2_loader", "data-preset"="circle"),
+                                                            plotlyOutput(outputId = "gProfilerManhatan"))
+                                       )
+                                     )
+                                   )
+                          ),
+                          tabPanel("scATAC-seq",
+                                   fluidRow(
+                                     box(width = 3, status = "info", solidHeader = TRUE,
+                                         title = "Motif enrichment analysis (scATAC-seq)", 
+                                         selectInput("findMotifsSetATAC", "Motif set:",
+                                                     c("Cisb" = "cisbp",
+                                                       "ENCODE" = "encode",
+                                                       "Homer" = "homer",
+                                                       "JASPAR 2016" = "JASPAR2016",
+                                                       "JASPAR 2018" = "JASPAR2018",
+                                                       "JASPAR 2020" = "JASPAR2020"
+                                                     )),
+                                         sliderInput(inputId = "findMotifsLogFCATAC", label = "Log2FC threshold:", min = 0, max = 3, value = 0.25, step = 0.05),
+                                         sliderInput(inputId = "findMotifsFDRATAC", label = "FDR threshold:", min = 0, max = 1, value = 0.01, step = 0.01),
+                                         actionButton(inputId = "findMotifsConfirmATAC", label = "OK"),
+                                     ),
+                                     
+                                     box(width = 9, status = "info", solidHeader = TRUE,
+                                         title = "Motif enrichment analysis results",
+                                         dataTableOutput(outputId="findMotifsTableATAC", height = "800px"),
+                                         tags$hr(),
+                                         plotlyOutput(outputId = "findMotifsHeatmapATAC", height = "800px")
+                                     )
+                                   )
+                          )
+              )  
       ),
       
       #Clusters' annotation

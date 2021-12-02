@@ -28,7 +28,7 @@ library(phateR) #pip install phate //\\ #install.packages("phateR") //\\ *devtoo
 library(ArchR)
 library(pheatmap)
 library(parallel)
-#library(DelayedMatrixStats) #BiocManager::install("DelayedMatrixStats")
+#BiocManager::install("JASPAR2020"), BiocManager::install("JASPAR2018"), BiocManager::install("JASPAR2016")
 
 #Global variables
 
@@ -82,6 +82,21 @@ js.enrich <- "
 
 
 # proj_default <<- loadArchRProject(path = "default/")
+# markersPeaks <- getMarkerFeatures(
+#   ArchRProj = proj_default, 
+#   useMatrix = "PeakMatrix", 
+#   groupBy = "Clusters",
+#   bias = c("TSSEnrichment", "log10(nFrags)"),
+#   testMethod = "wilcoxon"
+# )
+# proj_default <<- addMotifAnnotations(ArchRProj = proj_default, motifSet = "cisbp", name = "Motif", force = T)
+# enrichMotifs <- peakAnnoEnrichment(
+#   seMarker = markersPeaks,
+#   ArchRProj = proj_default,
+#   peakAnnotation = "Motif",
+#   cutOff = "FDR <= 0.1 & Log2FC >= 0.5"
+# )
+# proj_default@peakSet
 # 
 # proj_default <<- addIterativeLSI(ArchRProj = proj_default, useMatrix = "TileMatrix", name = "IterativeLSI",
 #                                  iterations = 1, varFeatures = 25000,
