@@ -689,6 +689,7 @@ ui <- dashboardPage(
                                          sliderInput(inputId = "findMarkersPeaksLogFCATAC", label = "Log2FC threshold:", min = 0, max = 3, value = 0.25, step = 0.05),
                                          
                                          sliderInput(inputId = "findMarkersPeaksFDRATAC", label = "FDR threshold:", min = 0, max = 1, value = 0.01, step = 0.01),
+                                         textInput(inputId = "pathToMacs2", label = "Absolute path to MACS2"),
                                          actionButton(inputId = "findMarkersPeaksConfirmATAC", label = "OK"),
                                      ),
                                      

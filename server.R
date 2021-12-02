@@ -81,14 +81,14 @@ server <- function(input, output, session) {
       minimum_features <<- input$upload10xRNAminFeatures
       organism <<- input$upload10xRNARadioSpecies
         userId <- "User1_"
-        user_dir <- paste0("D:\\BSRC_Fleming\\aaa_PhD_template\\", userId, metaD$my_project_name, gsub(pattern = "[ ]|[:]", replacement = "_", x = paste0("_", Sys.time()))) #TODO remove 2 random barcodes, does it crash?
-        dir.create(user_dir)
-        file.copy(from = input$matrix$datapath, to = paste0(user_dir, "\\", input$matrix$name), overwrite = TRUE)
-        file.copy(from = input$barcodes$datapath, to = paste0(user_dir, "\\", input$barcodes$name), overwrite = TRUE)
-        file.copy(from = input$genes$datapath, to = paste0(user_dir, "\\", input$genes$name), overwrite = TRUE)
-      
-         seurat_data <- Read10X(user_dir)
-      #seurat_data <- Read10X("User1_Tg4w/")#"hg19/"
+        # user_dir <- paste0("D:\\BSRC_Fleming\\aaa_PhD_template\\", userId, metaD$my_project_name, gsub(pattern = "[ ]|[:]", replacement = "_", x = paste0("_", Sys.time()))) #TODO remove 2 random barcodes, does it crash?
+        # dir.create(user_dir)
+        # file.copy(from = input$matrix$datapath, to = paste0(user_dir, "\\", input$matrix$name), overwrite = TRUE)
+        # file.copy(from = input$barcodes$datapath, to = paste0(user_dir, "\\", input$barcodes$name), overwrite = TRUE)
+        # file.copy(from = input$genes$datapath, to = paste0(user_dir, "\\", input$genes$name), overwrite = TRUE)
+        # 
+        #  seurat_data <- Read10X(user_dir)
+      seurat_data <- Read10X("User1_Tg4w/")#"hg19/"
       seurat_object <<- CreateSeuratObject(counts = seurat_data, project = metaD$my_project_name, min.cells = as.numeric(minimum_cells), min.features = as.numeric(minimum_features))
         
       init_seurat_object <<- CreateSeuratObject(counts = seurat_data, project = metaD$my_project_name, min.cells = as.numeric(minimum_cells), min.features = as.numeric(minimum_features))
@@ -839,7 +839,7 @@ server <- function(input, output, session) {
       else
       {
         session$sendCustomMessage("handler_startLoader", c("lsi_loader", 25))
-        proj_default <<- addIterativeLSI(ArchRProj = proj_default, useMatrix = "TileMatrix", name = "IterativeLSI",
+        proj_default <<- addIterativeLSI(ArchRProj = proj_default, useMatrix = "TileMatrix", name = "IterativeLSI", force = T,
                                          iterations = as.numeric(input$lsiIterations), varFeatures = as.numeric(input$lsiVarFeatures),
                                          clusterParams = list( resolution = as.numeric(input$lsiResolution), sampleCells = 10000, n.start = 10),dimsToUse=1:as.numeric(input$lsiDmensions))
         
@@ -1703,38 +1703,47 @@ observeEvent(input$findMarkersConfirmATAC, {
 })
 
 observeEvent(input$findMarkersPeaksConfirmATAC, {
-  proj_default <- addGroupCoverages(ArchRProj = proj_default, groupBy = "Clusters", force = T)
-  #pathToMacs2 <- findMacs2()   
-  
-  proj_default <- addReproduciblePeakSet(
-    ArchRProj = proj_default, 
-    groupBy = "Clusters", 
-    peakMethod = "Tiles", 
-    force = T
-  )
-  print("Peaks with tiles")
-  proj_default <- addPeakMatrix(proj_default)
-  
+  addArchRThreads(threads = 1)
+  # proj_default <- addGroupCoverages(ArchRProj = proj_default, groupBy = "Clusters", force = T)
+  # 
+  # proj_default <- addReproduciblePeakSet(
+  #   ArchRProj = proj_default, 
+  #   groupBy = "Clusters", 
+  #   pathToMacs2 = input$pathToMacs2, #"/home/user/anaconda3/bin/macs2", 
+  #   force = T
+  # )
+  # print("Peakset finished")
+  # proj_default <- addPeakMatrix(proj_default)
+  # 
   markersPeaks <- getMarkerFeatures(
-    ArchRProj = proj_default, 
-    useMatrix = "PeakMatrix", 
+    ArchRProj = proj_default,
+    useMatrix = "PeakMatrix",
     groupBy = "Clusters",
     bias = c("TSSEnrichment", "log10(nFrags)"),
     testMethod = "wilcoxon"
   )
   
-  markerList <- getMarkers(markersPeaks, cutOff = "FDR <= 0.01 & Log2FC >= 1", n = 10)
+  markersPeaks_clusterList <- getMarkers(markersPeaks, cutOff = paste0("FDR <= ",input$findMarkersPeaksFDRATAC," & Log2FC >= ",input$findMarkersPeaksLogFCATAC))
+  markersPeaks_clusters_all <- as.data.frame(unlist(markersPeaks_clusterList))
+  markersPeaks_clusters_all$Clusters <- rownames(markersPeaks_clusters_all)
+  markersPeaks_clusters_all$Clusters <- gsub(pattern = "[.][0-9]+", replacement = "", x = markersPeaks_clusters_all$Clusters)
+  rownames(markersPeaks_clusters_all) <- NULL
+
+  output$findMarkersPeaksTableATAC <- renderDataTable(expr = markersPeaks_clusters_all, filter = 'top', rownames = FALSE, options = list(pageLength = 10))
+  
+  markerList <- getMarkers(markersPeaks, cutOff = paste0("FDR <= ",input$findMarkersPeaksFDRATAC," & Log2FC >= ",input$findMarkersPeaksLogFCATAC), n = 10)
   top10peaks <- as.data.frame(unlist(markerList))
   top10peaks$names <- paste0(top10peaks$seqnames, ":", top10peaks$start,"-",top10peaks$end)
   
   markerListheatmapPeaks <- plotMarkerHeatmap(
     seMarker = markersPeaks, 
-    cutOff = "FDR <= 0.1 & Log2FC >= 1", returnMatrix = T,
+    cutOff = paste0("FDR <= ",input$findMarkersPeaksFDRATAC," & Log2FC >= ",input$findMarkersPeaksLogFCATAC), returnMatrix = T,
     transpose = TRUE
   )
   to_plot <- markerListheatmapPeaks[, top10peaks$names]
   
-  findMarkersPeaksHeatmapATAC <- renderPlotly(expr = heatmaply(t(to_plot)))  
+  output$findMarkersPeaksHeatmapATAC <- renderPlotly(expr = heatmaply(to_plot)) 
+  addArchRThreads(threads = as.numeric(input$upload10xATACThreads))
 })
 
 observeEvent(input$findMarkersFPConfirmATAC, {

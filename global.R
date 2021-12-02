@@ -27,6 +27,7 @@ library(phateR) #pip install phate //\\ #install.packages("phateR") //\\ *devtoo
 #ATAC libraries
 library(ArchR)
 library(pheatmap)
+library(parallel)
 #library(DelayedMatrixStats) #BiocManager::install("DelayedMatrixStats")
 
 #Global variables
