@@ -12,6 +12,12 @@ default
 QualityControl
 User1_Project9
 example.arrow
+pooled.arrow
 fragments.ucsc.tsv.gz.tbi
+fragments.ucsc.tsv.gz
+fragments.ucsc.minimal.tsv.gz
+fragments.ucsc.chr1.tsv.gz
 pooled_atac.RDS
 scenic_helper_files
+scenic_output
+a5fd847163cd9e7b0d17faaf79dea583Project19_2021-12-06_15_11_56

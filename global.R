@@ -25,6 +25,7 @@ library(colorspace)
 library(missMDA)
 library(phateR) #pip install phate //\\ #install.packages("phateR") //\\ *devtools::install_github("scottgigante/seurat", ref="patch/add-PHATE-again") //\\ #reticulate::py_install("phate", pip=TRUE)
 #ATAC libraries
+library(ArchR)
 library(pheatmap)
 library(SCENIC)
 library(SCopeLoomR)
@@ -33,6 +34,7 @@ library(GSEABase)
 library(RcisTarget)
 library(stringr)
 library(readr)
+library(parallel)
 #BiocManager::install("JASPAR2020"), BiocManager::install("JASPAR2018"), BiocManager::install("JASPAR2016")
 
 #Global variables
@@ -86,7 +88,8 @@ js.enrich <- "
 
 
 
-# proj_default <<- loadArchRProject(path = "default/")
+# proj_default <<- loadArchRProject(path = "a5fd847163cd9e7b0d17faaf79dea583Project19_2021-12-06_15_11_56/default/")
+ 
 # markersPeaks <- getMarkerFeatures(
 #   ArchRProj = proj_default, 
 #   useMatrix = "PeakMatrix", 
@@ -121,12 +124,12 @@ js.enrich <- "
 # rD <- getEmbedding(ArchRProj = proj_default, embedding = "umap")
 # groups <- getCellColData(ArchRProj = proj_default, select = "Clusters")
 # sds <- slingshot(
-#   data = rD[, 1:3], 
-#   clusterLabels = groups[rownames(rD), ], 
+#   data = rD[, 1:3],
+#   clusterLabels = groups[rownames(rD), ],
 #   start.clus = "C1", end.clus = "C7"
 # )
-# 
-# names(sds@lineages)
+# sds@metadata$lineages
+# names(sds@metadata$lineages)
 
 # #-----Trajectory
 # proj_default <<- addSlingShotTrajectories(
