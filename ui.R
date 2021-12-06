@@ -44,6 +44,9 @@ ui <- dashboardPage(
       menuItem(tags$div("LIGAND - RECEPTOR",
                         tags$br(),
                         "ANALYSIS", class = "menu_item_div"), tabName = "ligandReceptor", icon = icon("satellite-dish")), #icon("satellite-dish")),
+      menuItem(tags$div("GENE REGULATORY NETWORK",
+                        tags$br(),
+                        "ANALYSIS", class = "menu_item_div"), tabName = "grn", icon = icon("network-wired")),
       menuItem(text = "TRACKS", tabName = "visualizeTracks", icon = icon("compact-disc")),
       tags$hr(),
       menuItem(text = "Help", tabName = "help", icon = icon("question")),
@@ -979,6 +982,42 @@ ui <- dashboardPage(
                    )
                  )
                )
+      ),
+      
+      #GRN analysis
+      tabItem(tabName = "grn",
+              tabsetPanel(type="tabs",
+                          tabPanel("scRNA-seq", #TODO for pyscenic ctx minimun number of genes per module, AUC+NES thresholds [for the update]
+                                   fluidRow(
+                                     box(width = 3, status = "info", solidHeader = TRUE,
+                                         tags$h3("Analysis options"),
+                                         tags$hr(),
+                                         title = "GRN input parameters",
+                                         textInput(inputId = "grnPyscenicPathRNA", label = "Absolute path for PyScenic"),
+                                         sliderInput(inputId = "grnCoresRNA", label = "Number of cores", min = 1, max = 64, value = 1, step = 1), 
+                                         actionButton(inputId = "grnConfirmRNA", label = "Run GRN analysis"),
+                                         tags$h3("Visualization options"),
+                                         tags$hr(),
+                                         selectInput(inputId = "grnMatrixSelectionRNA", label = "Regulons - display:", choices = c("Matrix of AUC values"="auc",
+                                                                                                                               "Matrix of RSS scores"="rss")),
+                                         sliderInput(inputId = "grnTopRegulonsRNA", label = "Display top regulons:", min = 5, max = 100, value = 10, step = 1),
+                                         actionButton(inputId = "grnConfirmVisualizationRNA", label = "Plot")
+                                     ),
+                                     box(
+                                        dataTableOutput(outputId="grnMatrixRNA", height = "500px"),
+                                        tags$hr(),
+                                        plotlyOutput(outputId = "grnHeatmapRNA", height = "800px")
+                                     )
+                                   )
+                          ),
+                          tabPanel("scATAC-seq",
+                                   fluidRow(
+                                     box(
+                                       
+                                     )
+                                   )
+                          )
+              )
       ),
       
       #ATAC-seq tracks

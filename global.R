@@ -25,9 +25,14 @@ library(colorspace)
 library(missMDA)
 library(phateR) #pip install phate //\\ #install.packages("phateR") //\\ *devtools::install_github("scottgigante/seurat", ref="patch/add-PHATE-again") //\\ #reticulate::py_install("phate", pip=TRUE)
 #ATAC libraries
-library(ArchR)
 library(pheatmap)
-library(parallel)
+library(SCENIC)
+library(SCopeLoomR)
+library(AUCell)
+library(GSEABase)
+library(RcisTarget)
+library(stringr)
+library(readr)
 #BiocManager::install("JASPAR2020"), BiocManager::install("JASPAR2018"), BiocManager::install("JASPAR2016")
 
 #Global variables
@@ -95,7 +100,7 @@ js.enrich <- "
 #   ArchRProj = proj_default,
 #   peakAnnotation = "Motif",
 #   cutOff = "FDR <= 0.1 & Log2FC >= 0.5"
-# )
+# )   
 # proj_default@peakSet
 # 
 # proj_default <<- addIterativeLSI(ArchRProj = proj_default, useMatrix = "TileMatrix", name = "IterativeLSI",
