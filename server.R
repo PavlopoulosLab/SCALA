@@ -188,11 +188,14 @@ server <- function(input, output, session) {
       
       #user dir creation
       projectNameATAC <<- input$uploadATACprojectID
-      userId <- "User1_"
-      user_dir <- paste0("D:\\BSRC_Fleming\\SCANNER\\", userId, projectNameATAC) #TODO remove 2 random barcodes, does it crash?
-      #dir.create(user_dir)
-      #file.copy(from = input$uploadATACFragments$datapath, to = paste0(user_dir, "\\", input$uploadATACFragments$name), overwrite = TRUE)
-      
+      userId <- session$token
+      user_dir <- paste0("./", userId, projectNameATAC, gsub(pattern = "[ ]|[:]", replacement = "_", x = paste0("_", Sys.time()))) #TODO remove 2 random barcodes, does it crash?
+      dir.create(user_dir)
+      print(paste0(user_dir, "/", input$uploadATACFragments$name))
+      file.copy(from = input$uploadATACFragments$datapath, to = paste0(user_dir, "/", input$uploadATACFragments$name), overwrite = TRUE)
+      setwd(user_dir)
+      dir.create("./default")
+      print(getwd())
       #select genome version and organism
       addArchRGenome(input$upload10xATACRadioSpecies)
       if(grep("mm", input$upload10xATACRadioSpecies))
@@ -205,31 +208,33 @@ server <- function(input, output, session) {
       }
       
       #set number of threads, TODO set to 1 in server version
-      addArchRThreads(threads = as.numeric(input$upload10xATACThreads)) 
+      addArchRThreads(threads = 1) 
       
       ####################################
       ######## Create Arrow files ########
       ####################################
       
-      # arrow_files <- ArchR::createArrowFiles( #TODO default values, QC changes lead to re-creation of Arrow files
-      #   inputFiles = "fragments.ucsc.tsv.gz",
-      #   sampleNames = "pooled", force = T
-      # )
+      #arrow_files <- ArchR::createArrowFiles( #TODO default values, QC changes lead to re-creation of Arrow files
+      #  inputFiles = "./fragments.ucsc.tsv.gz",
+      #  sampleNames = "pooled", 
+      #  minTSS = 5, 
+      #  minFrags = 1000, 
+      #  force = T
+      #)
       
       ########################################
       ######### Create Arch Project ##########
       ########################################
-      # proj_default <<- ArchRProject(
-      #   ArrowFiles = "example.arrow",
-      #   #outputDirectory = "pooled",
-      #   outputDirectory = "default",
-      #   copyArrows = TRUE #This is recommened so that if you modify the Arrow files you have an original copy for later usage.
-      # )
+      proj_default <<- ArchRProject(
+        ArrowFiles = "pooled.arrow",
+        outputDirectory = "./default",
+        copyArrows = TRUE #This is recommened so that if you modify the Arrow files you have an original copy for later usage.
+      )
+       
+      saveArchRProject(proj_default)
+      print("Project saved")
       
-      #saveArchRProject(proj_default)
-      #print("Project saved")
-      
-      proj_default <<- loadArchRProject(path = "default/")
+      #proj_default <<- loadArchRProject(path = "default/")
       
       session$sendCustomMessage("handler_startLoader", c("input_loader", 50))
       session$sendCustomMessage("handler_startLoader", c("input_loader", 75))
@@ -237,9 +242,10 @@ server <- function(input, output, session) {
       df_meta_data <- as.data.frame(getCellColData(proj_default))
       df_meta_data$cell_id <- rownames(df_meta_data)
       rownames(df_meta_data) <- NULL
-
+       
       output$metadataTableATAC <- renderDataTable(df_meta_data, options = list(pageLength = 10), rownames = F)
-
+      addArchRThreads(threads = as.numeric(input$upload10xATACThreads))
+      
       cleanAllPlots(T) # fromDataInput -> TRUE
       session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " QUALITY CONTROL", " UTILITY OPTIONS"))
       # }, warning = function(w) {
@@ -252,6 +258,43 @@ server <- function(input, output, session) {
       Sys.sleep(1) # giving some time for renderer for smoother transition
       session$sendCustomMessage("handler_finishLoader", "input_loader")
       session$sendCustomMessage("handler_enableButton", "upload10xATACConfirm")
+    })
+  })
+  
+  observeEvent(input$upload10xExampleATACConfirm, {
+    #session$sendCustomMessage("handler_disableTabs", "sidebarMenu") # disable all tab panels (except Data Input) until files are uploaded
+    session$sendCustomMessage("handler_startLoader", c("input_loader", 10))
+    session$sendCustomMessage("handler_disableButton", "upload10xExampleATACConfirm")
+    tryCatch({
+      
+      session$sendCustomMessage("handler_startLoader", c("input_loader", 25))
+      organism <<- "mouse"
+
+      proj_default <<- loadArchRProject(path = "a5fd847163cd9e7b0d17faaf79dea583Project19_2021-12-06_15_11_56/default/")
+      setwd("a5fd847163cd9e7b0d17faaf79dea583Project19_2021-12-06_15_11_56/")
+      
+      session$sendCustomMessage("handler_startLoader", c("input_loader", 50))
+      session$sendCustomMessage("handler_startLoader", c("input_loader", 75))
+      
+      df_meta_data <- as.data.frame(getCellColData(proj_default))
+      df_meta_data$cell_id <- rownames(df_meta_data)
+      rownames(df_meta_data) <- NULL
+      
+      output$metadataTableATAC <- renderDataTable(df_meta_data, options = list(pageLength = 10), rownames = F)
+      addArchRThreads(threads = as.numeric(input$upload10xATACThreads))
+      
+      cleanAllPlots(T) # fromDataInput -> TRUE
+      session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " QUALITY CONTROL", " UTILITY OPTIONS"))
+      # }, warning = function(w) {
+      #   print(paste("Warning:  ", w))
+    }, error = function(e) {
+      print(paste("Error :  ", e))
+      session$sendCustomMessage("handler_alert", "Data Input error. Please, refer to the help pages for input format.")
+    }, finally = { # with or without error
+      session$sendCustomMessage("handler_startLoader", c("input_loader", 100))
+      Sys.sleep(1) # giving some time for renderer for smoother transition
+      session$sendCustomMessage("handler_finishLoader", "input_loader")
+      session$sendCustomMessage("handler_enableButton", "upload10xExampleATACConfirm")
     })
   })
   
@@ -842,7 +885,7 @@ server <- function(input, output, session) {
         proj_default <<- addIterativeLSI(ArchRProj = proj_default, useMatrix = "TileMatrix", name = "IterativeLSI", force = T,
                                          iterations = as.numeric(input$lsiIterations), varFeatures = as.numeric(input$lsiVarFeatures),
                                          clusterParams = list( resolution = as.numeric(input$lsiResolution), sampleCells = 10000, n.start = 10),dimsToUse=1:as.numeric(input$lsiDmensions))
-        
+        saveArchRProject(proj_default)
         session$sendCustomMessage("handler_startLoader", c("lsi_loader", 75))
         #proj_default <<- addClusters(input = proj_default, reducedDims = "IterativeLSI", method = "Seurat", name = "Clusters_0.8", resolution = 0.8)
         #print(head(getCellColData(proj_default)))
@@ -1020,6 +1063,7 @@ server <- function(input, output, session) {
     #Run clustering
     proj_default <<- addClusters(input = proj_default, reducedDims = "IterativeLSI", method = "Seurat", neme = "Clusters", #name = paste0("Clusters_res_", input$clusterResATAC), 
                                  resolution = as.numeric(input$clusterResATAC), dimsToUse = 1:as.numeric(input$clusterDimensionsATAC), force = T)
+    saveArchRProject(proj_default)
     #Cluster table
     cluster_df <- as.data.frame(table(proj_default$Clusters))
     colnames(cluster_df)[1] <- "Cluster"
@@ -1079,7 +1123,7 @@ server <- function(input, output, session) {
         
         #UMAP is used in Trajectory tab only
         proj_default <<- addUMAP(ArchRProj = proj_default, reducedDims = "IterativeLSI", name = "UMAP", nNeighbors = 30, minDist = 0.5, metric = "cosine",
-                                 force = T, n_components = 3, dimsToUse = 1:30) #3D-->2
+                                 force = T, n_components = as.numeric(input$umapOutComponentsATAC), dimsToUse = 1:as.numeric(input$umapDimensionsATAC)) #3D-->2
         df_2d <- proj_default@embeddings$UMAP$df[, 1:2]
         proj_default@embeddings$UMAP$df <- df_2d
         
@@ -1704,17 +1748,19 @@ observeEvent(input$findMarkersConfirmATAC, {
 
 observeEvent(input$findMarkersPeaksConfirmATAC, {
   addArchRThreads(threads = 1)
-  proj_default <- addGroupCoverages(ArchRProj = proj_default, groupBy = "Clusters", force = T)
+  proj_default <<- addGroupCoverages(ArchRProj = proj_default, groupBy = "Clusters", force = T)
 
-  proj_default <- addReproduciblePeakSet(
+  proj_default <<- addReproduciblePeakSet(
     ArchRProj = proj_default,
     groupBy = "Clusters",
     pathToMacs2 = input$pathToMacs2, #"/home/user/anaconda3/bin/macs2",
     force = T
   )
   print("Peakset finished")
-  proj_default <- addPeakMatrix(proj_default)
-
+  proj_default <<- addPeakMatrix(proj_default, force = TRUE)
+  print(getPeakSet(proj_default))
+  saveArchRProject(proj_default)
+  
   markersPeaks <- getMarkerFeatures(
     ArchRProj = proj_default,
     useMatrix = "PeakMatrix",
@@ -2050,13 +2096,9 @@ observeEvent(input$findMotifsConfirmATAC, {
     bias = c("TSSEnrichment", "log10(nFrags)"),
     testMethod = "wilcoxon"
   )
-  # heatmapPeaks <- markerHeatmap(
-  #   seMarker = markersPeaks, 
-  #   cutOff = "FDR <= 0.1 & Log2FC >= 0.5",
-  #   transpose = TRUE
-  # )
-  #proj_default <<- addMotifAnnotations(ArchRProj = proj_default, motifSet = "cisbp", name = "Motif", force = T)
-  #print("afterAddMotifAnno")
+ 
+  proj_default <<- addMotifAnnotations(ArchRProj = proj_default, motifSet = "cisbp", name = "Motif", force = T)
+  print("afterAddMotifAnno")
   enrichMotifs <- peakAnnoEnrichment(
     seMarker = markersPeaks,
     ArchRProj = proj_default,
@@ -2070,9 +2112,9 @@ observeEvent(input$findMotifsConfirmATAC, {
    print(head(heatmapEM))
    full_motif_table <- t(plotEnrichHeatmap(enrichMotifs, transpose = TRUE, returnMatrix = T))
    print(head(full_motif_table))
-  # output$findMotifsTableATAC <- renderDataTable(expr = full_motif_table, filter = 'top', options = list(pageLength = 10))
-  # 
-  # output$findMotifsHeatmapATAC <- renderPlotly(expr = heatmaply(heatmapEM))
+   output$findMotifsTableATAC <- renderDataTable(expr = full_motif_table, filter = 'top', options = list(pageLength = 10))
+    
+   output$findMotifsHeatmapATAC <- renderPlotly(expr = heatmaply(heatmapEM))
 })  
 
   #------------------CIPR tab-----------------------------------------------
@@ -2283,21 +2325,17 @@ observeEvent(input$findMotifsConfirmATAC, {
     )
     
     #add lineages to the object
-    for(i in 1:length(sds@lineages))
+    for(i in 1:length(sds@metadata$lineages))
     {
-      current_lineage <- sds@lineages[[i]]
+      current_lineage <- sds@metadata$lineages[[i]]
       current_name <- paste0("Lineage", i)
       proj_default <<- addTrajectory(proj_default, trajectory = current_lineage, groupBy = "Clusters", name = current_name, force = T)
     }
     
     #for verbatim text
-    output$trajectoryTextATAC <- renderPrint({ print(sds@lineages) })
+    output$trajectoryTextATAC <- renderPrint({ print(sds@metadata$lineages) })
     
-    #plot Lineage1
-    p <- plotTrajectory(proj_default, trajectory = "Lineage1", colorBy = "cellColData", name = "Lineage1", embedding = "UMAP")
-    output$trajectoryPseudotimePlotATAC <- renderPlot({ plot(p[[1]]) })
-    
-    updateSelectInput(session, "trajectoryLineageSelectATAC", choices = names(sds@lineages))
+    updateSelectInput(session, "trajectoryLineageSelectATAC", choices = names(sds@metadata$lineages))
   }) 
   
   observeEvent(input$trajectoryConfirmLineageATAC, {
@@ -2691,6 +2729,65 @@ observeEvent(input$findMotifsConfirmATAC, {
     #pheatmap::pheatmap(t(regulonActivity_byCellType_Scaled.seurat_object_top), #fontsize_row=3,
     #                   color=colorRampPalette(ArchRPalettes$horizonExtra)(100), breaks=seq(-2, 2, length.out = 100),
     #                   treeheight_row=10, treeheight_col=10, border_color=NA)
+  })
+  
+  observeEvent(input$grnConfirmATAC, {
+    fdr_lim <- input$grnFdrATAC
+    corr_lim <- input$grnCorrlationATTAC
+    
+    ##########################################################################
+    ######################### Positive regulators ############################
+    ##########################################################################
+    proj_default <<- addBgdPeaks(proj_default)
+    proj_default <<- addMotifAnnotations(ArchRProj = proj_default, motifSet = "cisbp", name = "Motif", force = TRUE)
+    proj_default <<- addDeviationsMatrix(ArchRProj = proj_default, peakAnnotation = "Motif", force = TRUE)
+    ## Deviant Motifs ##
+    seGroupMotif_proj_default_condition <- getGroupSE(ArchRProj = proj_default, useMatrix = "MotifMatrix", groupBy = "Clusters")
+    ## Keep z-scores or deviation scores ##
+    seZ_proj_default_condition <- seGroupMotif_proj_default_condition[rowData(seGroupMotif_proj_default_condition)$seqnames=="z",]
+    # seZ_proj_default_condition <- seGroupMotif_proj_default_condition[rowData(seGroupMotif_proj_default_condition)$seqnames=="deviations",]
+    ## Maximum delta in z-score between all clusters ##
+    rowData(seZ_proj_default_condition)$maxDelta <- lapply(seq_len(ncol(seZ_proj_default_condition)), function(x){
+      rowMaxs(assay(seZ_proj_default_condition) - assay(seZ_proj_default_condition)[,x],na.rm=TRUE)
+    }) %>% Reduce("cbind", .) %>% rowMaxs
+    ## Correlate TF Accessibility with Genescore ##
+    corGSM_MM_proj_default <- correlateMatrices(
+      ArchRProj = proj_default,
+      useMatrix1 = "GeneScoreMatrix",
+      useMatrix2 = "MotifMatrix",
+      reducedDims = "IterativeLSI"
+    )
+    ## Add Maximum Delta Deviation to the Correlation Data Frame ##
+    corGSM_MM_proj_default_condition<-corGSM_MM_proj_default
+    corGSM_MM_proj_default_condition$maxDelta <- rowData(seZ_proj_default_condition)[match(corGSM_MM_proj_default_condition$MotifMatrix_name, rowData(seZ_proj_default_condition)$name), "maxDelta"]
+    ## Identify Positive TF Regulators ##
+    # Better use cor > 0.5 & padj < 0.05 and without the quantile 0.75 #
+    corGSM_MM_proj_default_condition<-corGSM_MM_proj_default_condition[!is.na(corGSM_MM_proj_default_condition$maxDelta),] #***error 
+    corGSM_MM_proj_default_condition <- corGSM_MM_proj_default_condition[order(abs(corGSM_MM_proj_default_condition$cor), decreasing = TRUE), ]
+    corGSM_MM_proj_default_condition <- corGSM_MM_proj_default_condition[which(!duplicated(gsub("\\-.*","",corGSM_MM_proj_default_condition[,"MotifMatrix_name"]))), ]
+    corGSM_MM_proj_default_condition$TFRegulator <- "NO"
+    corGSM_MM_proj_default_condition$TFRegulator[which(corGSM_MM_proj_default_condition$cor > corr_lim & corGSM_MM_proj_default_condition$padj < fdr_lim & corGSM_MM_proj_default_condition$maxDelta)] <- "YES"
+    positive_regulators_GSM_MM_proj_default_condition<-sort(corGSM_MM_proj_default_condition[corGSM_MM_proj_default_condition$TFRegulator=="YES",1])
+    ## Plot top regulators ##
+    ## Create the zscore data frames ##
+    seZ_proj_default_condition_df<-assays(seZ_proj_default_condition)$MotifMatrix
+    rownames(seZ_proj_default_condition_df)<-rowData(seZ_proj_default_condition)$name
+    # seZ_proj_default_condition_df[is.na(seZ_proj_default_condition_df)] <- 0
+    ## Keep positive regulators ##
+    seZ_proj_default_condition_df_positive_regulators_GSM_MM_condition<-seZ_proj_default_condition_df[which(sub("_.*", "", rownames(seZ_proj_default_condition_df)) %in% positive_regulators_GSM_MM_proj_default_condition),]
+    
+    output$grnMatrixATAC <- renderDataTable(seZ_proj_default_condition_df_positive_regulators_GSM_MM_condition, options = list(pageLength = 10), rownames = T)
+    
+    output$grnHeatmapATAC <- renderPlotly(heatmaply(seZ_proj_default_condition_df_positive_regulators_GSM_MM_condition, colors=viridis(n = 256, option = "plasma")))
+     
+    #pheatmap::pheatmap(seZ_proj_default_condition_df_positive_regulators_GSM_MM_condition, #fontsize_row=3, 
+    #                   color=colorRampPalette(c("blue","white","red"))(100), breaks=seq(-3, 3, length.out = 100),
+    #                   treeheight_row=10, treeheight_col=10, border_color=NA,scale="none",cluster_cols=FALSE)
+                       
+    ##########################################################################
+    ##########################################################################
+    ##########################################################################
+    
   })
   
   #---------------------------Tracks tab----------------------------------------

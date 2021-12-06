@@ -110,7 +110,7 @@ ui <- dashboardPage(
                                        ),
                               tabPanel("10x input files (scATAC-seq)", 
                                        textInput(inputId = "uploadATACprojectID", label = "Project name : ", value = "Project1"),
-                                       fileInput(inputId = "uploadATACFragments", label = "Please upload fragments.tsv.gz file", accept = ".gz"),
+                                       fileInput(inputId = "uploadATACFragments", label = "Please upload fragments.tsv.gz file", accept = ".arrow"),
                                        radioButtons("upload10xATACRadioSpecies", label = h3("Select organism and genome version: "),
                                                     choices = list("Mus musculus (Mouse) - mm10" = "mm10", 
                                                                    "Homo sapiens (Human) - hg19" = "hg19",
@@ -989,10 +989,9 @@ ui <- dashboardPage(
               tabsetPanel(type="tabs",
                           tabPanel("scRNA-seq", #TODO for pyscenic ctx minimun number of genes per module, AUC+NES thresholds [for the update]
                                    fluidRow(
-                                     box(width = 3, status = "info", solidHeader = TRUE,
+                                     box(width = 3, status = "info", solidHeader = TRUE, title = "GRN input parameters",
                                          tags$h3("Analysis options"),
                                          tags$hr(),
-                                         title = "GRN input parameters",
                                          textInput(inputId = "grnPyscenicPathRNA", label = "Absolute path for PyScenic"),
                                          sliderInput(inputId = "grnCoresRNA", label = "Number of cores", min = 1, max = 64, value = 1, step = 1), 
                                          actionButton(inputId = "grnConfirmRNA", label = "Run GRN analysis"),
@@ -1003,7 +1002,7 @@ ui <- dashboardPage(
                                          sliderInput(inputId = "grnTopRegulonsRNA", label = "Display top regulons:", min = 5, max = 100, value = 10, step = 1),
                                          actionButton(inputId = "grnConfirmVisualizationRNA", label = "Plot")
                                      ),
-                                     box(
+                                     box(width = 9, status = "info", solidHeader = TRUE, title = "GRN output",
                                         dataTableOutput(outputId="grnMatrixRNA", height = "500px"),
                                         tags$hr(),
                                         plotlyOutput(outputId = "grnHeatmapRNA", height = "800px")
@@ -1013,7 +1012,15 @@ ui <- dashboardPage(
                           tabPanel("scATAC-seq",
                                    fluidRow(
                                      box(
-                                       
+                                       width = 3, status = "info", solidHeader = TRUE, title = "Analysis options",
+                                       sliderInput(inputId = "grnFdrATAC", label = "FDR threshold:", min = 0, max = 1, value = 0.1, step = 0.01),
+                                       sliderInput(inputId = "grnCorrlationATTAC", label = "Correllation threshold:", min = 0, max = 1, value = 0.7, step = 0.1),
+                                       actionButton(inputId = "grnConfirmATAC", label = "OK")
+                                     ),
+                                     box(width = 9, status = "info", solidHeader = TRUE, title = "Positive regulators",
+                                       dataTableOutput(outputId="grnMatrixATAC", height = "500px"),
+                                       tags$hr(),
+                                       plotlyOutput(outputId = "grnHeatmapATAC", height = "800px")
                                      )
                                    )
                           )
