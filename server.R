@@ -1,4 +1,9 @@
-server <- function(input, output, session) {
+#change plot name in cellcycle
+#cluster annotation gia ATAC
+#enable all tabs
+
+server <- function(input, output, session) { 
+  #use_python("/opt/conda39/envs/pyscenic/bin/python")
   options(shiny.maxRequestSize=3*1024^3) #increase upload limit
   source("global.R", local=TRUE)
   
@@ -232,6 +237,10 @@ server <- function(input, output, session) {
       rownames(df_meta_data) <- NULL
        
       output$metadataTableATAC <- renderDataTable(df_meta_data, options = list(pageLength = 10), rownames = F)
+      
+      #export table
+      export_metadata_ATAC <<- df_meta_data
+      
       addArchRThreads(threads = as.numeric(input$upload10xATACThreads))
       updateSelectizeInput(session, "visualizeTracksGene", choices = unique(proj_default@geneAnnotation$genes$symbol), server = T)
       
@@ -255,26 +264,60 @@ server <- function(input, output, session) {
     session$sendCustomMessage("handler_startLoader", c("input_loader", 10))
     session$sendCustomMessage("handler_disableButton", "upload10xExampleATACConfirm")
     tryCatch({
-      
-      session$sendCustomMessage("handler_startLoader", c("input_loader", 25))
-      organism <<- "mouse"
-
-      proj_default <<- loadArchRProject(path = "5772ded67871dc25c805f9505c7e3b16Project9_2021-12-07_02_18_57/default/")
-      setwd("5772ded67871dc25c805f9505c7e3b16Project9_2021-12-07_02_18_57/")
-      
-      session$sendCustomMessage("handler_startLoader", c("input_loader", 50))
-      session$sendCustomMessage("handler_startLoader", c("input_loader", 75))
-      
-      df_meta_data <- as.data.frame(getCellColData(proj_default))
-      df_meta_data$cell_id <- rownames(df_meta_data)
-      rownames(df_meta_data) <- NULL
-      
-      output$metadataTableATAC <- renderDataTable(df_meta_data, options = list(pageLength = 10), rownames = F)
-      addArchRThreads(threads = as.numeric(input$upload10xATACThreads))
-      
-      updateSelectizeInput(session, "visualizeTracksGene", choices = unique(proj_default@geneAnnotation$genes$symbol), server = T)
-      cleanAllPlots(T) # fromDataInput -> TRUE
-      session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " QUALITY CONTROL", " UTILITY OPTIONS"))
+        session$sendCustomMessage("handler_startLoader", c("input_loader", 25))
+        
+        #user dir creation
+        projectNameATAC <<- "example"
+        userId <- session$token
+        user_dir <- paste0("./", userId, projectNameATAC, gsub(pattern = "[ ]|[:]", replacement = "_", x = paste0("_", Sys.time()))) #TODO remove 2 random barcodes, does it crash?
+        dir.create(user_dir)
+        file.copy(from = "./exampleATAC/arrowFile.arrow", to = paste0(user_dir, "/arrowFile.arrow"), overwrite = TRUE)
+        setwd(user_dir)
+        dir.create("./default")
+        print(getwd())
+        #select genome version and organism
+        addArchRGenome("mm10")
+        if(grep("mm", input$upload10xATACRadioSpecies))
+        {
+          organism <<- "mouse"
+        }
+        else
+        {
+          organism <<- "human"
+        }
+        
+        #set number of threads, TODO set to 1 in server version
+        addArchRThreads(threads = 1) #as.numeric(input$upload10xATACThreads)) 
+        
+        ########################################
+        ######### Create Arch Project ##########
+        ########################################
+        proj_default <<- ArchRProject(
+          ArrowFiles = "arrowFile.arrow",
+          outputDirectory = "./default",
+          copyArrows = TRUE #This is recommened so that if you modify the Arrow files you have an original copy for later usage.
+        )
+        
+        saveArchRProject(proj_default)
+        print("Project saved")
+        
+        session$sendCustomMessage("handler_startLoader", c("input_loader", 50))
+        session$sendCustomMessage("handler_startLoader", c("input_loader", 75))
+        
+        df_meta_data <- as.data.frame(getCellColData(proj_default))
+        df_meta_data$cell_id <- rownames(df_meta_data)
+        rownames(df_meta_data) <- NULL
+        
+        output$metadataTableATAC <- renderDataTable(df_meta_data, options = list(pageLength = 10), rownames = F)
+        
+        #export table
+        export_metadata_ATAC <<- df_meta_data
+        
+        addArchRThreads(threads = as.numeric(input$upload10xATACThreads))
+        updateSelectizeInput(session, "visualizeTracksGene", choices = unique(proj_default@geneAnnotation$genes$symbol), server = T)
+        
+        cleanAllPlots(T) # fromDataInput -> TRUE
+        session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " QUALITY CONTROL", " UTILITY OPTIONS"))
       # }, warning = function(w) {
       #   print(paste("Warning:  ", w))
     }, error = function(e) {
@@ -288,13 +331,15 @@ server <- function(input, output, session) {
     })
   })
   
+  output$uploadMetadataExport <- downloadHandler(
+    filename = function() { 
+      paste("metadataTableATAC-", Sys.Date(), ".txt", sep="")
+    },
+    content = function(file) {
+      write.table(export_metadata_ATAC, file, sep = "\t", quote = F, row.names = F)
+    })
+  
   #------------------Utilities------------------------------------------
-  # observeEvent(input$utilitiesColorPicker, {
-  #   user_palette <- choose_palette()
-  #   print(class(user_palette))
-  #   print("\n")
-  #   print(user_palette)
-  # })
   
   observeEvent(input$utilitiesConfirmRename, {
     if(!identical(seurat_object, NULL) & input$utilitiesRenameOldName != "-" & input$utilitiesRenameNewName != "")
@@ -1061,7 +1106,7 @@ server <- function(input, output, session) {
     cluster_df$`% of cells per cluster` <- cluster_df$`Number of cells`/nrow(getCellColData(proj_default))*100
     
     output$clusterTableATAC <- renderDataTable(cluster_df, options = list(pageLength = 10), rownames = F)
-    
+    export_clustertable_ATAC <<- cluster_df
     
     cols = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(cluster_df$Cluster)))
     
@@ -1098,6 +1143,13 @@ server <- function(input, output, session) {
       })
   })
   
+  output$clusterTableExportATAC <- downloadHandler(
+    filename = function() { 
+      paste("clusterTableATAC-", Sys.Date(), ".txt", sep="")
+    },
+    content = function(file) {
+      write.table(export_clustertable_ATAC, file, sep = "\t", quote = F, row.names = F)
+    })
   
   #------------------Umap/tSNE/DFM tab---------------------------------------
   observeEvent(input$umapRunUmapTsneATAC, {
@@ -1701,7 +1753,8 @@ observeEvent(input$findMarkersViolinConfirm, {
     } else session$sendCustomMessage("handler_alert", "Please select signature.")
   } else session$sendCustomMessage("handler_alert", "Please upload some data first.")
 })
-  
+
+#ATAC   
 observeEvent(input$findMarkersConfirmATAC, { #ADD loading bar
   session$sendCustomMessage("handler_startLoader", c("DEA7_loader", 10))
   session$sendCustomMessage("handler_disableButton", "findMarkersConfirmATAC")
@@ -1731,6 +1784,7 @@ observeEvent(input$findMarkersConfirmATAC, { #ADD loading bar
       session$sendCustomMessage("handler_startLoader", c("DEA7_loader", 80))
       
       output$findMarkersGenesTableATAC <- renderDataTable(expr = markers_clusters_all, filter = 'top', rownames = FALSE, options = list(pageLength = 10))
+      export_markerGenes_ATAC <<- markers_clusters_all
       
       #heatmap top10
       markers_clusterList10 <- unlist(getMarkers(markers_cluster, cutOff = paste0("FDR <= ",input$findMarkersFDRATAC," & Log2FC >= ",input$findMarkersLogFCATAC), n = 10))
@@ -1817,6 +1871,7 @@ observeEvent(input$findMarkersPeaksConfirmATAC, {
       rownames(markersPeaks_clusters_all) <- NULL
       session$sendCustomMessage("handler_startLoader", c("DEA7_loader", 95))
       output$findMarkersPeaksTableATAC <- renderDataTable(expr = markersPeaks_clusters_all, filter = 'top', rownames = FALSE, options = list(pageLength = 10))
+      export_markerPeaks_ATAC <<- markersPeaks_clusters_all
       
       markerList <- getMarkers(markersPeaks, cutOff = paste0("FDR <= ",input$findMarkersPeaksFDRATAC," & Log2FC >= ",input$findMarkersPeaksLogFCATAC), n = 10)
       top10peaks <- as.data.frame(unlist(markerList))
@@ -1870,6 +1925,22 @@ observeEvent(input$findMarkersFPConfirmATAC, {
     session$sendCustomMessage("handler_enableButton", "findMarkersFPConfirmATAC")
   })
 })
+
+output$findMarkersGenesATACExport <- downloadHandler(
+  filename = function() { 
+    paste("markerGenesTableATAC-", Sys.Date(), ".txt", sep="")
+  },
+  content = function(file) {
+    write.table(export_markerGenes_ATAC, file, sep = "\t", quote = F, row.names = F)
+  })
+
+output$findMarkersPeaksATACExport <- downloadHandler(
+  filename = function() { 
+    paste("markerPeaksTableATAC-", Sys.Date(), ".txt", sep="")
+  },
+  content = function(file) {
+    write.table(export_markerPeaks_ATAC, file, sep = "\t", quote = F, row.names = F)
+  })
 
   #------------------Cell cycle tab------------------------------------------
   observeEvent(input$cellCycleRun, { # observe selectInput cellCycleReduction instead of cellCycleRun actionButton
@@ -2184,6 +2255,7 @@ observeEvent(input$findMotifsConfirmATAC, {
       print(head(full_motif_table))
       session$sendCustomMessage("handler_startLoader", c("motif_loader", 90))
       output$findMotifsTableATAC <- renderDataTable(expr = full_motif_table, filter = 'top', options = list(pageLength = 10))
+      export_motifs_ATAC <<- full_motif_table
       
       output$findMotifsHeatmapATAC <- renderPlotly(expr = heatmaply(heatmapEM))
       session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " GENE REGULATORY NETWORK\nANALYSIS"))
@@ -2199,6 +2271,14 @@ observeEvent(input$findMotifsConfirmATAC, {
   })	
   
 })  
+
+output$findMotifsATACExport <- downloadHandler(
+  filename = function() { 
+    paste("motifsTableATAC-", Sys.Date(), ".txt", sep="")
+  },
+  content = function(file) {
+    write.table(export_motifs_ATAC, file, sep = "\t", quote = F, row.names = F)
+  })
 
   #------------------CIPR tab-----------------------------------------------
   observeEvent(input$annotateClustersConfirm, {
@@ -2912,10 +2992,12 @@ observeEvent(input$findMotifsConfirmATAC, {
         session$sendCustomMessage("handler_startLoader", c("grn2_loader", 90))
         
         output$grnMatrixATAC <- renderDataTable(seZ_proj_default_condition_df_positive_regulators_GSM_MM_condition, options = list(pageLength = 10), rownames = T)
+        export_positiveRegulators_ATAC <<- seZ_proj_default_condition_df_positive_regulators_GSM_MM_condition
         
         output$grnHeatmapATAC <- renderPlotly(heatmaply(seZ_proj_default_condition_df_positive_regulators_GSM_MM_condition, colors=viridis(n = 256, option = "plasma")))
         
         output$grnP2GlinksTable <- renderDataTable(p2g_table, options = list(pageLength = 10), rownames = T)
+        export_peakToGenelinks_ATAC <<- p2g_table
         
         ##########################################################################
         ##########################################################################
@@ -2931,6 +3013,22 @@ observeEvent(input$findMotifsConfirmATAC, {
       session$sendCustomMessage("handler_enableButton", "grnConfirmATAC")
     })
   })
+  
+  output$grnPositiveRegulatorsATACExport <- downloadHandler(
+    filename = function() { 
+      paste("positiveRegulatorsTableATAC-", Sys.Date(), ".txt", sep="")
+    },
+    content = function(file) {
+      write.table(export_positiveRegulators_ATAC, file, sep = "\t", quote = F, row.names = F)
+    })
+  
+  output$grnPeakToGeneLinksATACExport <- downloadHandler(
+    filename = function() { 
+      paste("peakToGeneLinksTableATAC-", Sys.Date(), ".txt", sep="")
+    },
+    content = function(file) {
+      write.table(export_peakToGenelinks_ATAC, file, sep = "\t", quote = F, row.names = F)
+    })
   
   #---------------------------Tracks tab----------------------------------------
   observeEvent(input$visualizeTracksConfirm, {

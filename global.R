@@ -84,6 +84,14 @@ reductions_choices <- c("-")
 #ATAC variables
 ArrowFiles <- NULL
 proj_default <- NULL
+#export tables
+export_metadata_ATAC <- ""
+export_clustertable_ATAC <- ""
+export_markerGenes_ATAC <- ""
+export_markerPeaks_ATAC <- ""
+export_motifs_ATAC <- ""
+export_positiveRegulators_ATAC <- ""
+export_peakToGenelinks_ATAC <- ""
 
 js.enrich <- "
   shinyjs.Enrich = function(url) {

@@ -108,7 +108,9 @@ ui <- dashboardPage(
                                                                  selected = "mouse"),
                                        actionButton(inputId = "upload10xRNAConfirm", label = "Submit")
                                        ),
-                              tabPanel("10x input files (scATAC-seq)", 
+                              tabPanel("Arrow input files (scATAC-seq)", 
+                                       tags$h3("Load your dataset"),
+                                       tags$hr(),
                                        textInput(inputId = "uploadATACprojectID", label = "Project name : ", value = "Project1"),
                                        fileInput(inputId = "uploadATACArrow", label = "Please upload an .arrow file", accept = ".arrow"),
                                        radioButtons("upload10xATACRadioSpecies", label = h3("Select organism and genome version: "),
@@ -118,11 +120,14 @@ ui <- dashboardPage(
                                                     ), 
                                                     selected = "mm10"),
                                        sliderInput(inputId = "upload10xATACThreads", label = "Threads to be used:", min = 1, max = 200, value = 4, step = 1), #TODO floor(parallel::detectCores()/2)
-                                       actionButton(inputId = "upload10xATACConfirm", label = "Submit")
+                                       actionButton(inputId = "upload10xATACConfirm", label = "Submit"),
+                                       tags$h3("Load an example dataset"),
+                                       tags$hr(),
+                                       actionButton(inputId = "upload10xExampleATACConfirm", label = "Load PBMC 10x dataset (example scATAC-seq)")
                               ),
                               tabPanel("Load example data", 
-                                       actionButton(inputId = "upload10xExampleRNAConfirm", label = "Load PBMC 10x dataset (example scRNA-seq)"),
-                                       actionButton(inputId = "upload10xExampleATACConfirm", label = "Load PBMC 10x dataset (example scATAC-seq)"))
+                                       actionButton(inputId = "upload10xExampleRNAConfirm", label = "Load PBMC 10x dataset (example scRNA-seq)")
+                                       )
                   )
                 ),
                 box(
@@ -134,7 +139,9 @@ ui <- dashboardPage(
                               tabPanel("scRNA-seq",
                                        dataTableOutput("metadataTable", width = "100%", height = "100%")),
                               tabPanel("scATAC-seq",
-                                       dataTableOutput("metadataTableATAC"))
+                                       dataTableOutput("metadataTableATAC"),
+                                       downloadButton(outputId = "uploadMetadataExport", label = "Save table")
+                                       )
                               )
                 )
               ),
@@ -417,6 +424,7 @@ ui <- dashboardPage(
                                                    tabPanel("Clustering results", 
                                                             div(class="ldBar", id="clust3_loader", "data-preset"="circle"),
                                                             dataTableOutput(outputId="clusterTableATAC", height = "500px"),
+                                                            downloadButton(outputId = "clusterTableExportATAC", label = "Save table"),
                                                             #selectInput("clusterGroupBy", "Grouping variable:",
                                                             #            c("Sample" = "Sample")),
                                                             #actionButton(inputId = "clusterBarplotConfirmATAC", label = "Display barchart"),
@@ -709,6 +717,7 @@ ui <- dashboardPage(
                                                    tabPanel("Marker genes table (ATAC)", fluidRow(
                                                      div(class="ldBar", id="DEA7_loader", "data-preset"="circle"),
                                                      dataTableOutput(outputId="findMarkersGenesTableATAC", height = "800px"),
+                                                     downloadButton(outputId = "findMarkersGenesATACExport", label = "Save table"),
                                                      tags$hr(),
                                                      plotlyOutput(outputId = "findMarkersGenesHeatmapATAC", height = "800px")
                                                     ) 
@@ -716,6 +725,7 @@ ui <- dashboardPage(
                                                    tabPanel("Marker peaks table (ATAC)", fluidRow(
                                                      div(class="ldBar", id="DEA8_loader", "data-preset"="circle"),
                                                      dataTableOutput(outputId="findMarkersPeaksTableATAC", height = "800px"),
+                                                     downloadButton(outputId = "findMarkersPeaksATACExport", label = "Save table"),
                                                      tags$hr(),
                                                      plotlyOutput(outputId = "findMarkersPeaksHeatmapATAC", height = "800px")
                                                     ) 
@@ -846,6 +856,7 @@ ui <- dashboardPage(
                                          div(class="ldBar", id="motif_loader", "data-preset"="circle"),
                                          title = "Motif enrichment analysis results",
                                          dataTableOutput(outputId="findMotifsTableATAC", height = "800px"),
+                                         downloadButton(outputId = "findMotifsATACExport", label = "Save table"),
                                          tags$hr(),
                                          plotlyOutput(outputId = "findMotifsHeatmapATAC", height = "800px")
                                      )
@@ -1033,12 +1044,14 @@ ui <- dashboardPage(
                                                      tabPanel("Positive regulators",
                                                               div(class="ldBar", id="grn2_loader", "data-preset"="circle"),
                                                               dataTableOutput(outputId="grnMatrixATAC", height = "500px"),
+                                                              downloadButton(outputId = "grnPositiveRegulatorsATACExport", label = "Save table"),
                                                               tags$hr(),
                                                               plotlyOutput(outputId = "grnHeatmapATAC", height = "800px"),
                                                               plotOutput(outputId = "grnHeatmapATAC2", height = "800px")
                                                               ),
                                                      tabPanel("Peak to gene links",
                                                               dataTableOutput(outputId="grnP2GlinksTable", height = "800px"),
+                                                              downloadButton(outputId = "grnPeakToGeneLinksATACExport", label = "Save table"),
                                                               )
                                          )
                                      )
