@@ -110,7 +110,7 @@ ui <- dashboardPage(
                                        ),
                               tabPanel("10x input files (scATAC-seq)", 
                                        textInput(inputId = "uploadATACprojectID", label = "Project name : ", value = "Project1"),
-                                       fileInput(inputId = "uploadATACFragments", label = "Please upload fragments.tsv.gz file", accept = ".arrow"),
+                                       fileInput(inputId = "uploadATACArrow", label = "Please upload an .arrow file", accept = ".arrow"),
                                        radioButtons("upload10xATACRadioSpecies", label = h3("Select organism and genome version: "),
                                                     choices = list("Mus musculus (Mouse) - mm10" = "mm10", 
                                                                    "Homo sapiens (Human) - hg19" = "hg19",
@@ -220,16 +220,16 @@ ui <- dashboardPage(
                                      box(
                                        width = 3, status = "info", solidHeader = TRUE,
                                        title = "Quality control",
-                                       tags$h3("1. Display soft filtered quality control plots"),
+                                       tags$h3("Display soft filtered quality control plots"),
                                        actionButton(inputId = "qcDisplayATAC", label = "OK"),
-                                       tags$hr(),
-                                       tags$h3("2. Filter out low quality cells"),
-                                       tags$hr(),                                       
-                                       sliderInput(inputId = "minFrags", label = "The minimum number of mapped ATAC-seq fragments required per cell to pass filtering for use in downstream analyses:", 
-                                                   min = 500, max = 2000, value = 1000, step = 100),
-                                       sliderInput(inputId = "minTSS", label = "The minimum numeric transcription start site (TSS) enrichment score required for a cell to pass filtering 
-									   for use in downstream analyses:", min = 1, max = 10, value = 4, step = 1),
-                                       actionButton(inputId = "qcConfirmATAC", label = "OK"),
+#                                        tags$hr(),
+#                                        tags$h3("2. Filter out low quality cells"),
+#                                        tags$hr(),                                       
+#                                        sliderInput(inputId = "minFrags", label = "The minimum number of mapped ATAC-seq fragments required per cell to pass filtering for use in downstream analyses:", 
+#                                                    min = 500, max = 2000, value = 1000, step = 100),
+#                                        sliderInput(inputId = "minTSS", label = "The minimum numeric transcription start site (TSS) enrichment score required for a cell to pass filtering 
+# 									   for use in downstream analyses:", min = 1, max = 10, value = 4, step = 1),
+#                                        actionButton(inputId = "qcConfirmATAC", label = "OK"),
                                        #TODO list of chromosomes to be analysed
                                        #TODO mark doublets (ATAC, RNA) incorporate after tSNE, UMAP generation and visualize on UMAP, output .csv - exclude? [optional]
                                      ),
@@ -243,13 +243,13 @@ ui <- dashboardPage(
                                          column(plotlyOutput(outputId = "TSS_plot", height = "100%"), width = 4),
                                          column(plotOutput(outputId = "nFrag_plot", height = "100%"), width = 4),
                                          column(plotlyOutput(outputId = "TSS_nFrag_plot", height = "100%"), width = 4),
-                                         column(verbatimTextOutput(outputId = "CellStatsATAC"), width = 4),
-                                         column(tags$h3("Custom filtered plots"), width=12),
-                                         column(tags$hr(), width = 12),
-                                         column(plotlyOutput(outputId = "filteredTSS_plot", height = "100%"), width = 4),
-                                         column(plotOutput(outputId = "filterednFrag_plot", height = "100%"), width = 4),
-                                         column(plotlyOutput(outputId = "filteredTSS_nFrag_plot", height = "100%"), width = 4),
-                                         column(verbatimTextOutput(outputId = "filteredCellStatsATAC"), width = 4),
+                                         column(verbatimTextOutput(outputId = "CellStatsATAC"), width = 5)
+                                         # column(tags$h3("Custom filtered plots"), width=12),
+                                         # column(tags$hr(), width = 12),
+                                         # column(plotlyOutput(outputId = "filteredTSS_plot", height = "100%"), width = 4),
+                                         # column(plotOutput(outputId = "filterednFrag_plot", height = "100%"), width = 4),
+                                         # column(plotlyOutput(outputId = "filteredTSS_nFrag_plot", height = "100%"), width = 4),
+                                         # column(verbatimTextOutput(outputId = "filteredCellStatsATAC"), width = 4),
                                        )
                                      )
                                    )
@@ -420,8 +420,8 @@ ui <- dashboardPage(
                                                             #selectInput("clusterGroupBy", "Grouping variable:",
                                                             #            c("Sample" = "Sample")),
                                                             #actionButton(inputId = "clusterBarplotConfirmATAC", label = "Display barchart"),
-                                                            plotlyOutput(outputId = "clusterBarplotATAC", height = "700px")),
-                                                   tabPanel("Confusion matrix", plotlyOutput(outputId="confusionMatrixATAC", height = "1300px"))
+                                                            plotlyOutput(outputId = "clusterBarplotATAC", height = "700px"))#,
+                                                   #tabPanel("Confusion matrix", plotlyOutput(outputId="confusionMatrixATAC", height = "1300px"))
                                        ),
                                      ),
                                    )
@@ -692,7 +692,15 @@ ui <- dashboardPage(
                                          sliderInput(inputId = "findMarkersPeaksLogFCATAC", label = "Log2FC threshold:", min = 0, max = 3, value = 0.25, step = 0.05),
                                          
                                          sliderInput(inputId = "findMarkersPeaksFDRATAC", label = "FDR threshold:", min = 0, max = 1, value = 0.01, step = 0.01),
-                                         textInput(inputId = "pathToMacs2", label = "Absolute path to MACS2"),
+                                         textInput(inputId = "pathToMacs2", label = "Absolute path to MACS2")%>%
+                                           shinyInput_label_embed(
+                                             shiny_iconlink() %>%
+                                               bs_embed_popover(
+                                                 title = "Absolute path to MACS2 installation folder:
+                                                 Windows OS: the path will be detected automatically.
+                                                 Linux OS: provide the path for the MACS2, e.g. /home/user/anaconda3/bin/macs2", placement = "left"
+                                               )
+                                           ),
                                          actionButton(inputId = "findMarkersPeaksConfirmATAC", label = "OK"),
                                      ),
                                      
@@ -835,6 +843,7 @@ ui <- dashboardPage(
                                      ),
                                      
                                      box(width = 9, status = "info", solidHeader = TRUE,
+                                         div(class="ldBar", id="motif_loader", "data-preset"="circle"),
                                          title = "Motif enrichment analysis results",
                                          dataTableOutput(outputId="findMotifsTableATAC", height = "800px"),
                                          tags$hr(),
@@ -951,7 +960,9 @@ ui <- dashboardPage(
                                          selected = "Lineage1",
                                          multiple = FALSE),
                              actionButton(inputId = "trajectoryConfirmLineageATAC", label = "OK"),
+                             div(class="ldBar", id="traj4_loader", "data-preset"="circle"),
                              plotOutput(outputId = "trajectoryPseudotimePlotATAC", height = "1100px"),
+                             div(class="ldBar", id="traj3_loader", "data-preset"="circle"),
                              verbatimTextOutput(outputId="trajectoryTextATAC")
                            )
                          )
@@ -1017,10 +1028,19 @@ ui <- dashboardPage(
                                        sliderInput(inputId = "grnCorrlationATTAC", label = "Correllation threshold:", min = 0, max = 1, value = 0.7, step = 0.1),
                                        actionButton(inputId = "grnConfirmATAC", label = "OK")
                                      ),
-                                     box(width = 9, status = "info", solidHeader = TRUE, title = "Positive regulators",
-                                       dataTableOutput(outputId="grnMatrixATAC", height = "500px"),
-                                       tags$hr(),
-                                       plotlyOutput(outputId = "grnHeatmapATAC", height = "800px")
+                                     box(width = 9, status = "info", solidHeader = TRUE, title = "Gene regulatory networks results",
+                                         tabsetPanel(type = "tabs",
+                                                     tabPanel("Positive regulators",
+                                                              div(class="ldBar", id="grn2_loader", "data-preset"="circle"),
+                                                              dataTableOutput(outputId="grnMatrixATAC", height = "500px"),
+                                                              tags$hr(),
+                                                              plotlyOutput(outputId = "grnHeatmapATAC", height = "800px"),
+                                                              plotOutput(outputId = "grnHeatmapATAC2", height = "800px")
+                                                              ),
+                                                     tabPanel("Peak to gene links",
+                                                              dataTableOutput(outputId="grnP2GlinksTable", height = "800px"),
+                                                              )
+                                         )
                                      )
                                    )
                           )
@@ -1043,6 +1063,7 @@ ui <- dashboardPage(
                     ),
                 box(width = 9, status = "info", solidHeader = TRUE,
                     title = "scATAC-seq tracks",
+                    div(class="ldBar", id="tracks_loader", "data-preset"="circle"),
                     plotOutput(outputId="visualizeTracksOutput", height = "1100px")
                 )
               )

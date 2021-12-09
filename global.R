@@ -35,7 +35,12 @@ library(RcisTarget)
 library(stringr)
 library(readr)
 library(parallel)
-#BiocManager::install("JASPAR2020"), BiocManager::install("JASPAR2018"), BiocManager::install("JASPAR2016")
+library(chromVAR)
+library(chromVARmotifs)
+library(reticulate)
+library(JASPAR2020)
+library(JASPAR2018)
+library(JASPAR2016) #BiocManager::install("JASPAR2020"), BiocManager::install("JASPAR2018"), BiocManager::install("JASPAR2016")
 
 #Global variables
 
@@ -88,7 +93,7 @@ js.enrich <- "
 
 
 
-# proj_default <<- loadArchRProject(path = "a5fd847163cd9e7b0d17faaf79dea583Project19_2021-12-06_15_11_56/default/")
+# proj_default <<- loadArchRProject(path = "5772ded67871dc25c805f9505c7e3b16Project9_2021-12-07_02_18_57/default/")
  
 # markersPeaks <- getMarkerFeatures(
 #   ArchRProj = proj_default, 
