@@ -20,7 +20,6 @@ ui <- dashboardPage(
       menuItem(text = "HOME", tabName = "home", icon = icon("home")),
       tags$hr(),
       menuItem(text = "DATA INPUT", tabName = "upload", icon = icon("upload")),
-      menuItem(text = "UTILITY OPTIONS", tabName = "utilities", icon = icon("edit")),
       menuItem(text = "QUALITY CONTROL", tabName = "qc", icon = icon("check-circle")),
       menuItem(tags$div("DATA NORMALIZATION",
                         tags$br(),
@@ -92,7 +91,10 @@ ui <- dashboardPage(
                                                                    "Homo sapiens (Human)" = "human"
                                                     ), 
                                                     selected = "mouse"),
-                                       actionButton(inputId = "uploadCountMatrixConfirm", label = "Submit")
+                                       actionButton(inputId = "uploadCountMatrixConfirm", label = "Submit"),
+                                       tags$h3("Export working object as .RDS file"),
+                                       tags$hr(),
+                                       downloadButton(outputId = "utilitiesConfirmExport1", label = "Export .RDS"),
                                        ),
                               tabPanel("10x input files (scRNA-seq)", 
                                        textInput(inputId = "upload10xRNAprojectID", label = "Project name : ", value = "Project1"),
@@ -106,7 +108,10 @@ ui <- dashboardPage(
                                                                                 "Homo sapiens (Human)" = "human"
                                                                  ), 
                                                                  selected = "mouse"),
-                                       actionButton(inputId = "upload10xRNAConfirm", label = "Submit")
+                                       actionButton(inputId = "upload10xRNAConfirm", label = "Submit"),
+                                       tags$h3("Export working object as .RDS file"),
+                                       tags$hr(),
+                                       downloadButton(outputId = "utilitiesConfirmExport2", label = "Export .RDS"),
                                        ),
                               tabPanel("Arrow input files (scATAC-seq)", 
                                        tags$h3("Load your dataset"),
@@ -1094,9 +1099,6 @@ ui <- dashboardPage(
                          tabPanel("Data Input"
                                   
                          ),
-                         tabPanel("Utility options"
-                                  
-                         ),
                          tabPanel("Quality Control"
                                   
                          ),
@@ -1142,8 +1144,10 @@ ui <- dashboardPage(
                               Bioinformatics and Integrative Biology Lab. </br></br> </p> 
                               <h2 class=sub_title> Developers </h2>
                               <ul>
-                              <li> Christos Tzaferis, tzaferis[at]gmail[dot]com
+                              <li> Christos Tzaferis, tzaferis[at]fleming[dot]com
                               <li> Evangelos Karatzas, karatzas[at]fleming[dot]gr
+                              <li> Fotis Baltoumas, baltoumas[at]fleming[dot]gr
+                              <li> Dimitris Konstantopoulos, konstantopoulos[at]fleming[dot]gr
                               <li> George Kollias, kollias[at]fleming[dot]gr
                               <li> Georgios A. Pavlopoulos, pavlopoulos[at]fleming[dot]gr 
                               </ul>

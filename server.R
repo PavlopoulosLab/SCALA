@@ -340,37 +340,15 @@ server <- function(input, output, session) {
     })
   
   #------------------Utilities------------------------------------------
+  output$utilitiesConfirmExport1 <- downloadHandler(
+    filename = function() { 
+      paste("processed_seurat_object-", Sys.Date(), ".RDS", sep="")
+    },
+    content = function(file) {
+      saveRDS(seurat_object, file)
+    })
   
-  observeEvent(input$utilitiesConfirmRename, {
-    if(!identical(seurat_object, NULL) & input$utilitiesRenameOldName != "-" & input$utilitiesRenameNewName != "")
-    {
-      old_idents_for_change <- seurat_object$seurat_clusters
-      seurat_object$seurat_clusters <<- gsub(pattern = paste0("^",input$utilitiesRenameOldName,"$"), replacement = input$utilitiesRenameNewName, x = old_idents_for_change)
-      seurat_object$seurat_clusters <<- as.factor(seurat_object$seurat_clusters)
-      Idents(seurat_object) <<- seurat_object$seurat_clusters
-      updateInputLRclusters()
-      updateInpuTrajectoryClusters()
-      output$metadataTable <- renderDataTable(seurat_object@meta.data, options = list(pageLength = 20))
-      updateClusterTab()
-      cleanModesAfterClusterEdits()
-    }
-  })
-  
-  observeEvent(input$utilitiesConfirmDelete, {
-    if(!identical(seurat_object, NULL) & input$utilitiesDeleteCluster != "-")
-    {
-      ident_to_remove <- input$utilitiesDeleteCluster
-      seurat_object <<- subset(seurat_object, idents = ident_to_remove, invert = TRUE)
-      seurat_object$seurat_clusters <<- Idents(seurat_object)
-      updateInputLRclusters()
-      updateInpuTrajectoryClusters()
-      output$metadataTable <- renderDataTable(seurat_object@meta.data, options = list(pageLength = 20))
-      updateClusterTab()
-      cleanModesAfterClusterEdits()
-    }
-  })
-  
-  output$utilitiesConfirmExport <- downloadHandler(
+  output$utilitiesConfirmExport2 <- downloadHandler(
     filename = function() { 
       paste("processed_seurat_object-", Sys.Date(), ".RDS", sep="")
     },
@@ -2588,7 +2566,7 @@ output$findMotifsATACExport <- downloadHandler(
         lr_network_top_df_large = weighted_networks_lr %>% filter(from %in% potential_ligands & to %in% best_upstream_receptors)
         
         lr_network_top_df = lr_network_top_df_large %>% spread("from","weight",fill = 0)
-        lr_network_top_matrix = lr_network_top_df %>% select(-to) %>% as.matrix() %>% magrittr::set_rownames(lr_network_top_df$to)
+        lr_network_top_matrix = lr_network_top_df %>% dplyr::select(-to) %>% as.matrix() %>% magrittr::set_rownames(lr_network_top_df$to)
         
         dist_receptors = dist(lr_network_top_matrix, method = "binary")
         hclust_receptors = hclust(dist_receptors, method = "ward.D2")
@@ -2619,7 +2597,7 @@ output$findMotifsATACExport <- downloadHandler(
         lr_network_top_df_large_strict = lr_network_top_df_large_strict %>% inner_join(lr_network_top_df_large, by = c("from","to"))
         
         lr_network_top_df_strict = lr_network_top_df_large_strict %>% spread("from","weight",fill = 0)
-        lr_network_top_matrix_strict = lr_network_top_df_strict %>% select(-to) %>% as.matrix() %>% magrittr::set_rownames(lr_network_top_df_strict$to)
+        lr_network_top_matrix_strict = lr_network_top_df_strict %>% dplyr::select(-to) %>% as.matrix() %>% magrittr::set_rownames(lr_network_top_df_strict$to)
         
         dist_receptors = dist(lr_network_top_matrix_strict, method = "binary")
         hclust_receptors = hclust(dist_receptors, method = "ward.D2")
@@ -3470,30 +3448,6 @@ output$findMotifsATACExport <- downloadHandler(
     updateSelectInput(session, "trajectoryReduction", choices = reductions_choices)
   }
   
-  #To be called after changes in the clusters of the dataset
-  cleanModesAfterClusterEdits <- function()
-  {
-    #clean plots and tables
-    output$gProfilerTable <- NULL
-    output$annotateClustersCIPRTable <- NULL
-    output$findMarkersTable <- NULL
-    
-    output$gProfilerManhatan <- NULL
-    output$annotateClustersCIPRDotplot <- NULL
-    output$ligandReceptorFullHeatmap <- NULL
-    output$ligandReceptorCuratedHeatmap <- NULL
-    output$trajectoryPlot <- NULL
-    output$trajectoryPseudotimePlot <- NULL
-    
-    #clean data
-    seurat_object@misc$markers <- NULL
-    
-    for_delete <- grep("Lineage", colnames(seurat_object@meta.data))
-    if(length(for_delete) != 0)
-    {
-      seurat_object@meta.data <<- seurat_object@meta.data[, -for_delete]
-    }
-  }
   
   #functions for optimal number of PCs
   #Initialize Functions
