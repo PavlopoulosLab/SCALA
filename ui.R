@@ -413,7 +413,10 @@ ui <- dashboardPage(
                                                             actionButton(inputId = "clusterBarplotConfirm", label = "Display barchart"),
                                                             div(class="ldBar", id="clust2_loader", "data-preset"="circle"),
                                                             plotlyOutput(outputId = "clusterBarplot", height = "700px")),
-                                                   tabPanel("Shared Nearest Neighbour Graph", visNetworkOutput(outputId="snnSNN", height = "1300px"))
+                                                   tabPanel("Shared Nearest Neighbour Graph", 
+                                                            div(class="ldBar", id="clust3_loader", "data-preset"="circle"),
+                                                            actionButton(inputId = "snnDisplayConfirm", label = "Display SNN graph"),
+                                                            visNetworkOutput(outputId="snnSNN", height = "1300px"))
                                        ),
                                      ),
                                    )
@@ -431,7 +434,7 @@ ui <- dashboardPage(
                                        width = 8, status = "info", solidHeader = TRUE, title = "Clustering output", height = "1500px",
                                        tabsetPanel(type = "tabs",
                                                    tabPanel("Clustering results", 
-                                                            div(class="ldBar", id="clust3_loader", "data-preset"="circle"),
+                                                            div(class="ldBar", id="clust4_loader", "data-preset"="circle"),
                                                             dataTableOutput(outputId="clusterTableATAC", height = "500px"),
                                                             downloadButton(outputId = "clusterTableExportATAC", label = "Save table"),
                                                             #selectInput("clusterGroupBy", "Grouping variable:",
@@ -561,10 +564,12 @@ ui <- dashboardPage(
                                                             dataTableOutput(outputId="findMarkersTable", height = "1300px")),
                                                    tabPanel("Heatmap", 
                                                             div(class="ldBar", id="DEA2_loader", "data-preset"="circle"),
+                                                            actionButton(inputId = "findMarkersTop10HeatmapConfirm", label = "Display top10 marker genes heatmap"),
                                                             plotlyOutput(outputId = "findMarkersHeatmap", height = "1300px")),
                                                    
                                                    tabPanel("Dotplot", 
                                                             div(class="ldBar", id="DEA3_loader", "data-preset"="circle"),
+                                                            actionButton(inputId = "findMarkersTop10DotplotConfirm", label = "Display top10 marker genes dotplot"),
                                                             plotlyOutput(outputId = "findMarkersDotplot", height = "1300px")),
                                                    
                                                    tabPanel("Feature plot", fluidRow(
@@ -605,7 +610,7 @@ ui <- dashboardPage(
                                                          actionButton(inputId = "findMarkersSignatureAdd", label = "Calculate signature score")
                                                      ),
                                                      box(width = 9, status = "info", solidHeader = TRUE, title = "Plot",
-                                                         #div(class="ldBar", id="DEA4_loader", "data-preset"="circle"),
+                                                         div(class="ldBar", id="DEA4_loader", "data-preset"="circle"),
                                                          plotlyOutput(outputId = "findMarkersFeaturePlot", height = "1300px")
                                                      )
                                                    )),
@@ -638,6 +643,7 @@ ui <- dashboardPage(
                                                          actionButton(inputId = "findMarkersFeaturePairConfirm", label = "Display plot")
                                                      ),
                                                      box(width=9, status="info", solidHeader=TRUE, title="Plot",
+                                                         div(class="ldBar", id="DEA5_loader", "data-preset"="circle"),
                                                          div(
                                                            column(plotlyOutput(outputId="findMarkersFPfeature1", height = "650px"), width = 6),
                                                            column(plotlyOutput(outputId="findMarkersFPfeature2", height = "650px"), width = 6),
@@ -668,15 +674,18 @@ ui <- dashboardPage(
                                                          actionButton(inputId = "findMarkersViolinConfirm", label = "Display plot")
                                                      ),
                                                      box(width = 9, status = "info", solidHeader = TRUE, title = "Plot",
-                                                         #div(class="ldBar", id="DEA5_loader", "data-preset"="circle"),
+                                                         div(class="ldBar", id="DEA6_loader", "data-preset"="circle"),
                                                          plotlyOutput(outputId = "findMarkersViolinPlot", height = "1300px")
                                                      )
                                                    )),
                                                    tabPanel("VolcanoPlot", fluidRow(
                                                      box(width = 3, status = "info", solidHeader = TRUE, title = "Cluster selection",
-                                                         textInput(inputId = "findMarkersClusterSelect", label = "Cluster:", value = "0")),
+                                                         selectInput("findMarkersClusterSelect", "Cluster:", choices=c("-"="-"), multiple = F, selectize = F),
+                                                         actionButton(inputId = "findMarkersVolcanoConfirm", "Display volcano plot")
+                                                         ),
+                                                     
                                                      box(width = 9, status = "info", solidHeader = TRUE, title = "Volcano plot",
-                                                         div(class="ldBar", id="DEA6_loader", "data-preset"="circle"),
+                                                         div(class="ldBar", id="DEA7_loader", "data-preset"="circle"),
                                                          plotlyOutput(outputId = "findMarkersVolcanoPlot", height = "1300px"))
                                                    ))
                                        )
@@ -772,11 +781,11 @@ ui <- dashboardPage(
                   width = 12, status = "info", solidHeader = T,
                   title = "Cell cycle phase analysis",
                   tabsetPanel(type = "tabs",
-                              tabPanel("PCA plot", 
-                                       actionButton(inputId = "cellCycleRun", label = "Run cell cycle analysis"), # TODO remove this button
+                              tabPanel("Dimensionality reduction plot", 
                                        selectInput("cellCycleReduction", "Plot type:", # TODO observe this selectbox instead, default value "-" -> do nothing
                                                    c("-" = "-")
                                                    ),
+                                       actionButton(inputId = "cellCycleRun", label = "Run cell cycle analysis"), # TODO remove this button
                                        div(class="ldBar", id="CC1_loader", "data-preset"="circle"),
                                        plotlyOutput(outputId = "cellCyclePCA", height = "1100px")),
                               tabPanel("Barplot", # TODO this should appear together with cellCyclePCA output, by observed event cellCycleReduction

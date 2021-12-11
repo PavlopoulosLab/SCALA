@@ -25,9 +25,9 @@ server <- function(input, output, session) {
     updateSelInpColor()
     updateRegressOut()
     updateGeneSearchFP()
-    updateInputGeneList()
+    #updateInputGeneList()
     updateInputLRclusters()
-    updateInpuTrajectoryClusters()
+    #updateInpuTrajectoryClusters()
     setwd("exampleRNA_10xFiles/")
     organism <<- "human"
     
@@ -74,7 +74,7 @@ server <- function(input, output, session) {
       output$metadataTable <- renderDataTable(seurat_object@meta.data, options = list(pageLength = 20))
       session$sendCustomMessage("handler_startLoader", c("input_loader", 75))
       updateSelInpColor()
-      updateInputGeneList()
+      #updateInputGeneList()
       updateGeneSearchFP()
       updateQC_choices()
       cleanAllPlots(T) # fromDataInput -> TRUE
@@ -135,7 +135,7 @@ server <- function(input, output, session) {
       output$metadataTable <- renderDataTable(seurat_object@meta.data, options = list(pageLength = 20))
       session$sendCustomMessage("handler_startLoader", c("input_loader", 75))
       updateSelInpColor()
-      updateInputGeneList()
+      #updateInputGeneList()
       updateGeneSearchFP()
       updateQC_choices()
       cleanAllPlots(T) # fromDataInput -> TRUE
@@ -204,7 +204,7 @@ server <- function(input, output, session) {
       output$metadataTable <- renderDataTable(seurat_object@meta.data, options = list(pageLength = 20))
       session$sendCustomMessage("handler_startLoader", c("input_loader", 75))
       updateSelInpColor()
-      updateInputGeneList()
+      #updateInputGeneList()
       updateGeneSearchFP()
       updateQC_choices()
       cleanAllPlots(T) # fromDataInput -> TRUE
@@ -272,7 +272,7 @@ server <- function(input, output, session) {
       output$metadataTable <- renderDataTable(seurat_object@meta.data, options = list(pageLength = 20))
       session$sendCustomMessage("handler_startLoader", c("input_loader", 75))
       updateSelInpColor()
-      updateInputGeneList()
+      #updateInputGeneList()
       updateGeneSearchFP()
       updateQC_choices()
       cleanAllPlots(T) # fromDataInput -> TRUE
@@ -1085,32 +1085,6 @@ server <- function(input, output, session) {
         output$clusterTable <- renderDataTable(cluster_df, options = list(pageLength = 10), rownames = F)
         
         session$sendCustomMessage("handler_startLoader", c("clust1_loader", 70))
-        output$snnSNN <- renderVisNetwork(
-          {
-            if(!is.null(seurat_object@graphs$RNA_snn))
-            {
-              #set.seed(9)
-              mygraph <- as.matrix(seurat_object@graphs$RNA_snn)
-              graphOut <- graph_from_adjacency_matrix(mygraph, mode = "undirected", weighted = T, diag = F)
-              graphSimple <- simplify(graphOut) #, remove.loops=T)
-              weights <- E(graphSimple)$weight
-              sub_nodes <- V(graphSimple)$name
-              
-              tableCl <- seurat_object@meta.data[, ]
-              tableCl$Cell_id <- rownames(tableCl)
-              tableCl <- tableCl[, c('Cell_id', 'seurat_clusters')]
-              tableCl <- tableCl[order(tableCl$seurat_clusters), ]
-              tableCl <- tableCl[sub_nodes, ]
-              colors_cl <- colorRampPalette(brewer.pal(12, "Paired"))(length(unique(tableCl$seurat_clusters)))
-              tableCl$color <- colors_cl[as.numeric(tableCl$seurat_clusters)]
-              
-              V(graphSimple)$color <- tableCl$color
-              
-              visIgraph(graphSimple, layout = "layout_with_lgl", randomSeed = 9) %>%
-                visInteraction(navigationButtons = TRUE, hover = TRUE)
-            }
-          }
-        )
         session$sendCustomMessage("handler_startLoader", c("clust1_loader", 80))
         updateSelInpColor()
         updateInputLRclusters()
@@ -1204,9 +1178,58 @@ server <- function(input, output, session) {
     })
   })
   
+  observeEvent(input$snnDisplayConfirm, {
+    session$sendCustomMessage("handler_startLoader", c("clust3_loader", 10))
+    session$sendCustomMessage("handler_disableButton", "snnDisplayConfirm")
+    tryCatch({
+      if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
+      else{
+        
+        session$sendCustomMessage("handler_startLoader", c("clust3_loader", 20))
+        session$sendCustomMessage("handler_startLoader", c("clust3_loader", 50))
+        session$sendCustomMessage("handler_startLoader", c("clust3_loader", 70))
+        output$snnSNN <- renderVisNetwork(
+          {
+            if(!is.null(seurat_object@graphs$RNA_snn))
+            {
+              #set.seed(9)
+              mygraph <- as.matrix(seurat_object@graphs$RNA_snn)
+              graphOut <- graph_from_adjacency_matrix(mygraph, mode = "undirected", weighted = T, diag = F)
+              graphSimple <- simplify(graphOut) #, remove.loops=T)
+              weights <- E(graphSimple)$weight
+              sub_nodes <- V(graphSimple)$name
+              
+              tableCl <- seurat_object@meta.data[, ]
+              tableCl$Cell_id <- rownames(tableCl)
+              tableCl <- tableCl[, c('Cell_id', 'seurat_clusters')]
+              tableCl <- tableCl[order(tableCl$seurat_clusters), ]
+              tableCl <- tableCl[sub_nodes, ]
+              colors_cl <- colorRampPalette(brewer.pal(12, "Paired"))(length(unique(tableCl$seurat_clusters)))
+              tableCl$color <- colors_cl[as.numeric(tableCl$seurat_clusters)]
+              
+              V(graphSimple)$color <- tableCl$color
+              visIgraph(graphSimple, layout = "layout_with_lgl", randomSeed = 9) %>%
+                visInteraction(navigationButtons = TRUE, hover = TRUE)
+            }
+          }
+        )
+        
+        
+      }
+    }, error = function(e) {
+      print(paste("Error :  ", e))
+      session$sendCustomMessage("handler_alert", "The selected Quality Control arguments cannot produce meaningful visualizations.")
+    }, finally = {
+      session$sendCustomMessage("handler_startLoader", c("clust3_loader", 100))
+      Sys.sleep(1)
+      session$sendCustomMessage("handler_finishLoader", "clust3_loader")
+      session$sendCustomMessage("handler_enableButton", "snnDisplayConfirm")
+    })
+  }) 
+  
   #ATAC clustering
   observeEvent(input$clusterConfirmATAC, {
-    session$sendCustomMessage("handler_startLoader", c("clust3_loader", 10))
+    session$sendCustomMessage("handler_startLoader", c("clust4_loader", 10))
     session$sendCustomMessage("handler_disableButton", "clusterConfirmATAC")
     tryCatch({
       if (identical(proj_default, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
@@ -1238,8 +1261,8 @@ server <- function(input, output, session) {
             axis.line = element_line(colour = "black")) +
       labs(x="", y="Percent of cells", fill="Clusters")
     gp <- plotly::ggplotly(p, tooltip = c("x", "y"))
-    session$sendCustomMessage("handler_startLoader", c("clust3_loader", 50))
-    session$sendCustomMessage("handler_startLoader", c("clust3_loader", 75))
+    session$sendCustomMessage("handler_startLoader", c("clust4_loader", 50))
+    session$sendCustomMessage("handler_startLoader", c("clust4_loader", 75))
     
     output$clusterBarplotATAC <- renderPlotly({print(gp)})
     
@@ -1253,9 +1276,9 @@ server <- function(input, output, session) {
         print(paste("Error :  ", e))
         session$sendCustomMessage("handler_alert", "There was an error with the Clustering procedure.")
       }, finally = {
-        session$sendCustomMessage("handler_startLoader", c("clust3_loader", 100))
+        session$sendCustomMessage("handler_startLoader", c("clust4_loader", 100))
         Sys.sleep(1)
-        session$sendCustomMessage("handler_finishLoader", "clust3_loader")
+        session$sendCustomMessage("handler_finishLoader", "clust4_loader")
         session$sendCustomMessage("handler_enableButton", "clusterConfirmATAC")
       })
   })
@@ -1577,12 +1600,7 @@ server <- function(input, output, session) {
   #------------------DEA tab-----------------------------------------------
   observeEvent(input$findMarkersConfirm, { #TODO selectinput gia clustering column + check for errors in extra tabs with readRDS("seurat_processed.RDS")
     session$sendCustomMessage("handler_startLoader", c("DEA1_loader", 10))
-    session$sendCustomMessage("handler_startLoader", c("DEA2_loader", 10))
-    session$sendCustomMessage("handler_startLoader", c("DEA3_loader", 10))
-    #session$sendCustomMessage("handler_startLoader", c("DEA4_loader", 10))
-    #session$sendCustomMessage("handler_startLoader", c("DEA5_loader", 10))
-    session$sendCustomMessage("handler_startLoader", c("DEA6_loader", 10))
-    session$sendCustomMessage("handler_disableButton", "umapConfirm")
+    session$sendCustomMessage("handler_disableButton", "findMarkersConfirm")
     tryCatch({
       if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else if (identical(seurat_object@meta.data$seurat_clusters, NULL)) session$sendCustomMessage("handler_alert", "Please, execute CLUSTERING first and then re-run UMAP or tSNE or Diffusion Map above.")
@@ -1599,7 +1617,8 @@ server <- function(input, output, session) {
           seurat_object@misc$markers <<- FindAllMarkers(seurat_object, test.use = input$findMarkersTest, min.pct = as.numeric(input$findMarkersMinPct), logfc.threshold = as.numeric(input$findMarkersLogFC), 
                                                         return.thresh = as.numeric(input$findMarkersPval), base = 2)
         }
-        updateInputGeneList()
+        #updateInputGeneList()
+        updateInputLRclusters()
         
         output$findMarkersTable <- renderDataTable(
           {
@@ -1610,90 +1629,6 @@ server <- function(input, output, session) {
           }
         )
         session$sendCustomMessage("handler_startLoader", c("DEA1_loader", 75))
-        
-        #DEA output rendering
-        output$findMarkersHeatmap <- renderPlotly(
-          {
-            top10 <- seurat_object@misc$markers %>% group_by(cluster) %>% top_n(n = 10, wt = eval(parse(text=markers_logFCBase))) #wt = avg_logFC)
-            set.seed(9)
-            downsampled <- subset(seurat_object, cells = sample(Cells(seurat_object), 1500))
-            
-            scaled_tabe <- as.data.frame(downsampled@assays$RNA@scale.data)
-            scaled_tabe$gene <- rownames(scaled_tabe)
-            scaled_tabe_order <- as.data.frame(top10$gene)
-            colnames(scaled_tabe_order)[1] <- "gene"
-            scaled_tabe_final <- left_join(scaled_tabe_order, scaled_tabe)
-            scaled_tabe_final <- na.omit(scaled_tabe_final)
-            
-            tableCl <- downsampled@meta.data[, ]
-            tableCl$Cell_id <- rownames(tableCl)
-            tableCl <- tableCl[, c('Cell_id', 'seurat_clusters')]
-            tableCl <- tableCl[order(tableCl$seurat_clusters), ]
-            
-            clip<-function(x, min=-2, max=2) {
-              x[x<min]<-min; 
-              x[x>max]<-max; 
-              x
-            }
-            
-            final_mat <- scaled_tabe_final[, -1]
-            final_mat <- final_mat[, tableCl$Cell_id]
-            
-            cols <- colorRampPalette(brewer.pal(12, "Paired"))(length(unique(tableCl$seurat_clusters)))
-            names(cols) <- unique(tableCl$seurat_clusters)
-            heatmaply(clip(final_mat), Rowv = F, Colv = F, colors = rev(RdBu(256)), showticklabels = c(F, T), labRow  = scaled_tabe_final$gene, 
-                      col_side_colors = tableCl$seurat_clusters, col_side_palette =  cols)
-          }
-        )
-        session$sendCustomMessage("handler_startLoader", c("DEA2_loader", 75))
-        
-        output$findMarkersDotplot <- renderPlotly(
-          {
-            top10 <- seurat_object@misc$markers %>% group_by(cluster) %>% top_n(n = 10, wt = eval(parse(text=markers_logFCBase)))#wt = avg_logFC)
-            p <- DotPlot(seurat_object, features = rev(unique(top10$gene)), dot.scale = 6, cols = c("grey", "red")) + RotatedAxis() + labs(fill="Average\nexpression")
-            plotly::ggplotly(p)
-          }
-        )
-        
-        #session$sendCustomMessage("handler_startLoader", c("DEA3_loader", 75))
-        
-        #session$sendCustomMessage("handler_startLoader", c("DEA4_loader", 75))
-        
-        #session$sendCustomMessage("handler_startLoader", c("DEA5_loader", 75))
-        
-        output$findMarkersVolcanoPlot <- renderPlotly(
-          {
-            diff_exp_genes <- seurat_object@misc$markers
-            cluster_degs <- diff_exp_genes[which(diff_exp_genes$cluster == input$findMarkersClusterSelect), ]
-            cluster_degs$status <- "Down regulated"
-            for(i in 1:length(cluster_degs$gene))
-            {
-              if(cluster_degs[i, markers_logFCBase] > 0) #(cluster_degs$avg_logFC[i] > 0)
-              {
-                cluster_degs$status[i] <- "Up regulated"
-              }
-            }
-            cluster_degs$log10Pval <- -log10(cluster_degs$p_val)
-            
-            p <- ggplot(data=cluster_degs, aes_string(x=markers_logFCBase, y="log10Pval", fill="status", label="gene", color="status")) + #x="avg_logFC"
-              geom_point(size=1, shape=16)+
-              scale_fill_manual(values = c("cyan3", "orange"))+
-              scale_color_manual(values = c("cyan3", "orange"))+
-              scale_size()+
-              theme_bw() +
-              theme(axis.text.x = element_text(face = "bold", color = "black", size = 25, angle = 0),
-                    axis.text.y = element_text(face = "bold", color = "black", size = 25, angle = 0),
-                    axis.title.y = element_text(face = "bold", color = "black", size = 25),
-                    axis.title.x = element_text(face = "bold", color = "black", size = 25),
-                    legend.text = element_text(face = "bold", color = "black", size = 9),
-                    legend.title = element_text(face = "bold", color = "black", size = 9),
-                    legend.position="right",
-                    title = element_text(face = "bold", color = "black", size = 25, angle = 0)) +
-              labs(x=paste0("", markers_logFCBase), y="-log10(Pvalue)", fill="Color", color="")
-            plotly::ggplotly(p, tooltip = c("x", "y", "label"))
-          }
-        )
-        session$sendCustomMessage("handler_startLoader", c("DEA6_loader", 75))
         session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " FUNCTIONAL ENRICHMENT\nANALYSIS", " CLUSTERS' ANNOTATION"))
       }
       # }, warning = function(w) {
@@ -1703,40 +1638,132 @@ server <- function(input, output, session) {
       session$sendCustomMessage("handler_alert", "There was an error with the DE Analysis")
     }, finally = {
       session$sendCustomMessage("handler_startLoader", c("DEA1_loader", 100))
-      session$sendCustomMessage("handler_startLoader", c("DEA2_loader", 100))
-      session$sendCustomMessage("handler_startLoader", c("DEA3_loader", 100))
-      #session$sendCustomMessage("handler_startLoader", c("DEA4_loader", 100))
-      #session$sendCustomMessage("handler_startLoader", c("DEA5_loader", 100))
-      session$sendCustomMessage("handler_startLoader", c("DEA6_loader", 100))
       Sys.sleep(1)
       session$sendCustomMessage("handler_finishLoader", c("DEA1_loader"))
-      session$sendCustomMessage("handler_finishLoader", c("DEA2_loader"))
-      session$sendCustomMessage("handler_finishLoader", c("DEA3_loader"))
-      #session$sendCustomMessage("handler_finishLoader", c("DEA4_loader"))
-      #session$sendCustomMessage("handler_finishLoader", c("DEA5_loader"))
-      session$sendCustomMessage("handler_finishLoader", c("DEA6_loader"))
-      session$sendCustomMessage("handler_enableButton", "umapConfirm")
+      session$sendCustomMessage("handler_enableButton", "findMarkersConfirm")
     })
   })
 
-  observeEvent(input$findMarkersSignatureAdd, {
-    markers <- list()
-    varTextarea <- input$findMarkersSignatureMembers
-    markers[[1]] <- unlist(strsplit(varTextarea, "\\n")) #c("Prg4", "Tspan14", "Clic5", "Htra4")
-    sig_name <- input$findMarkersSignatureName
-    print(sig_name)
-    names(markers)[1] <- sig_name
-    print(markers)
+  observeEvent(input$findMarkersTop10HeatmapConfirm, {
+    #DEA output rendering
     
-    seurat_object <<- AddModuleScore_UCell(seurat_object, features = markers)
-    updateSignatures()
-    output$metadataTable <- renderDataTable(seurat_object@meta.data, options = list(pageLength = 20))
+    session$sendCustomMessage("handler_startLoader", c("DEA2_loader", 10))
+    session$sendCustomMessage("handler_disableButton", "findMarkersTop10HeatmapConfirm")
+    tryCatch({
+      if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
+      else{
+        top10 <- seurat_object@misc$markers %>% group_by(cluster) %>% top_n(n = 10, wt = eval(parse(text=markers_logFCBase))) #wt = avg_logFC)
+        set.seed(9)
+        downsampled <- subset(seurat_object, cells = sample(Cells(seurat_object), 1500))
+        session$sendCustomMessage("handler_startLoader", c("DEA2_loader", 30))
+        scaled_tabe <- as.data.frame(downsampled@assays$RNA@scale.data)
+        scaled_tabe$gene <- rownames(scaled_tabe)
+        scaled_tabe_order <- as.data.frame(top10$gene)
+        colnames(scaled_tabe_order)[1] <- "gene"
+        scaled_tabe_final <- left_join(scaled_tabe_order, scaled_tabe)
+        scaled_tabe_final <- na.omit(scaled_tabe_final)
+        session$sendCustomMessage("handler_startLoader", c("DEA2_loader", 50))
+        tableCl <- downsampled@meta.data[, ]
+        tableCl$Cell_id <- rownames(tableCl)
+        tableCl <- tableCl[, c('Cell_id', 'seurat_clusters')]
+        tableCl <- tableCl[order(tableCl$seurat_clusters), ]
+        
+        clip<-function(x, min=-2, max=2) {
+          x[x<min]<-min; 
+          x[x>max]<-max; 
+          x
+        }
+        session$sendCustomMessage("handler_startLoader", c("DEA2_loader", 70))
+        final_mat <- scaled_tabe_final[, -1]
+        final_mat <- final_mat[, tableCl$Cell_id]
+        
+        cols <- colorRampPalette(brewer.pal(12, "Paired"))(length(unique(tableCl$seurat_clusters)))
+        names(cols) <- unique(tableCl$seurat_clusters)
+        session$sendCustomMessage("handler_startLoader", c("DEA2_loader", 90))
+        output$findMarkersHeatmap <- renderPlotly({
+          heatmaply(clip(final_mat), Rowv = F, Colv = F, colors = rev(RdBu(256)), showticklabels = c(F, T), labRow  = scaled_tabe_final$gene, 
+                    col_side_colors = tableCl$seurat_clusters, col_side_palette =  cols)
+        })
+      }
+    }, error = function(e) {
+      print(paste("Error :  ", e))
+      session$sendCustomMessage("handler_alert", "The selected Quality Control arguments cannot produce meaningful visualizations.")
+    }, finally = {
+      session$sendCustomMessage("handler_startLoader", c("DEA2_loader", 100))
+      Sys.sleep(1)
+      session$sendCustomMessage("handler_finishLoader", "DEA2_loader")
+      session$sendCustomMessage("handler_enableButton", "findMarkersTop10HeatmapConfirm")
+    })  
+      
+  })
+  
+  observeEvent(input$findMarkersTop10DotplotConfirm, {
+    session$sendCustomMessage("handler_startLoader", c("DEA3_loader", 10))
+    session$sendCustomMessage("handler_disableButton", "findMarkersTop10DotplotConfirm")
+    tryCatch({
+      if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
+      else{
+        
+        output$findMarkersDotplot <- renderPlotly(
+          {
+            top10 <- seurat_object@misc$markers %>% group_by(cluster) %>% top_n(n = 10, wt = eval(parse(text=markers_logFCBase))) #wt = avg_logFC)
+            p <- DotPlot(seurat_object, features = rev(unique(top10$gene)), dot.scale = 6, cols = c("grey", "red")) + RotatedAxis() + labs(fill="Average\nexpression")
+            plotly::ggplotly(p)
+          }
+        )
+        
+      }
+    }, error = function(e) {
+      print(paste("Error :  ", e))
+      session$sendCustomMessage("handler_alert", "The selected Quality Control arguments cannot produce meaningful visualizations.")
+    }, finally = {
+      session$sendCustomMessage("handler_startLoader", c("DEA3_loader", 100))
+      Sys.sleep(1)
+      session$sendCustomMessage("handler_finishLoader", "DEA3_loader")
+      session$sendCustomMessage("handler_enableButton", "findMarkersTop10DotplotConfirm")
+    })
+  })
+  
+  observeEvent(input$findMarkersSignatureAdd, {
+    session$sendCustomMessage("handler_startLoader", c("DEA4_loader", 10))
+    session$sendCustomMessage("handler_disableButton", "findMarkersSignatureAdd")
+    tryCatch({
+      if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
+      else{
+        session$sendCustomMessage("handler_startLoader", c("DEA4_loader", 50))
+        markers <- list()
+        varTextarea <- input$findMarkersSignatureMembers
+        markers[[1]] <- unlist(strsplit(varTextarea, "\\n"))
+        sig_name <- input$findMarkersSignatureName
+        print(sig_name)
+        names(markers)[1] <- sig_name
+        print(markers)
+        session$sendCustomMessage("handler_startLoader", c("DEA4_loader", 70))
+        seurat_object <<- AddModuleScore_UCell(seurat_object, features = markers)
+        updateSignatures()
+        output$metadataTable <- renderDataTable(seurat_object@meta.data, options = list(pageLength = 20))
+        session$sendCustomMessage("handler_startLoader", c("DEA4_loader", 90))
+        
+      }
+    }, error = function(e) {
+      print(paste("Error :  ", e))
+      session$sendCustomMessage("handler_alert", "The signature could not be added.")
+    }, finally = {
+      session$sendCustomMessage("handler_startLoader", c("DEA4_loader", 100))
+      Sys.sleep(1)
+      session$sendCustomMessage("handler_finishLoader", "DEA4_loader")
+      session$sendCustomMessage("handler_enableButton", "findMarkersSignatureAdd")
+    })
   })
     
 observeEvent(input$findMarkersFPConfirm, {
-  if(input$findMarkersReductionType != "-")
-  {
-    output$findMarkersFeaturePlot <- renderPlotly(
+  session$sendCustomMessage("handler_startLoader", c("DEA4_loader", 10))
+  session$sendCustomMessage("handler_disableButton", "findMarkersFPConfirm")
+  tryCatch({
+    if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
+    else{
+      
+      if(input$findMarkersReductionType != "-")
       {
         geneS <- ""
         if(input$findMarkersFeatureSignature == "signature")
@@ -1779,7 +1806,7 @@ observeEvent(input$findMarkersFPConfirm, {
           label_x <- "PHATE_1"
           label_y <- "PHATE_2"
         }
-        
+        session$sendCustomMessage("handler_startLoader", c("DEA4_loader", 50))
         plot <- FeaturePlot(seurat_object, features = geneS, pt.size = 1.5, label = show_label, label.size = 5, cols = c("lightgrey", "red"), 
                             order = order_exp, reduction = input$findMarkersReductionType, max.cutoff = maxq, min.cutoff = minq) +
           theme_bw() +
@@ -1793,14 +1820,142 @@ observeEvent(input$findMarkersFPConfirm, {
                 title = element_text(face = "bold", color = "black", size = 25, angle = 0)) +
           labs(x=label_x, y=label_y, title = geneS, color="")
         gp <- plotly::ggplotly(plot, tooltip = c("x", "y", geneS))
-        gp
+        session$sendCustomMessage("handler_startLoader", c("DEA4_loader", 90))
+        output$findMarkersFeaturePlot <- renderPlotly({
+          gp
+        })
       }
-    )
-  }
+      
+    }
+  }, error = function(e) {
+    print(paste("Error :  ", e))
+    session$sendCustomMessage("handler_alert", "There was a problem with the generation of the plot.")
+  }, finally = {
+    session$sendCustomMessage("handler_startLoader", c("DEA4_loader", 100))
+    Sys.sleep(1)
+    session$sendCustomMessage("handler_finishLoader", "DEA4_loader")
+    session$sendCustomMessage("handler_enableButton", "findMarkersFPConfirm")
+  })
 })
 
 observeEvent(input$findMarkersFeaturePairConfirm, {
-   updateFeaturePair()
+  session$sendCustomMessage("handler_startLoader", c("DEA5_loader", 10))
+  session$sendCustomMessage("handler_disableButton", "findMarkersFeaturePairConfirm")
+  tryCatch({
+    if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
+    else{
+      updateFeaturePair()
+    }
+  }, error = function(e) {
+    print(paste("Error :  ", e))
+    session$sendCustomMessage("handler_alert", "There was a problem with the generation of the plot.")
+  }, finally = {
+    session$sendCustomMessage("handler_startLoader", c("DEA5_loader", 100))
+    Sys.sleep(1)
+    session$sendCustomMessage("handler_finishLoader", "DEA5_loader")
+    session$sendCustomMessage("handler_enableButton", "findMarkersFeaturePairConfirm")
+  })
+})
+
+observeEvent(input$findMarkersViolinConfirm, {
+  session$sendCustomMessage("handler_startLoader", c("DEA6_loader", 10))
+  session$sendCustomMessage("handler_disableButton", "findMarkersViolinConfirm")
+  tryCatch({
+    if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
+    else{
+      
+      if ((input$findMarkersViolinFeaturesSignature == "gene" & !identical(input$findMarkersGeneSelect2, NULL))
+          | (input$findMarkersViolinFeaturesSignature == "signature" & input$findMarkersViolinSignatureSelect != "-")){
+        output$findMarkersViolinPlot <- renderPlotly(
+          {
+            geneS <- ""
+            if(input$findMarkersViolinFeaturesSignature == "gene")
+            {
+              geneS <- input$findMarkersGeneSelect2
+            }
+            else
+            {
+              geneS <- input$findMarkersViolinSignatureSelect
+            }
+            print(geneS)
+            plot <- VlnPlot(seurat_object, features = geneS, pt.size = 0,
+                            cols = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(seurat_object@meta.data[, 'seurat_clusters'])))) +
+              theme_bw() +
+              theme(axis.text.x = element_text(face = "bold", color = "black", size = 25, angle = 0),
+                    axis.text.y = element_text(face = "bold", color = "black", size = 25, angle = 0),
+                    axis.title.y = element_text(face = "bold", color = "black", size = 25),
+                    axis.title.x = element_text(face = "bold", color = "black", size = 25),
+                    legend.text = element_text(face = "bold", color = "black", size = 9),
+                    legend.title = element_text(face = "bold", color = "black", size = 9),
+                    #legend.position="right",
+                    title = element_text(face = "bold", color = "black", size = 25, angle = 0)) +
+              labs(x="Cluster", y="", title = geneS, fill="Cluster")
+            gp <- plotly::ggplotly(plot, tooltip = c("x", "y", geneS))
+            gp
+          }
+        )
+      }
+    }
+  }, error = function(e) {
+    print(paste("Error :  ", e))
+    session$sendCustomMessage("handler_alert", "There was a problem with the generation of the plot.")
+  }, finally = {
+    session$sendCustomMessage("handler_startLoader", c("DEA6_loader", 100))
+    Sys.sleep(1)
+    session$sendCustomMessage("handler_finishLoader", "DEA6_loader")
+    session$sendCustomMessage("handler_enableButton", "findMarkersViolinConfirm")
+  })
+})
+
+observeEvent(input$findMarkersVolcanoConfirm, {
+  session$sendCustomMessage("handler_startLoader", c("DEA7_loader", 10))
+  session$sendCustomMessage("handler_disableButton", "findMarkersVolcanoConfirm")
+  tryCatch({
+    if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
+    else{
+      
+      diff_exp_genes <- seurat_object@misc$markers
+      cluster_degs <- diff_exp_genes[which(diff_exp_genes$cluster == input$findMarkersClusterSelect), ]
+      cluster_degs$status <- "Down regulated"
+      for(i in 1:length(cluster_degs$gene))
+      {
+        if(cluster_degs[i, markers_logFCBase] > 0) #(cluster_degs$avg_logFC[i] > 0)
+        {
+          cluster_degs$status[i] <- "Up regulated"
+        }
+      }
+      cluster_degs$log10Pval <- -log10(cluster_degs$p_val)
+      
+      p <- ggplot(data=cluster_degs, aes_string(x=markers_logFCBase, y="log10Pval", fill="status", label="gene", color="status")) + #x="avg_logFC"
+        geom_point(size=1, shape=16)+
+        scale_fill_manual(values = c("cyan3", "orange"))+
+        scale_color_manual(values = c("cyan3", "orange"))+
+        scale_size()+
+        theme_bw() +
+        theme(axis.text.x = element_text(face = "bold", color = "black", size = 25, angle = 0),
+              axis.text.y = element_text(face = "bold", color = "black", size = 25, angle = 0),
+              axis.title.y = element_text(face = "bold", color = "black", size = 25),
+              axis.title.x = element_text(face = "bold", color = "black", size = 25),
+              legend.text = element_text(face = "bold", color = "black", size = 9),
+              legend.title = element_text(face = "bold", color = "black", size = 9),
+              legend.position="right",
+              title = element_text(face = "bold", color = "black", size = 25, angle = 0)) +
+        labs(x=paste0("", markers_logFCBase), y="-log10(Pvalue)", fill="Color", color="")
+      
+      output$findMarkersVolcanoPlot <- renderPlotly(
+        {
+          plotly::ggplotly(p, tooltip = c("x", "y", "label"))
+        })
+    }
+  }, error = function(e) {
+    print(paste("Error :  ", e))
+    session$sendCustomMessage("handler_alert", "There was a problem with the generation of the plot.")
+  }, finally = {
+    session$sendCustomMessage("handler_startLoader", c("DEA7_loader", 100))
+    Sys.sleep(1)
+    session$sendCustomMessage("handler_finishLoader", "DEA7_loader")
+    session$sendCustomMessage("handler_enableButton", "findMarkersVolcanoConfirm")
+  })
 })
 
 # observeEvent(input$findMarkersBlendThreshold, {
@@ -1835,41 +1990,6 @@ observeEvent(input$findMarkersFeaturePairConfirm, {
 #   updateFeaturePair()
 # })
 
-observeEvent(input$findMarkersViolinConfirm, {
-  if(!identical(seurat_object, NULL)){
-    if ((input$findMarkersViolinFeaturesSignature == "gene" & !identical(input$findMarkersGeneSelect2, NULL))
-        | (input$findMarkersViolinFeaturesSignature == "signature" & input$findMarkersViolinSignatureSelect != "-")){
-      output$findMarkersViolinPlot <- renderPlotly(
-        {
-          geneS <- ""
-          if(input$findMarkersViolinFeaturesSignature == "gene")
-          {
-            geneS <- input$findMarkersGeneSelect2
-          }
-          else
-          {
-            geneS <- input$findMarkersViolinSignatureSelect
-          }
-          print(geneS)
-          plot <- VlnPlot(seurat_object, features = geneS, pt.size = 0,
-                          cols = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(seurat_object@meta.data[, 'seurat_clusters'])))) +
-            theme_bw() +
-            theme(axis.text.x = element_text(face = "bold", color = "black", size = 25, angle = 0),
-                  axis.text.y = element_text(face = "bold", color = "black", size = 25, angle = 0),
-                  axis.title.y = element_text(face = "bold", color = "black", size = 25),
-                  axis.title.x = element_text(face = "bold", color = "black", size = 25),
-                  legend.text = element_text(face = "bold", color = "black", size = 9),
-                  legend.title = element_text(face = "bold", color = "black", size = 9),
-                  #legend.position="right",
-                  title = element_text(face = "bold", color = "black", size = 25, angle = 0)) +
-            labs(x="Cluster", y="", title = geneS, fill="Cluster")
-          gp <- plotly::ggplotly(plot, tooltip = c("x", "y", geneS))
-          gp
-        }
-      )
-    } else session$sendCustomMessage("handler_alert", "Please select signature.")
-  } else session$sendCustomMessage("handler_alert", "Please upload some data first.")
-})
 
 #ATAC   
 observeEvent(input$findMarkersConfirmATAC, { #ADD loading bar
@@ -3491,32 +3611,34 @@ output$findMotifsATACExport <- downloadHandler(
     updateSelectizeInput(session, 'findMarkersFeaturePair2', choices = total_genes, server = TRUE)
   }
   
-  updateInputGeneList <- function()
-  {
-    all_cluster_names <- as.character(unique(seurat_object@misc$markers$cluster))
-    updateSelectInput(session, "gProfilerList", choices = all_cluster_names)
-  }
+  # updateInputGeneList <- function()
+  # {
+  #   all_cluster_names <- as.character(unique(seurat_object@misc$markers$cluster))
+  #   updateSelectInput(session, "gProfilerList", choices = all_cluster_names)
+  # }
   
   updateInputLineageList <- function(lin_names)
   {
     updateSelectInput(session, "trajectoryLineageSelect", choices = lin_names)
   }
   
-  updateInputLRclusters <- function()
+  updateInputLRclusters <- function() #update after clustering clusternames used in --> Volcano, gProfiler, slingshot, nichenetR
   {
     all_cluster_names <- (levels(seurat_object@meta.data[, 'seurat_clusters']))
     updateSelectInput(session, "ligandReceptorSender", choices = all_cluster_names)
     updateSelectInput(session, "ligandReceptorReciever", choices = all_cluster_names)
-    updateSelectInput(session, "utilitiesRenameOldName", choices = all_cluster_names)
-    updateSelectInput(session, "utilitiesDeleteCluster", choices = all_cluster_names)
-  }
-  
-  updateInpuTrajectoryClusters <- function()
-  {
-    all_cluster_names <- (levels(seurat_object@meta.data[, 'seurat_clusters']))
     updateSelectInput(session, "trajectoryStart", choices = all_cluster_names)
     updateSelectInput(session, "trajectoryEnd", choices = all_cluster_names)
+    updateSelectInput(session, "findMarkersClusterSelect", choices = all_cluster_names)
+    updateSelectInput(session, "gProfilerList", choices = all_cluster_names)
   }
+  
+  # updateInpuTrajectoryClusters <- function()
+  # {
+  #   all_cluster_names <- (levels(seurat_object@meta.data[, 'seurat_clusters']))
+  #   updateSelectInput(session, "trajectoryStart", choices = all_cluster_names)
+  #   updateSelectInput(session, "trajectoryEnd", choices = all_cluster_names)
+  # }
   
   # Helper Functions ####
   
