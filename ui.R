@@ -92,6 +92,9 @@ ui <- dashboardPage(
                                                     ), 
                                                     selected = "mouse"),
                                        actionButton(inputId = "uploadCountMatrixConfirm", label = "Submit"),
+                                       tags$h3("Load PBMC 10x dataset (example scRNA-seq)"),
+                                       tags$hr(),
+                                       actionButton(inputId = "upload10xExampleRNACountMatrixConfirm", label = "Load example"),
                                        tags$h3("Export working object as .RDS file"),
                                        tags$hr(),
                                        downloadButton(outputId = "utilitiesConfirmExport1", label = "Export .RDS"),
@@ -109,6 +112,9 @@ ui <- dashboardPage(
                                                                  ), 
                                                                  selected = "mouse"),
                                        actionButton(inputId = "upload10xRNAConfirm", label = "Submit"),
+                                       tags$h3("Load PBMC 10x dataset (example scRNA-seq)"),
+                                       tags$hr(),
+                                       actionButton(inputId = "upload10xExampleRNA10xFilesConfirm", label = "Load example"),
                                        tags$h3("Export working object as .RDS file"),
                                        tags$hr(),
                                        downloadButton(outputId = "utilitiesConfirmExport2", label = "Export .RDS"),
@@ -129,10 +135,7 @@ ui <- dashboardPage(
                                        tags$h3("Load an example dataset"),
                                        tags$hr(),
                                        actionButton(inputId = "upload10xExampleATACConfirm", label = "Load PBMC 10x dataset (example scATAC-seq)")
-                              ),
-                              tabPanel("Load example data", 
-                                       actionButton(inputId = "upload10xExampleRNAConfirm", label = "Load PBMC 10x dataset (example scRNA-seq)")
-                                       )
+                              )
                   )
                 ),
                 box(
@@ -1094,10 +1097,14 @@ ui <- dashboardPage(
                          tabPanel("Examples",
                                   div(class = "div_container",
                                       examples_help
-                                  )
+                                  ), 
+                                  div(downloadButton(outputId = "downloadExampleRNA10xMatrix", label = "Save RNA count matrix example for PBMC"),
+                                      downloadButton(outputId = "downloadExampleRNA10xFiles", label = "Save RNA 10x files example for PBMC"),
+                                      downloadButton(outputId = "downloadExampleATACarrow", label = "Save ATAC arrow file example")
+                                      )
                          ),
                          tabPanel("Data Input"
-                                  
+                      
                          ),
                          tabPanel("Quality Control"
                                   

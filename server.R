@@ -21,16 +21,13 @@ server <- function(input, output, session) {
       minimum_cells <<- input$uploadCountMatrixminCells
       minimum_features <<- input$uploadCountMatrixminFeatures
       organism <<- input$uploadCountMatrixRadioSpecies
-      #  userId <- "User1_"
-      #  user_dir <- paste0("D:\\BSRC_Fleming\\aaa_PhD_template\\", userId, metaD$my_project_name) #TODO remove 2 random barcodes, does it crash?
-      #  dir.create(user_dir)
-      #  file.copy(from = input$matrix$datapath, to = paste0(user_dir, "\\", input$matrix$name), overwrite = TRUE)
-      #  file.copy(from = input$barcodes$datapath, to = paste0(user_dir, "\\", input$barcodes$name), overwrite = TRUE)
-      #  file.copy(from = input$genes$datapath, to = paste0(user_dir, "\\", input$genes$name), overwrite = TRUE)
-      #
-      #   seurat_data <- Read10X(user_dir)
+      userId <- session$token
+      user_dir <- paste0("./", userId, metaD$my_project_name, gsub(pattern = "[ ]|[:]", replacement = "_", x = paste0("_", Sys.time()))) #TODO remove 2 random barcodes, does it crash?
+      dir.create(user_dir)
+      file.copy(from = input$countMatrix$datapath, to = paste0(user_dir, "/countMatrix.txt"), overwrite = TRUE)
+      setwd(user_dir)
       
-      testMatrix <- read.table("testMatrix.txt")
+      testMatrix <- read.table("countMatrix.txt")
       seurat_object <<- CreateSeuratObject(counts = testMatrix, project = metaD$my_project_name, min.cells = as.numeric(minimum_cells), min.features = as.numeric(minimum_features))
         
       init_seurat_object <<- CreateSeuratObject(counts = testMatrix, project = metaD$my_project_name, min.cells = as.numeric(minimum_cells), min.features = as.numeric(minimum_features))
@@ -75,6 +72,67 @@ server <- function(input, output, session) {
     })
   })
   
+  observeEvent(input$upload10xExampleRNACountMatrixConfirm, { #TODO one dataset per session, deactivate options from other modality
+    session$sendCustomMessage("handler_disableTabs", "sidebarMenu") # disable all tab panels (except Data Input) until files are uploaded
+    session$sendCustomMessage("handler_startLoader", c("input_loader", 10))
+    session$sendCustomMessage("handler_disableButton", "upload10xExampleRNACountMatrixConfirm") 
+    tryCatch({
+      # Create the user directory for the input and output of the analysis
+      metaD$my_project_name <- input$uploadCountMatrixprojectID
+      minimum_cells <<- input$uploadCountMatrixminCells
+      minimum_features <<- input$uploadCountMatrixminFeatures
+      organism <<- "human"
+      userId <- session$token
+      user_dir <- paste0("./", userId, metaD$my_project_name, gsub(pattern = "[ ]|[:]", replacement = "_", x = paste0("_", Sys.time()))) #TODO remove 2 random barcodes, does it crash?
+      dir.create(user_dir)
+      file.copy(from = "exampleRNA_matrix/exampleMatrix.txt", to = paste0(user_dir, "/countMatrix.txt"), overwrite = TRUE)
+      setwd(user_dir)
+      
+      testMatrix <- read.table("countMatrix.txt")
+      seurat_object <<- CreateSeuratObject(counts = testMatrix, project = metaD$my_project_name, min.cells = as.numeric(minimum_cells), min.features = as.numeric(minimum_features))
+      
+      init_seurat_object <<- CreateSeuratObject(counts = testMatrix, project = metaD$my_project_name, min.cells = as.numeric(minimum_cells), min.features = as.numeric(minimum_features))
+      
+      
+      session$sendCustomMessage("handler_startLoader", c("input_loader", 25))
+      if(organism == "mouse")
+      {
+        seurat_object[["percent.mt"]] <<- PercentageFeatureSet(seurat_object, pattern = "^mt-")
+        init_seurat_object[["percent.mt"]] <<- PercentageFeatureSet(init_seurat_object, pattern = "^mt-")
+      }
+      else
+      {
+        seurat_object[["percent.mt"]] <<- PercentageFeatureSet(seurat_object, pattern = "^MT-")
+        init_seurat_object[["percent.mt"]] <<- PercentageFeatureSet(init_seurat_object, pattern = "^MT-")
+      }
+      
+      session$sendCustomMessage("handler_startLoader", c("input_loader", 50))
+      
+      output$metadataTable <- renderDataTable(seurat_object@meta.data, options = list(pageLength = 20))
+      session$sendCustomMessage("handler_startLoader", c("input_loader", 75))
+      updateSelInpColor()
+      updateInputGeneList()
+      updateGeneSearchFP()
+      updateQC_choices()
+      cleanAllPlots(T) # fromDataInput -> TRUE
+      # updateInputLRclusters()
+      # updateInpuTrajectoryClusters()
+      # print(organism)
+      # saveRDS(seurat_object, "seurat_object.RDS")
+      session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " QUALITY CONTROL", " DATA NORMALIZATION\n& SCALING", " UTILITY OPTIONS"))
+      # }, warning = function(w) {
+      #   print(paste("Warning:  ", w))
+    }, error = function(e) {
+      print(paste("Error :  ", e))
+      session$sendCustomMessage("handler_alert", "Data Input error. Please, refer to the help pages for input format.")
+    }, finally = { # with or without error
+      session$sendCustomMessage("handler_startLoader", c("input_loader", 100))
+      Sys.sleep(1) # giving some time for renderer for smoother transition
+      session$sendCustomMessage("handler_finishLoader", "input_loader")
+      session$sendCustomMessage("handler_enableButton", "upload10xExampleRNACountMatrixConfirm")
+    })
+  })
+  
   observeEvent(input$upload10xRNAConfirm, {
     session$sendCustomMessage("handler_disableTabs", "sidebarMenu") # disable all tab panels (except Data Input) until files are uploaded
     session$sendCustomMessage("handler_startLoader", c("input_loader", 10))
@@ -85,15 +143,19 @@ server <- function(input, output, session) {
       minimum_cells <<- input$upload10xRNAminCells
       minimum_features <<- input$upload10xRNAminFeatures
       organism <<- input$upload10xRNARadioSpecies
-        userId <- "User1_"
-        # user_dir <- paste0("D:\\BSRC_Fleming\\aaa_PhD_template\\", userId, metaD$my_project_name, gsub(pattern = "[ ]|[:]", replacement = "_", x = paste0("_", Sys.time()))) #TODO remove 2 random barcodes, does it crash?
-        # dir.create(user_dir)
-        # file.copy(from = input$matrix$datapath, to = paste0(user_dir, "\\", input$matrix$name), overwrite = TRUE)
-        # file.copy(from = input$barcodes$datapath, to = paste0(user_dir, "\\", input$barcodes$name), overwrite = TRUE)
-        # file.copy(from = input$genes$datapath, to = paste0(user_dir, "\\", input$genes$name), overwrite = TRUE)
+
+        
+        userId <- session$token
+        user_dir <- paste0("./", userId, metaD$my_project_name, gsub(pattern = "[ ]|[:]", replacement = "_", x = paste0("_", Sys.time()))) 
+        dir.create(user_dir)
+        file.copy(from = input$matrix$datapath, to = paste0(user_dir, "/", input$matrix$name), overwrite = TRUE)
+        file.copy(from = input$barcodes$datapath, to = paste0(user_dir, "/", input$barcodes$name), overwrite = TRUE)
+        file.copy(from = input$genes$datapath, to = paste0(user_dir, "/", input$genes$name), overwrite = TRUE)
+        setwd(user_dir)
+        print(getwd())
         # 
         #  seurat_data <- Read10X(user_dir)
-      seurat_data <- Read10X("User1_Tg4w/")#"hg19/"
+      seurat_data <- Read10X("./")#"hg19/"
       seurat_object <<- CreateSeuratObject(counts = seurat_data, project = metaD$my_project_name, min.cells = as.numeric(minimum_cells), min.features = as.numeric(minimum_features))
         
       init_seurat_object <<- CreateSeuratObject(counts = seurat_data, project = metaD$my_project_name, min.cells = as.numeric(minimum_cells), min.features = as.numeric(minimum_features))
@@ -140,23 +202,46 @@ server <- function(input, output, session) {
     })
   })
   
-  observeEvent(input$upload10xExampleRNAConfirm, {
+  observeEvent(input$upload10xExampleRNA10xFilesConfirm, {
     session$sendCustomMessage("handler_disableTabs", "sidebarMenu") # disable all tab panels (except Data Input) until files are uploaded
     session$sendCustomMessage("handler_startLoader", c("input_loader", 10))
-    session$sendCustomMessage("handler_disableButton", "upload10xExampleRNAConfirm")
+    session$sendCustomMessage("handler_disableButton", "upload10xExampleRNA10xFilesConfirm")
     tryCatch({
       # Create the user directory for the input and output of the analysis
-      seurat_data <- Read10X("hg19/")#"hg19/"
-      metaD$my_project_name <- "PBMC"
+      metaD$my_project_name <- input$upload10xRNAprojectID
+      minimum_cells <<- input$upload10xRNAminCells
+      minimum_features <<- input$upload10xRNAminFeatures
       organism <<- "human"
       
+      
+      userId <- session$token
+      user_dir <- paste0("./", userId, metaD$my_project_name, gsub(pattern = "[ ]|[:]", replacement = "_", x = paste0("_", Sys.time()))) 
+      dir.create(user_dir)
+      file.copy(from = "exampleRNA_10xFiles/matrix.mtx", to = paste0(user_dir, "/", input$matrix$name), overwrite = TRUE)
+      file.copy(from = "exampleRNA_10xFiles/barcodes.tsv", to = paste0(user_dir, "/", input$barcodes$name), overwrite = TRUE)
+      file.copy(from = "exampleRNA_10xFiles/genes.tsv", to = paste0(user_dir, "/", input$genes$name), overwrite = TRUE)
+      setwd(user_dir)
+      print(getwd())
+      
+      seurat_data <- Read10X("./")
       seurat_object <<- CreateSeuratObject(counts = seurat_data, project = metaD$my_project_name, min.cells = as.numeric(minimum_cells), min.features = as.numeric(minimum_features))
       
       init_seurat_object <<- CreateSeuratObject(counts = seurat_data, project = metaD$my_project_name, min.cells = as.numeric(minimum_cells), min.features = as.numeric(minimum_features))
       
-      seurat_object[["percent.mt"]] <<- PercentageFeatureSet(seurat_object, pattern = "^MT-")
-      init_seurat_object[["percent.mt"]] <<- PercentageFeatureSet(init_seurat_object, pattern = "^MT-")
+      session$sendCustomMessage("handler_startLoader", c("input_loader", 25))
+      if(organism == "mouse")
+      {
+        seurat_object[["percent.mt"]] <<- PercentageFeatureSet(seurat_object, pattern = "^mt-")
+        init_seurat_object[["percent.mt"]] <<- PercentageFeatureSet(init_seurat_object, pattern = "^mt-")
+      }
+      else
+      {
+        seurat_object[["percent.mt"]] <<- PercentageFeatureSet(seurat_object, pattern = "^MT-")
+        init_seurat_object[["percent.mt"]] <<- PercentageFeatureSet(init_seurat_object, pattern = "^MT-")
+      }
       
+      #seurat_object <<- readRDS("../ScenicTutorial/myeloid_final_annotation_edited.RDS")
+      #init_seurat_object <<- readRDS("../ScenicTutorial/myeloid_final_annotation_edited.RDS")
       
       session$sendCustomMessage("handler_startLoader", c("input_loader", 50))
       
@@ -181,7 +266,7 @@ server <- function(input, output, session) {
       session$sendCustomMessage("handler_startLoader", c("input_loader", 100))
       Sys.sleep(1) # giving some time for renderer for smoother transition
       session$sendCustomMessage("handler_finishLoader", "input_loader")
-      session$sendCustomMessage("handler_enableButton", "upload10xExampleRNAConfirm")
+      session$sendCustomMessage("handler_enableButton", "upload10xExampleRNA10xFilesConfirm")
     })
   })
   
@@ -338,6 +423,36 @@ server <- function(input, output, session) {
     content = function(file) {
       write.table(export_metadata_ATAC, file, sep = "\t", quote = F, row.names = F)
     })
+  
+  #SOS SERVER ABSOLUTE PATHS
+  output$downloadExampleRNA10xMatrix <- downloadHandler(
+    filename <- function() {
+      paste("10xExampleCountMatrix", "tar", sep=".")
+    },
+    
+    content <- function(file) {
+      tar(file, "/BSRC_Fleming/SCANNER/exampleRNA_matrix/exampleMatrix.zip")
+    })
+  
+  #Download examples from server, absolute paths needed
+  output$downloadExampleRNA10xFiles <- downloadHandler(
+    filename <- function() {
+      paste("10xExampleFiles", "tar", sep=".")
+    },
+    
+    content <- function(file) {
+      tar(file, "/BSRC_Fleming/SCANNER/exampleRNA_10xFiles/pbmc_example.zip")
+    })
+  
+  output$downloadExampleATACarrow <- downloadHandler(
+    filename <- function() {
+      paste("atacExample", "tar", sep=".")
+    },
+    
+    content <- function(file) {
+      tar(file, "/BSRC_Fleming/SCANNER/exampleATAC/arrowFile.zip")
+    })
+    
   
   #------------------Utilities------------------------------------------
   output$utilitiesConfirmExport1 <- downloadHandler(
@@ -2525,9 +2640,9 @@ output$findMotifsATACExport <- downloadHandler(
       else if (identical(seurat_object@meta.data$seurat_clusters, NULL)) session$sendCustomMessage("handler_alert", "Please, execute CLUSTERING first.")
       else {
         #load interactions
-        ligand_target_matrix = readRDS("ligand_target_matrix.rds")
-        lr_network = readRDS("lr_network.rds")
-        weighted_networks = readRDS("weighted_networks.rds")
+        ligand_target_matrix = readRDS("../ligand_target_matrix.rds")
+        lr_network = readRDS("../lr_network.rds")
+        weighted_networks = readRDS("../weighted_networks.rds")
         
         weighted_networks_lr = weighted_networks$lr_sig %>% inner_join(lr_network %>% distinct(from,to), by = c("from","to"))
         
@@ -2656,14 +2771,14 @@ output$findMotifsATACExport <- downloadHandler(
     print("import rankings")
     if(organism == "mouse")
     {
-      motifRankings1_mouse_human <- importRankings("scenic_helper_files/mm10__refseq-r80__500bp_up_and_100bp_down_tss.mc9nr.feather") # either one, they should have the same genes
-      motifRankings2_mouse_human <- importRankings("scenic_helper_files/mm10__refseq-r80__10kb_up_and_down_tss.mc9nr.feather") # either one, they should have the same genes
+      motifRankings1_mouse_human <- importRankings("../scenic_helper_files/mm10__refseq-r80__500bp_up_and_100bp_down_tss.mc9nr.feather") # either one, they should have the same genes
+      motifRankings2_mouse_human <- importRankings("../scenic_helper_files/mm10__refseq-r80__10kb_up_and_down_tss.mc9nr.feather") # either one, they should have the same genes
     }
-    #else
-    #{
-    #  motifRankings1_mouse_human <- importRankings("scenic_helper_files/hg19-500bp-upstream-10species.mc9nr.feather") # either one, they should have the same genes
-    #  motifRankings2_mouse_human <- importRankings("scenic_helper_files/hg19-tss-centered-10kb-10species.mc8nr.feather") # either one, they should have the same genes
-    #}
+    else
+    {
+     motifRankings1_mouse_human <- importRankings("../scenic_helper_files/hg19-500bp-upstream-10species.mc9nr.feather") # either one, they should have the same genes
+     motifRankings2_mouse_human <- importRankings("../scenic_helper_files/hg19-tss-centered-10kb-10species.mc8nr.feather") # either one, they should have the same genes
+    }
     print("get rankings")
     genesInDatabase1 <- colnames(getRanking(motifRankings1_mouse_human))
     genesInDatabase2 <- colnames(getRanking(motifRankings2_mouse_human))
@@ -2763,7 +2878,7 @@ output$findMotifsATACExport <- downloadHandler(
     #####################################################################################################################
     ###################################################### Results ######################################################
     #####################################################################################################################    
-    source('./scenic_helper_files/aux_rss.R')
+    source('../scenic_helper_files/aux_rss.R')
 
     pyScenicLoomFile.seurat_object <- file.path("seurat_object_only_auc_mtx_stringent.version.nes.score.loom")
     loom.seurat_object <- open_loom(pyScenicLoomFile.seurat_object, mode="r+")
