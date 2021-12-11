@@ -10,6 +10,30 @@ server <- function(input, output, session) {
   session$sendCustomMessage("handler_disableTabs", "sidebarMenu") # disable all tab panels (except Data Input) until files are uploaded
   metaD <- reactiveValues(my_project_name="-", all_lin="0")
   
+  #Fast debug mode
+  observeEvent(input$debugRNA, {
+    seurat_object <<- readRDS("processed_seurat_object-2021-12-11.RDS")
+    session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " QUALITY CONTROL", " DATA NORMALIZATION\n& SCALING", " PRINCIPAL COMPONENT\nANALYSIS",
+                                                      " CLUSTERING", " CELL CYCLE PHASE ANALYSIS", " ADDITIONAL DIMENSIONALITY\nREDUCTION METHODS", " TRAJECTORY ANALYSIS",
+                                                      " MARKERS' IDENTIFICATION", " LIGAND - RECEPTOR\nANALYSIS", " FUNCTIONAL ENRICHMENT\nANALYSIS", " CLUSTERS' ANNOTATION"))
+    
+    output$metadataTable <- renderDataTable(seurat_object@meta.data, options = list(pageLength = 20))
+    updateClusterTab()
+    output$findMarkersTable <- renderDataTable(seurat_object@misc$markers, options = list(pageLength = 20), filter = 'top', rownames = FALSE) 
+    updateUmapTypeChoices(c("pca", "umap", "tsne", "phate", "dfm"))
+    updateSignatures()
+    updateSelInpColor()
+    updateRegressOut()
+    updateGeneSearchFP()
+    updateInputGeneList()
+    updateInputLRclusters()
+    updateInpuTrajectoryClusters()
+    setwd("exampleRNA_10xFiles/")
+    organism <<- "human"
+    
+    print("Load complete")
+  })
+  
   #------------------Upload tab--------------------------------
   observeEvent(input$uploadCountMatrixConfirm, { #TODO one dataset per session, deactivate options from other modality
     session$sendCustomMessage("handler_disableTabs", "sidebarMenu") # disable all tab panels (except Data Input) until files are uploaded

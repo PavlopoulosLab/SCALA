@@ -70,6 +70,7 @@ ui <- dashboardPage(
                   from quality control and normalization, to dimensionality reduction, differential expression analysis, clustering and visualization.
                   </br> Try out our sample data and visit the Help pages for guidance. </p>"
                   ),
+                  actionButton(inputId = "debugRNA", label = "Fast debug RNA")
               )
       ),
       
