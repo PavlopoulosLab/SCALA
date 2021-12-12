@@ -72,6 +72,7 @@ server <- function(input, output, session) {
       session$sendCustomMessage("handler_startLoader", c("input_loader", 50))
       
       output$metadataTable <- renderDataTable(seurat_object@meta.data, options = list(pageLength = 20))
+      export_metadata_RNA <<- seurat_object@meta.data
       session$sendCustomMessage("handler_startLoader", c("input_loader", 75))
       updateSelInpColor()
       #updateInputGeneList()
@@ -133,6 +134,7 @@ server <- function(input, output, session) {
       session$sendCustomMessage("handler_startLoader", c("input_loader", 50))
       
       output$metadataTable <- renderDataTable(seurat_object@meta.data, options = list(pageLength = 20))
+      export_metadata_RNA <<- seurat_object@meta.data
       session$sendCustomMessage("handler_startLoader", c("input_loader", 75))
       updateSelInpColor()
       #updateInputGeneList()
@@ -202,6 +204,7 @@ server <- function(input, output, session) {
       session$sendCustomMessage("handler_startLoader", c("input_loader", 50))
       
       output$metadataTable <- renderDataTable(seurat_object@meta.data, options = list(pageLength = 20))
+      export_metadata_RNA <<- seurat_object@meta.data
       session$sendCustomMessage("handler_startLoader", c("input_loader", 75))
       updateSelInpColor()
       #updateInputGeneList()
@@ -241,9 +244,9 @@ server <- function(input, output, session) {
       userId <- session$token
       user_dir <- paste0("./", userId, metaD$my_project_name, gsub(pattern = "[ ]|[:]", replacement = "_", x = paste0("_", Sys.time()))) 
       dir.create(user_dir)
-      file.copy(from = "exampleRNA_10xFiles/matrix.mtx", to = paste0(user_dir, "/", input$matrix$name), overwrite = TRUE)
-      file.copy(from = "exampleRNA_10xFiles/barcodes.tsv", to = paste0(user_dir, "/", input$barcodes$name), overwrite = TRUE)
-      file.copy(from = "exampleRNA_10xFiles/genes.tsv", to = paste0(user_dir, "/", input$genes$name), overwrite = TRUE)
+      file.copy(from = "exampleRNA_10xFiles/matrix.mtx", to = paste0(user_dir, "/matrix.mtx"), overwrite = TRUE)
+      file.copy(from = "exampleRNA_10xFiles/barcodes.tsv", to = paste0(user_dir, "/barcodes.tsv"), overwrite = TRUE)
+      file.copy(from = "exampleRNA_10xFiles/genes.tsv", to = paste0(user_dir, "/genes.tsv"), overwrite = TRUE)
       setwd(user_dir)
       print(getwd())
       
@@ -270,6 +273,8 @@ server <- function(input, output, session) {
       session$sendCustomMessage("handler_startLoader", c("input_loader", 50))
       
       output$metadataTable <- renderDataTable(seurat_object@meta.data, options = list(pageLength = 20))
+      export_metadata_RNA <<- seurat_object@meta.data
+      export_metadata_RNA <<- seurat_object@meta.data
       session$sendCustomMessage("handler_startLoader", c("input_loader", 75))
       updateSelInpColor()
       #updateInputGeneList()
@@ -446,6 +451,14 @@ server <- function(input, output, session) {
     },
     content = function(file) {
       write.table(export_metadata_ATAC, file, sep = "\t", quote = F, row.names = F)
+    })
+  
+  output$uploadMetadataExportRNA <- downloadHandler(
+    filename = function() { 
+      paste("metadataTableRNA-", Sys.Date(), ".txt", sep="")
+    },
+    content = function(file) {
+      write.table(seurat_object@meta.data, file, sep = "\t", quote = F, row.names = F)
     })
   
   #SOS SERVER ABSOLUTE PATHS
@@ -1083,12 +1096,13 @@ server <- function(input, output, session) {
         
         session$sendCustomMessage("handler_startLoader", c("clust1_loader", 50))
         output$clusterTable <- renderDataTable(cluster_df, options = list(pageLength = 10), rownames = F)
+        export_clustertable_RNA <<- cluster_df
         
         session$sendCustomMessage("handler_startLoader", c("clust1_loader", 70))
         session$sendCustomMessage("handler_startLoader", c("clust1_loader", 80))
         updateSelInpColor()
         updateInputLRclusters()
-        updateInpuTrajectoryClusters()
+        #updateInpuTrajectoryClusters()
         output$metadataTable <- renderDataTable(seurat_object@meta.data, options = list(pageLength = 20))
         session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " ADDITIONAL DIMENSIONALITY\nREDUCTION METHODS", " TRAJECTORY ANALYSIS",
                                                           " MARKERS' IDENTIFICATION", " LIGAND - RECEPTOR\nANALYSIS"))
@@ -1282,6 +1296,14 @@ server <- function(input, output, session) {
         session$sendCustomMessage("handler_enableButton", "clusterConfirmATAC")
       })
   })
+  
+  output$clusterTableRNAExport <- downloadHandler(
+    filename = function() { 
+      paste("clusterTableRNA-", Sys.Date(), ".txt", sep="")
+    },
+    content = function(file) {
+      write.table(export_clustertable_RNA, file, sep = "\t", quote = F, row.names = F)
+    })
   
   output$clusterTableExportATAC <- downloadHandler(
     filename = function() { 
@@ -1625,6 +1647,7 @@ server <- function(input, output, session) {
             if (!is.null(seurat_object@misc$markers))
             {
               output$findMarkersTable <- renderDataTable(seurat_object@misc$markers, options = list(pageLength = 20), filter = 'top', rownames = FALSE)  
+              export_markerGenes_RNA <<- seurat_object@misc$markers
             }
           }
         )
@@ -2163,6 +2186,14 @@ observeEvent(input$findMarkersFPConfirmATAC, {
   })
 })
 
+output$findMarkersRNAExport <- downloadHandler(
+  filename = function() { 
+    paste("markerGenesTableRNA-", Sys.Date(), ".txt", sep="")
+  },
+  content = function(file) {
+    write.table(export_markerGenes_RNA, file, sep = "\t", quote = F, row.names = F)
+  })
+
 output$findMarkersGenesATACExport <- downloadHandler(
   filename = function() { 
     paste("markerGenesTableATAC-", Sys.Date(), ".txt", sep="")
@@ -2415,6 +2446,7 @@ output$findMarkersPeaksATACExport <- downloadHandler(
         session$sendCustomMessage("handler_startLoader", c("gprof1_loader", 80))
         
         output$gProfilerTable <- renderDataTable(temp_df[, c(1, 3:6, 9:11, 16)], options = list(pageLength = 10), rownames = F)
+        export_enrichedTerms_RNA <<- temp_df[, c(1, 3:6, 9:11, 16)]
       }
       # }, warning = function(w) {
       #   print(paste("Warning:  ", w))
@@ -2509,6 +2541,14 @@ observeEvent(input$findMotifsConfirmATAC, {
   
 })  
 
+output$gProfilerRNAExport <- downloadHandler(
+  filename = function() { 
+    paste("enrichedTermsTableRNA-", Sys.Date(), ".txt", sep="")
+  },
+  content = function(file) {
+    write.table(export_enrichedTerms_RNA, file, sep = "\t", quote = F, row.names = F)
+  })
+
 output$findMotifsATACExport <- downloadHandler(
   filename = function() { 
     paste("motifsTableATAC-", Sys.Date(), ".txt", sep="")
@@ -2564,6 +2604,7 @@ output$findMotifsATACExport <- downloadHandler(
         
         session$sendCustomMessage("handler_startLoader", c("annot1_loader", 80))
         output$annotateClustersCIPRTable <- renderDataTable(CIPR_top_results[], options = list(pageLength = 20), rownames = F) #remove Description
+        export_annotation_RNA <<- CIPR_top_results[]
         
         session$sendCustomMessage("handler_startLoader", c("annot2_loader", 80))
         output$annotateClustersCIPRDotplot <- renderPlotly({ print(p)})
@@ -2583,6 +2624,14 @@ output$findMotifsATACExport <- downloadHandler(
     })
   })
   
+  output$annotationRNAExport <- downloadHandler(
+  filename = function() { 
+    paste("clusterAnnotationTableRNA-", Sys.Date(), ".txt", sep="")
+  },
+  content = function(file) {
+    write.table(export_annotation_RNA, file, sep = "\t", quote = F, row.names = F)
+  })
+
   #--------------------trajectory tab----------------------------------------
   observeEvent(input$trajectoryConfirm, {
 
@@ -2823,8 +2872,9 @@ output$findMotifsATACExport <- downloadHandler(
         best_upstream_receptors = lr_network_top %>% pull(to) %>% unique()
         
         lr_network_top_df_large = weighted_networks_lr %>% filter(from %in% potential_ligands & to %in% best_upstream_receptors)
-        
+        export_ligandReceptor_full_RNA <<- lr_network_top_df_large
         lr_network_top_df = lr_network_top_df_large %>% spread("from","weight",fill = 0)
+        
         lr_network_top_matrix = lr_network_top_df %>% dplyr::select(-to) %>% as.matrix() %>% magrittr::set_rownames(lr_network_top_df$to)
         
         dist_receptors = dist(lr_network_top_matrix, method = "binary")
@@ -2854,7 +2904,7 @@ output$findMotifsATACExport <- downloadHandler(
         
         lr_network_top_df_large_strict = lr_network_top_df_large %>% distinct(from,to) %>% inner_join(lr_network_strict, by = c("from","to")) %>% distinct(from,to)
         lr_network_top_df_large_strict = lr_network_top_df_large_strict %>% inner_join(lr_network_top_df_large, by = c("from","to"))
-        
+        export_ligandReceptor_short_RNA <<- lr_network_top_df_large_strict
         lr_network_top_df_strict = lr_network_top_df_large_strict %>% spread("from","weight",fill = 0)
         lr_network_top_matrix_strict = lr_network_top_df_strict %>% dplyr::select(-to) %>% as.matrix() %>% magrittr::set_rownames(lr_network_top_df_strict$to)
         
@@ -2890,6 +2940,22 @@ output$findMotifsATACExport <- downloadHandler(
       session$sendCustomMessage("handler_enableButton", "ligandReceptorConfirm")
     })
   })
+  
+  output$ligandReceptorFullExport <- downloadHandler(
+    filename = function() { 
+      paste("ligandReceptorFullTableRNA-", Sys.Date(), ".txt", sep="")
+    },
+    content = function(file) {
+      write.table(export_ligandReceptor_full_RNA, file, sep = "\t", quote = F, row.names = F)
+    })
+  
+  output$ligandReceptorShortExport <- downloadHandler(
+    filename = function() { 
+      paste("ligandReceptorStrictTableRNA-", Sys.Date(), ".txt", sep="")
+    },
+    content = function(file) {
+      write.table(export_ligandReceptor_short_RNA, file, sep = "\t", quote = F, row.names = F)
+    })
   
   #---------------------------GRN tab-------------------------------------------
   observeEvent(input$grnConfirmRNA, {

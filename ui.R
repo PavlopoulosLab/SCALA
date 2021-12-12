@@ -146,7 +146,9 @@ ui <- dashboardPage(
                   
                   tabsetPanel(type = "tabs",
                               tabPanel("scRNA-seq",
-                                       dataTableOutput("metadataTable", width = "100%", height = "100%")),
+                                       dataTableOutput("metadataTable", width = "100%", height = "100%"),
+                                       downloadButton(outputId = "uploadMetadataExportRNA", label = "Save table")
+                                       ),
                               tabPanel("scATAC-seq",
                                        dataTableOutput("metadataTableATAC"),
                                        downloadButton(outputId = "uploadMetadataExport", label = "Save table")
@@ -408,6 +410,7 @@ ui <- dashboardPage(
                                                    tabPanel("Clustering results", 
                                                             div(class="ldBar", id="clust1_loader", "data-preset"="circle"),
                                                             dataTableOutput(outputId="clusterTable", height = "500px"),
+                                                            downloadButton(outputId = "clusterTableRNAExport", label = "Save table"),
                                                             selectInput("clusterGroupBy", "Grouping variable:",
                                                                         c("orig.ident" = "orig.ident")),
                                                             actionButton(inputId = "clusterBarplotConfirm", label = "Display barchart"),
@@ -561,7 +564,8 @@ ui <- dashboardPage(
                                        tabsetPanel(type = "tabs",
                                                    tabPanel("Marker genes", 
                                                             div(class="ldBar", id="DEA1_loader", "data-preset"="circle"),
-                                                            dataTableOutput(outputId="findMarkersTable", height = "1300px")),
+                                                            dataTableOutput(outputId="findMarkersTable", height = "1300px"),
+                                                            downloadButton(outputId = "findMarkersRNAExport", label = "Save table")),
                                                    tabPanel("Heatmap", 
                                                             div(class="ldBar", id="DEA2_loader", "data-preset"="circle"),
                                                             actionButton(inputId = "findMarkersTop10HeatmapConfirm", label = "Display top10 marker genes heatmap"),
@@ -845,7 +849,8 @@ ui <- dashboardPage(
                                        tabsetPanel(type = "tabs",
                                                    tabPanel("Table of functional terms", 
                                                             div(class="ldBar", id="gprof1_loader", "data-preset"="circle"),
-                                                            dataTableOutput(outputId = "gProfilerTable")),
+                                                            dataTableOutput(outputId = "gProfilerTable"),
+                                                            downloadButton(outputId = "gProfilerRNAExport", label = "Save table")),
                                                    tabPanel("Manhatan plot", 
                                                             div(class="ldBar", id="gprof2_loader", "data-preset"="circle"),
                                                             plotlyOutput(outputId = "gProfilerManhatan"))
@@ -920,7 +925,9 @@ ui <- dashboardPage(
                   tabsetPanel(type = "tabs",
                               tabPanel("Top-5 hits table", 
                                        div(class="ldBar", id="annot1_loader", "data-preset"="circle"),
-                                       dataTableOutput(outputId="annotateClustersCIPRTable")),
+                                       dataTableOutput(outputId="annotateClustersCIPRTable"),
+                                       downloadButton(outputId = "annotationRNAExport", label = "Save table")
+                                       ),
                               tabPanel("Top-5 hits dotplot", 
                                        div(class="ldBar", id="annot2_loader", "data-preset"="circle"),
                                        plotlyOutput(outputId="annotateClustersCIPRDotplot", height = "1100px"))
@@ -1015,9 +1022,11 @@ ui <- dashboardPage(
                    div(
                      tabsetPanel(type = "tabs",
                                  tabPanel("All interactions",
-                                          plotlyOutput(outputId="ligandReceptorFullHeatmap", height = "1100px")),
+                                          plotlyOutput(outputId="ligandReceptorFullHeatmap", height = "1100px"),
+                                          downloadButton(outputId = "ligandReceptorFullExport", label = "Save table")),
                                  tabPanel("Curated interactions (documented in literature and publicly available databases)",
-                                          plotlyOutput(outputId="ligandReceptorCuratedHeatmap", height = "1100px"))
+                                          plotlyOutput(outputId="ligandReceptorCuratedHeatmap", height = "1100px"),
+                                          downloadButton(outputId = "ligandReceptorShortExport", label = "Save table"))
                                  )
                    )
                  )

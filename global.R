@@ -81,6 +81,16 @@ markers_logFCBase <- "avg_logFC"
 #tabs Umap/tsne, DEA, Cell cycle, Trajectory
 reductions_choices <- c("-")
 
+#export tables RNA
+export_metadata_RNA <- ""
+export_clustertable_RNA <- ""
+export_markerGenes_RNA <- ""
+export_enrichedTerms_RNA <- ""
+export_annotation_RNA <- ""
+export_ligandReceptor_full_RNA <- ""
+export_ligandReceptor_short_RNA <- ""
+
+
 #ATAC variables
 ArrowFiles <- NULL
 proj_default <- NULL
