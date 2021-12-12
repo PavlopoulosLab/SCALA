@@ -29,7 +29,7 @@ server <- function(input, output, session) {
     updateInputLRclusters()
     setwd("exampleRNA_10xFiles/")
     organism <<- "human"
-    
+    disableTabsATAC()
     print("Load complete")
   })
   
@@ -78,6 +78,7 @@ server <- function(input, output, session) {
       updateGeneSearchFP()
       updateQC_choices()
       cleanAllPlots(T) # fromDataInput -> TRUE
+      disableTabsATAC()
       # updateInputLRclusters()
       # updateInpuTrajectoryClusters()
       # print(organism)
@@ -140,6 +141,7 @@ server <- function(input, output, session) {
       updateGeneSearchFP()
       updateQC_choices()
       cleanAllPlots(T) # fromDataInput -> TRUE
+      disableTabsATAC()
       # updateInputLRclusters()
       # updateInpuTrajectoryClusters()
       # print(organism)
@@ -210,6 +212,7 @@ server <- function(input, output, session) {
       updateGeneSearchFP()
       updateQC_choices()
       cleanAllPlots(T) # fromDataInput -> TRUE
+      disableTabsATAC()
       # updateInputLRclusters()
       # updateInpuTrajectoryClusters()
       # print(organism)
@@ -271,6 +274,7 @@ server <- function(input, output, session) {
       
       session$sendCustomMessage("handler_startLoader", c("input_loader", 50))
       
+      updateTabsetPanel(session, inputId = "uploadTabPanel", selected = "scATAC-seq") #******
       output$metadataTable <- renderDataTable(seurat_object@meta.data, options = list(pageLength = 20))
       export_metadata_RNA <<- seurat_object@meta.data
       export_metadata_RNA <<- seurat_object@meta.data
@@ -280,6 +284,7 @@ server <- function(input, output, session) {
       updateGeneSearchFP()
       updateQC_choices()
       cleanAllPlots(T) # fromDataInput -> TRUE
+      disableTabsATAC()
       # updateInputLRclusters()
       # updateInpuTrajectoryClusters()
       # print(organism)
@@ -358,6 +363,7 @@ server <- function(input, output, session) {
       updateSelectizeInput(session, "visualizeTracksGene", choices = unique(proj_default@geneAnnotation$genes$symbol), server = T)
       
       cleanAllPlots(T) # fromDataInput -> TRUE
+      disableTabsRNA()
       session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " QUALITY CONTROL", " UTILITY OPTIONS"))
       # }, warning = function(w) {
       #   print(paste("Warning:  ", w))
@@ -430,6 +436,7 @@ server <- function(input, output, session) {
         updateSelectizeInput(session, "visualizeTracksGene", choices = unique(proj_default@geneAnnotation$genes$symbol), server = T)
         
         cleanAllPlots(T) # fromDataInput -> TRUE
+        disableTabsRNA()
         session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " QUALITY CONTROL", " UTILITY OPTIONS"))
       # }, warning = function(w) {
       #   print(paste("Warning:  ", w))
@@ -457,7 +464,7 @@ server <- function(input, output, session) {
       paste("metadataTableRNA-", Sys.Date(), ".txt", sep="")
     },
     content = function(file) {
-      write.table(seurat_object@meta.data, file, sep = "\t", quote = F, row.names = F)
+      write.table(export_metadata_RNA, file, sep = "\t", quote = F, row.names = F)
     })
   
   #SOS SERVER ABSOLUTE PATHS
@@ -3842,6 +3849,69 @@ output$findMotifsATACExport <- downloadHandler(
     return(nPC)
   }
   
+  ###disable Tabs
+  
+  disableTabsRNA <- function()
+  {
+    hideTab(inputId="uploadTabPanel", target="scRNA-seq", session = session)
+    updateTabsetPanel(session, inputId = "uploadTabPanel", selected = "scATAC-seq")
+    
+    hideTab(inputId="qcTabPanel", target="scRNA-seq", session = session)
+    updateTabsetPanel(session, inputId = "qcTabPanel", selected = "scATAC-seq")
+    
+    hideTab(inputId="pcaTabPanel", target="scRNA-seq: PCA", session = session)
+    updateTabsetPanel(session, inputId = "pcaTabPanel", selected = "scATAC-seq: LSI")
+    
+    hideTab(inputId="clusteringTabPanel", target="scRNA-seq", session = session)
+    updateTabsetPanel(session, inputId = "clusteringTabPanel", selected = "scATAC-seq")
+    
+    hideTab(inputId="umapTabPanel", target="scRNA-seq", session = session)
+    updateTabsetPanel(session, inputId = "umapTabPanel", selected = "scATAC-seq")
+    
+    hideTab(inputId="findMarkersTabPanel", target="scRNA-seq", session = session)
+    updateTabsetPanel(session, inputId = "findMarkersTabPanel", selected = "scATAC-seq")
+    
+    hideTab(inputId="gProfilerTabPanel", target="scRNA-seq", session = session)
+    updateTabsetPanel(session, inputId = "gProfilerTabPanel", selected = "scATAC-seq")
+    
+    hideTab(inputId="trajectoryTabPanel", target="scRNA-seq", session = session)
+    updateTabsetPanel(session, inputId = "trajectoryTabPanel", selected = "scATAC-seq")
+    
+    hideTab(inputId="grnTabPanel", target="scRNA-seq", session = session)
+    updateTabsetPanel(session, inputId = "grnTabPanel", selected = "scATAC-seq")
+  }
+  
+  disableTabsATAC <- function()
+  {
+    hideTab(inputId="uploadTabPanel", target="scATAC-seq", session = session)
+    updateTabsetPanel(session, inputId = "uploadTabPanel", selected = "scRNA-seq")
+    
+    hideTab(inputId="qcTabPanel", target="scATAC-seq", session = session)
+    updateTabsetPanel(session, inputId = "qcTabPanel", selected = "scRNA-seq")
+    
+    hideTab(inputId="pcaTabPanel", target="scATAC-seq: LSI", session = session)
+    updateTabsetPanel(session, inputId = "pcaTabPanel", selected = "scRNA-seq: PCA")
+    
+    hideTab(inputId="clusteringTabPanel", target="scATAC-seq", session = session)
+    updateTabsetPanel(session, inputId = "clusteringTabPanel", selected = "scRNA-seq")
+    
+    hideTab(inputId="umapTabPanel", target="scATAC-seq", session = session)
+    updateTabsetPanel(session, inputId = "umapTabPanel", selected = "scRNA-seq")
+    
+    hideTab(inputId="findMarkersTabPanel", target="scATAC-seq", session = session)
+    updateTabsetPanel(session, inputId = "findMarkersTabPanel", selected = "scRNA-seq")
+    
+    hideTab(inputId="gProfilerTabPanel", target="scATAC-seq", session = session)
+    updateTabsetPanel(session, inputId = "gProfilerTabPanel", selected = "scRNA-seq")
+    
+    hideTab(inputId="trajectoryTabPanel", target="scATAC-seq", session = session)
+    updateTabsetPanel(session, inputId = "trajectoryTabPanel", selected = "scRNA-seq")
+    
+    hideTab(inputId="grnTabPanel", target="scATAC-seq", session = session)
+    updateTabsetPanel(session, inputId = "grnTabPanel", selected = "scRNA-seq")
+  }
+  
+  
   #ATAC
   #function update selectInput
   updateSelInpColorATAC <- function()
@@ -3868,5 +3938,3 @@ output$findMotifsATACExport <- downloadHandler(
     updateSelectInput(session, "trajectoryEndATAC", choices = cluster_names)
   }
 }
-
-

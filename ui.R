@@ -144,7 +144,7 @@ ui <- dashboardPage(
                   title = "Metadata table",
                   div(class="ldBar", id="input_loader", "data-preset"="circle"),
                   
-                  tabsetPanel(type = "tabs",
+                  tabsetPanel(type = "tabs", id = "uploadTabPanel",
                               tabPanel("scRNA-seq",
                                        dataTableOutput("metadataTable", width = "100%", height = "100%"),
                                        downloadButton(outputId = "uploadMetadataExportRNA", label = "Save table")
@@ -160,7 +160,7 @@ ui <- dashboardPage(
       
       #QC tab
       tabItem(tabName = "qc",
-              tabsetPanel(type = "tabs",
+              tabsetPanel(type = "tabs", id = "qcTabPanel",
                           tabPanel("scRNA-seq",
                                    #two boxes inside QC tab
                                    fluidRow(
@@ -311,7 +311,7 @@ ui <- dashboardPage(
       
       #PCA tab
       tabItem(tabName = "pca", 
-              tabsetPanel(type = "tabs",
+              tabsetPanel(type = "tabs", id = "pcaTabPanel",
                           tabPanel("scRNA-seq: PCA",
                                    fluidRow(
                                      box(
@@ -369,7 +369,7 @@ ui <- dashboardPage(
       
       #Clustering tab
       tabItem(tabName = "clustering", 
-              tabsetPanel(type = "tabs",
+              tabsetPanel(type = "tabs", id = "clusteringTabPanel",
                           tabPanel("scRNA-seq",
                                    fluidRow(
                                      box(
@@ -442,7 +442,7 @@ ui <- dashboardPage(
       
       #UMAP tab
       tabItem(tabName = "umap", 
-              tabsetPanel(type = "tabs",
+              tabsetPanel(type = "tabs", id = "umapTabPanel",
                           tabPanel("scRNA-seq",
                                    fluidRow(
                                      box(width = 3, status = "info", solidHeader = TRUE,
@@ -517,7 +517,7 @@ ui <- dashboardPage(
       
       #DEA tab
       tabItem(tabName = "findMarkers", 
-              tabsetPanel(type = "tabs",
+              tabsetPanel(type = "tabs", id = "findMarkersTabPanel",
                           tabPanel("scRNA-seq",
                                    fluidRow(
                                      box(width = 3, status = "info", solidHeader = TRUE,
@@ -786,7 +786,7 @@ ui <- dashboardPage(
       
       #Enrichment analysis -gProfiler
       tabItem(tabName = "gProfiler", 
-              tabsetPanel(type = "tabs",
+              tabsetPanel(type = "tabs", id = "gProfilerTabPanel",
                           tabPanel("scRNA-seq",
                                    fluidRow(
                                      box(width = 2, status = "info", solidHeader = TRUE,
@@ -923,7 +923,7 @@ ui <- dashboardPage(
       
       #Trajectory analysis
       tabItem(tabName = "trajectory",
-              tabsetPanel(type="tabs",
+              tabsetPanel(type="tabs", id = "trajectoryTabPanel",
                           tabPanel("scRNA-seq", 
                                    fluidRow(
                                      box(
@@ -1020,7 +1020,7 @@ ui <- dashboardPage(
       
       #GRN analysis
       tabItem(tabName = "grn",
-              tabsetPanel(type="tabs",
+              tabsetPanel(type="tabs", id = "grnTabPanel",
                           tabPanel("scRNA-seq", #TODO for pyscenic ctx minimun number of genes per module, AUC+NES thresholds [for the update]
                                    fluidRow(
                                      box(width = 3, status = "info", solidHeader = TRUE, title = "GRN input parameters",
