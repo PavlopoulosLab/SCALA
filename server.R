@@ -13,6 +13,7 @@ server <- function(input, output, session) {
   #Fast debug mode
   observeEvent(input$debugRNA, {
     seurat_object <<- readRDS("processed_seurat_object-2021-12-11.RDS")
+    init_seurat_object <<- readRDS("processed_seurat_object-2021-12-11.RDS")
     session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " QUALITY CONTROL", " DATA NORMALIZATION\n& SCALING", " PRINCIPAL COMPONENT\nANALYSIS",
                                                       " CLUSTERING", " CELL CYCLE PHASE ANALYSIS", " ADDITIONAL DIMENSIONALITY\nREDUCTION METHODS", " TRAJECTORY ANALYSIS",
                                                       " MARKERS' IDENTIFICATION", " LIGAND - RECEPTOR\nANALYSIS", " FUNCTIONAL ENRICHMENT\nANALYSIS", " CLUSTERS' ANNOTATION"))
@@ -25,9 +26,7 @@ server <- function(input, output, session) {
     updateSelInpColor()
     updateRegressOut()
     updateGeneSearchFP()
-    #updateInputGeneList()
     updateInputLRclusters()
-    #updateInpuTrajectoryClusters()
     setwd("exampleRNA_10xFiles/")
     organism <<- "human"
     
@@ -615,7 +614,7 @@ server <- function(input, output, session) {
   })
   
   observeEvent(input$qcConfirm, {
-    session$sendCustomMessage("handler_startLoader", c("qc_loader", 10))
+    session$sendCustomMessage("handler_startLoader", c("qc_loader2", 10))
     session$sendCustomMessage("handler_disableButton", "qcConfirm")
     tryCatch({
       if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
@@ -625,10 +624,10 @@ server <- function(input, output, session) {
         qc_maxFeatures <<- input$maxUniqueGenes
         qc_maxMtPercent <<- input$maxMtReads
         
-        session$sendCustomMessage("handler_startLoader", c("qc_loader", 50))
+        session$sendCustomMessage("handler_startLoader", c("qc_loader2", 50))
         seurat_object <<- subset(init_seurat_object, subset = nFeature_RNA > as.numeric(qc_minFeatures) & nFeature_RNA < as.numeric(qc_maxFeatures) & percent.mt < as.double(qc_maxMtPercent)) #filter object
         
-        session$sendCustomMessage("handler_startLoader", c("qc_loader", 75))
+        session$sendCustomMessage("handler_startLoader", c("qc_loader2", 75))
         output$filteredNFeatureViolin <- renderPlotly(
           {
             p <- VlnPlot(seurat_object, features = c("nFeature_RNA"), pt.size = 0.5, group.by = input$qcColorBy,
@@ -715,16 +714,16 @@ server <- function(input, output, session) {
       print(paste("Error :  ", e))
       session$sendCustomMessage("handler_alert", "The selected Quality Control arguments cannot produce meaningful visualizations.")
     }, finally = {
-      session$sendCustomMessage("handler_startLoader", c("qc_loader", 100))
+      session$sendCustomMessage("handler_startLoader", c("qc_loade2r", 100))
       Sys.sleep(1)
-      session$sendCustomMessage("handler_finishLoader", "qc_loader")
+      session$sendCustomMessage("handler_finishLoader", "qc_loader2")
       session$sendCustomMessage("handler_enableButton", "qcConfirm")
     })
   })
   
   #ATAC qc
   observeEvent(input$qcDisplayATAC, {
-    session$sendCustomMessage("handler_startLoader", c("qc_loader2", 10))
+    session$sendCustomMessage("handler_startLoader", c("qc_loader3", 10))
     session$sendCustomMessage("handler_disableButton", "qcDisplayATAC")
     tryCatch({
       if (identical(proj_default, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
@@ -740,7 +739,7 @@ server <- function(input, output, session) {
     )
     output$TSS_plot <- renderPlotly( expr =  ggplot(p1$data, aes(x=x, y=y, fill=x)) + geom_violin() + theme_bw() + labs(y="TSS Enrichment"))
     
-    session$sendCustomMessage("handler_startLoader", c("qc_loader2", 50))
+    session$sendCustomMessage("handler_startLoader", c("qc_loader3", 50))
     
     #nFrags plot
     p2 <- plotGroups(
@@ -753,7 +752,7 @@ server <- function(input, output, session) {
                                              width = 500, height = 500
                                           )
     
-    session$sendCustomMessage("handler_startLoader", c("qc_loader2", 75))
+    session$sendCustomMessage("handler_startLoader", c("qc_loader3", 75))
     
     #nFrags-TSS plot
     df <- getCellColData(proj_default, select = c("log10(nFrags)", "TSSEnrichment"))
@@ -788,9 +787,9 @@ server <- function(input, output, session) {
       print(paste("Error :  ", e))
       session$sendCustomMessage("handler_alert", "The selected Quality Control arguments cannot produce meaningful visualizations.")
     }, finally = {
-      session$sendCustomMessage("handler_startLoader", c("qc_loader2", 100))
+      session$sendCustomMessage("handler_startLoader", c("qc_loader3", 100))
       Sys.sleep(1)
-      session$sendCustomMessage("handler_finishLoader", "qc_loader2")
+      session$sendCustomMessage("handler_finishLoader", "qc_loader3")
       session$sendCustomMessage("handler_enableButton", "qcDisplayATAC")
     })
   })

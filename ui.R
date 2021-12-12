@@ -158,31 +158,6 @@ ui <- dashboardPage(
               ),
       ),
       
-      #utilities tab
-      tabItem(tabName = "utilities",
-              fluidRow(
-                box(
-                  width = 12, status = "info", solidHeader = TRUE,
-                  title = "Edit/export working object",
-                  tags$h3("Rename cluster"),
-                  tags$hr(),
-                  selectInput(inputId = "utilitiesRenameOldName", label = "Cluster to be renamed (old name):", choices = "-", multiple = F),
-                  textInput(inputId = "utilitiesRenameNewName", label = "New name of the cluster:", value = "New_name_1"),
-                  actionButton(inputId = "utilitiesConfirmRename", label = "Rename"),
-                  tags$h3("Delete cluster"),
-                  tags$hr(),
-                  selectInput(inputId = "utilitiesDeleteCluster", label = "Cluster to be deleted:", choices = "-", multiple = F),
-                  actionButton(inputId = "utilitiesConfirmDelete", label = "Delete"),
-                  tags$h3("Export working object as .RDS file"),
-                  tags$hr(),
-                  downloadButton(outputId = "utilitiesConfirmExport", label = "Export .RDS"),
-                  #tags$h3("Select palette for cluster colors"),
-                  #tags$hr(),
-                  #actionButton(inputId = "utilitiesColorPicker", label = "choose palette")
-                  )
-                )
-              ),
-      
       #QC tab
       tabItem(tabName = "qc",
               tabsetPanel(type = "tabs",
@@ -210,25 +185,35 @@ ui <- dashboardPage(
                                      box(
                                        width = 9, status = "info", solidHeader = TRUE,
                                        title = "Quality control plots",
-                                       div(class="ldBar", id="qc_loader", "data-preset"="circle"),
-                                       div(
-                                         column(tags$h3("Pre-filtering plots"), width=12),
-                                         column(tags$hr(), width = 12),
-                                         column(plotlyOutput(outputId = "nFeatureViolin", height = "100%"), width = 4),
-                                         column(plotlyOutput(outputId = "totalCountsViolin", height = "100%"), width = 4),
-                                         column(plotlyOutput(outputId = "mitoViolin", height = "100%"), width = 4),
-                                         column(plotlyOutput(outputId = "genesCounts", height= "100%"), width = 6),
-                                         column(plotlyOutput(outputId = "mtCounts", height= "100%"), width = 6),
-                                         column(verbatimTextOutput(outputId = "cellStats"), width = 4),
-                                         column(tags$h3("Post-filtering plots"), width=12),
-                                         column(tags$hr(), width = 12),
-                                         column(plotlyOutput(outputId = "filteredNFeatureViolin", height = "100%"), width = 4),
-                                         column(plotlyOutput(outputId = "filteredTotalCountsViolin", height = "100%"), width = 4),
-                                         column(plotlyOutput(outputId = "filteredMitoViolin", height = "100%"), width = 4),
-                                         column(plotlyOutput(outputId = "filteredGenesCounts", height= "100%"), width = 6),
-                                         column(plotlyOutput(outputId = "filteredMtCounts", height= "100%"), width = 6),
-                                         column(verbatimTextOutput(outputId = "filteredCellStats"), width = 4),
-                                       )
+                                       tabsetPanel(type="tabs", 
+                                                   tabPanel("Pre-filtering plots",
+                                                            div(
+                                                              column(tags$h3("Pre-filtering plots"), width=12),
+                                                              column(tags$hr(), width = 12),
+                                                              div(class="ldBar", id="qc_loader", "data-preset"="circle"),
+                                                              column(plotlyOutput(outputId = "nFeatureViolin", height = "100%"), width = 4),
+                                                              column(plotlyOutput(outputId = "totalCountsViolin", height = "100%"), width = 4),
+                                                              column(plotlyOutput(outputId = "mitoViolin", height = "100%"), width = 4),
+                                                              column(plotlyOutput(outputId = "genesCounts", height= "100%"), width = 6),
+                                                              column(plotlyOutput(outputId = "mtCounts", height= "100%"), width = 6),
+                                                              column(verbatimTextOutput(outputId = "cellStats"), width = 4)
+                                                              )
+                                                            ),
+                                                   tabPanel("Post-filtering plots",
+                                                            div(
+                                                              column(tags$h3("Post-filtering plots"), width=12),
+                                                              column(tags$hr(), width = 12),
+                                                              div(class="ldBar", id="qc_loader2", "data-preset"="circle"),
+                                                              column(plotlyOutput(outputId = "filteredNFeatureViolin", height = "100%"), width = 4),
+                                                              column(plotlyOutput(outputId = "filteredTotalCountsViolin", height = "100%"), width = 4),
+                                                              column(plotlyOutput(outputId = "filteredMitoViolin", height = "100%"), width = 4),
+                                                              column(plotlyOutput(outputId = "filteredGenesCounts", height= "100%"), width = 6),
+                                                              column(plotlyOutput(outputId = "filteredMtCounts", height= "100%"), width = 6),
+                                                              column(verbatimTextOutput(outputId = "filteredCellStats"), width = 4),
+                                                              )
+                                                            )
+                                                   ),
+                                       
                                      )
                                    )
                           ),
@@ -254,7 +239,7 @@ ui <- dashboardPage(
                                      box(
                                        width = 9, status = "info", solidHeader = TRUE,
                                        title = "Quality control plots",
-                                       div(class="ldBar", id="qc_loader2", "data-preset"="circle"),
+                                       div(class="ldBar", id="qc_loader3", "data-preset"="circle"),
                                        div(
                                          column(tags$h3("Soft filtered plots"), width=12),
                                          column(tags$hr(), width = 12),
