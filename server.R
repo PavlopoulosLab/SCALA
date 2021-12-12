@@ -12,26 +12,33 @@ server <- function(input, output, session) {
   
   #Fast debug mode
   observeEvent(input$debugRNA, {
-    seurat_object <<- readRDS("processed_seurat_object-2021-12-11.RDS")
-    session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " QUALITY CONTROL", " DATA NORMALIZATION\n& SCALING", " PRINCIPAL COMPONENT\nANALYSIS",
-                                                      " CLUSTERING", " CELL CYCLE PHASE ANALYSIS", " ADDITIONAL DIMENSIONALITY\nREDUCTION METHODS", " TRAJECTORY ANALYSIS",
-                                                      " MARKERS' IDENTIFICATION", " LIGAND - RECEPTOR\nANALYSIS", " FUNCTIONAL ENRICHMENT\nANALYSIS", " CLUSTERS' ANNOTATION"))
-    
-    output$metadataTable <- renderDataTable(seurat_object@meta.data, options = list(pageLength = 20))
-    updateClusterTab()
-    output$findMarkersTable <- renderDataTable(seurat_object@misc$markers, options = list(pageLength = 20), filter = 'top', rownames = FALSE) 
-    updateUmapTypeChoices(c("pca", "umap", "tsne", "phate", "dfm"))
-    updateSignatures()
-    updateSelInpColor()
-    updateRegressOut()
-    updateGeneSearchFP()
-    #updateInputGeneList()
-    updateInputLRclusters()
-    #updateInpuTrajectoryClusters()
-    setwd("exampleRNA_10xFiles/")
-    organism <<- "human"
-    
-    print("Load complete")
+    tryCatch({
+      seurat_object <<- readRDS("processed_seurat_object-2021-12-11.RDS")
+      session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " QUALITY CONTROL", " DATA NORMALIZATION\n& SCALING", " PRINCIPAL COMPONENT\nANALYSIS",
+                                                        " CLUSTERING", " CELL CYCLE PHASE ANALYSIS", " ADDITIONAL DIMENSIONALITY\nREDUCTION METHODS", " TRAJECTORY ANALYSIS",
+                                                        " MARKERS' IDENTIFICATION", " LIGAND - RECEPTOR\nANALYSIS", " FUNCTIONAL ENRICHMENT\nANALYSIS", " CLUSTERS' ANNOTATION"))
+      
+      output$metadataTable <- renderDataTable(seurat_object@meta.data, options = list(pageLength = 20))
+      updateClusterTab()
+      output$findMarkersTable <- renderDataTable(seurat_object@misc$markers, options = list(pageLength = 20), filter = 'top', rownames = FALSE) 
+      updateUmapTypeChoices(c("pca", "umap", "tsne", "phate", "dfm"))
+      updateSignatures()
+      updateSelInpColor()
+      updateRegressOut()
+      updateGeneSearchFP()
+      #updateInputGeneList()
+      updateInputLRclusters()
+      #updateInpuTrajectoryClusters()
+      # setwd("exampleRNA_10xFiles/") # TODO remove this, never use setwd() on server apps. create a path with paste() instead
+      organism <<- "human"
+      
+      print("Load complete")
+    }, error = function(e) {
+      print(paste("Error :  ", e))
+      session$sendCustomMessage("handler_alert", "Error.")
+    }, finally = { # with or without error
+      
+    })
   })
   
   #------------------Upload tab--------------------------------
@@ -846,10 +853,11 @@ server <- function(input, output, session) {
                   scale_color_manual(
                     values = c("red", "black")
                   )+
-                  labs(x="Average Expression", y="Standardized Variance", color="")  
+                  labs(x="Average Expression", y="Standardized Variance", color="")
               }
               else
               {
+                withProgress(message = 'Making plot', value = 0, {
                 p <- ggplot(varplot, aes(x=mean, y=dispersion.scaled, color=colors, text = paste0("mean expression: ", mean,
                                                                                                   "\nscaled dispersion: ", dispersion.scaled,
                                                                                                   "\ngene: ", gene)
@@ -860,10 +868,20 @@ server <- function(input, output, session) {
                     values = c("red", "black")
                   )+ 
                   labs(x="Average Expression", y="Scaled Dispersion", color="")
+                })
               }
               
-              gp <- plotly::ggplotly(p, tooltip = "text")#c("label", "x", "y"))
-              print(gp)  
+              # TODO Debugging, not working properly after first execution
+              future_promise({ # future
+                prog <- shiny::Progress$new(max = 1)
+                prog$set(message = "Rendering Normalization Plot", value = 0)
+                on.exit(prog$close())
+                prog$inc(amount = 9/10, detail = "Please Wait")
+                gp <- plotly::ggplotly(p, tooltip = "text") #c("label", "x", "y"))
+              }) %...>% (function(result) {
+                return(result)
+              })
+
             }
           }
         )
