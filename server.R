@@ -830,61 +830,53 @@ server <- function(input, output, session) {
         session$sendCustomMessage("handler_startLoader", c("normalize_loader", 75))
         updateSignatures()
         
-        output$hvgScatter <- renderPlotly(#tooltip example TODO the same in all plots
-          {
-            if(length(VariableFeatures(seurat_object)) != 0)
-            {
-              plot1 <- VariableFeaturePlot(seurat_object)
-              varplot <- plot1$data
-              varplot$gene <- rownames(varplot)
-              varplot$colors[varplot$colors == "yes"] <- paste0("Highly Variable genes(", length(VariableFeatures(seurat_object)), ")")
-              varplot$colors[varplot$colors == "no"] <- paste0("Not Variable genes(", length(rownames(seurat_object)) - length(VariableFeatures(seurat_object)), ")")
-              
-              if(normalize_hvgMethod == "vst")
-              {
-                #p <- ggplot(varplot, aes(x=log10(mean), y=variance.standardized, color=colors, label=gene)) + 
-                p <- ggplot(varplot, aes(x=log10(mean), y=variance.standardized, color=colors, text = paste0("log10(mean expression): ", log10(mean),
-                                                                                                             "\nstandardized variance: ", variance.standardized,
-                                                                                                             "\ngene: ", gene)
-                                         )) +
-                  geom_point() +
-                  theme_bw() +
-                  #scale_color_manual(values = c("black", "red")) +
-                  scale_color_manual(
-                    values = c("red", "black")
-                  )+
-                  labs(x="Average Expression", y="Standardized Variance", color="")
-              }
-              else
-              {
-                withProgress(message = 'Making plot', value = 0, {
-                p <- ggplot(varplot, aes(x=mean, y=dispersion.scaled, color=colors, text = paste0("mean expression: ", mean,
-                                                                                                  "\nscaled dispersion: ", dispersion.scaled,
-                                                                                                  "\ngene: ", gene)
-                )) +
-                  geom_point() +
-                  theme_bw() +
-                  scale_color_manual(
-                    values = c("red", "black")
-                  )+ 
-                  labs(x="Average Expression", y="Scaled Dispersion", color="")
-                })
-              }
-              
-              # TODO Debugging, not working properly after first execution
-              future_promise({ # future
-                prog <- shiny::Progress$new(max = 1)
-                prog$set(message = "Rendering Normalization Plot", value = 0)
-                on.exit(prog$close())
-                prog$inc(amount = 9/10, detail = "Please Wait")
-                gp <- plotly::ggplotly(p, tooltip = "text") #c("label", "x", "y"))
-              }) %...>% (function(result) {
-                return(result)
-              })
-
+        # Rendering
+        output$hvgScatter <- renderPlotly({ # tooltip example TODO the same in all plots
+          prog <- shiny::Progress$new(max = 1) # TODO further debug/synchronization
+          prog$set(message = "Rendering Normalization Plot", value = 0)
+          on.exit(prog$close())
+          prog$inc(amount = 1/4, detail = "Please Wait...")
+          
+          if(length(VariableFeatures(seurat_object)) != 0){
+            plot1 <- VariableFeaturePlot(seurat_object)
+            varplot <- plot1$data
+            varplot$gene <- rownames(varplot)
+            varplot$colors[varplot$colors == "yes"] <- paste0("Highly Variable genes(", length(VariableFeatures(seurat_object)), ")")
+            varplot$colors[varplot$colors == "no"] <- paste0("Not Variable genes(", length(rownames(seurat_object)) - length(VariableFeatures(seurat_object)), ")")
+            prog$inc(amount = 2/4, detail = "Please Wait...")
+            
+            if(normalize_hvgMethod == "vst"){
+              #p <- ggplot(varplot, aes(x=log10(mean), y=variance.standardized, color=colors, label=gene)) + 
+              p <- ggplot(varplot, aes(x=log10(mean), y=variance.standardized, color=colors, text = paste0("log10(mean expression): ", log10(mean),
+                                                                                                           "\nstandardized variance: ", variance.standardized,
+                                                                                                           "\ngene: ", gene)
+              )) +
+                geom_point() +
+                theme_bw() +
+                #scale_color_manual(values = c("black", "red")) +
+                scale_color_manual(
+                  values = c("red", "black")
+                )+
+                labs(x="Average Expression", y="Standardized Variance", color="")
+            } else { # TODO DeBUG
+              p <- ggplot(varplot, aes(x=mean, y=dispersion.scaled, color=colors, text = paste0("mean expression: ", mean,
+                                                                                                "\nscaled dispersion: ", dispersion.scaled,
+                                                                                                "\ngene: ", gene)
+              )) +
+                geom_point() +
+                theme_bw() +
+                scale_color_manual(
+                  values = c("red", "black")
+                )+ 
+                labs(x="Average Expression", y="Scaled Dispersion", color="")
             }
-          }
-        )
+            prog$inc(amount = 3/4, detail = "Please Wait...")
+            gp <- plotly::ggplotly(p, tooltip = "text") #c("label", "x", "y"))
+            prog$inc(amount = 4/4, detail = "Please Wait...")
+            return(gp)
+          } else session$sendCustomMessage("handler_alert", "There are no variable features in the Seaurat object.")
+        }) # End Rendering
+        
         session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " PRINCIPAL COMPONENT\nANALYSIS"))
       }
     # }, warning = function(w) {
