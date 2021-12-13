@@ -53,7 +53,7 @@ libraries_CRAN <- c(
   "shinydashboard",
   "shinycssloaders",
   "shinyalert",
-  "bsplus"
+  "bsplus",
   "tidyverse",
   "DT",
   "ggplot2",
