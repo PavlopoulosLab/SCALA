@@ -41,7 +41,7 @@ fi
 RSTUDIO_CHK=$(which rstudio)
 if [[ $RSTUDIO_CHK == "" ]]
 then
-	apt-get install dpkg-sig
+	apt-get install -y dpkg-sig
 	wget https://download1.rstudio.org/desktop/bionic/amd64/rstudio-2021.09.1-372-amd64.deb
 	gpg --keyserver keyserver.ubuntu.com --recv-keys 3F32EE77E331692F
 	dpkg-sig --verify rstudio-2021.09.1-372-amd64.deb
