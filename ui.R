@@ -15,7 +15,6 @@ ui <- dashboardPage(
   #------------------------------------------------------------Sidebar
   dashboardSidebar(
     width = "280px",
-    
     sidebarMenu(id = "sidebarMenu",
       menuItem(text = "HOME", tabName = "home", icon = icon("home")),
       tags$hr(),
@@ -78,6 +77,7 @@ ui <- dashboardPage(
       tabItem(tabName = "upload", #TODO 3 tabs
               # two boxes inside upload tab
               fluidRow(
+                #useShinyalert(),
                 box(
                   width = 4, status = "info", solidHeader = TRUE,
                   title = "Select input files",

@@ -39,6 +39,7 @@ server <- function(input, output, session) {
     session$sendCustomMessage("handler_startLoader", c("input_loader", 10))
     session$sendCustomMessage("handler_disableButton", "uploadCountMatrixConfirm") 
     tryCatch({
+      
       # Create the user directory for the input and output of the analysis
       metaD$my_project_name <- input$uploadCountMatrixprojectID
       minimum_cells <<- input$uploadCountMatrixminCells
@@ -70,8 +71,7 @@ server <- function(input, output, session) {
       
       session$sendCustomMessage("handler_startLoader", c("input_loader", 50))
       
-      output$metadataTable <- renderDataTable(seurat_object@meta.data, options = list(pageLength = 20))
-      export_metadata_RNA <<- seurat_object@meta.data
+      updateMetadata()
       session$sendCustomMessage("handler_startLoader", c("input_loader", 75))
       updateSelInpColor()
       #updateInputGeneList()
@@ -133,8 +133,7 @@ server <- function(input, output, session) {
       
       session$sendCustomMessage("handler_startLoader", c("input_loader", 50))
       
-      output$metadataTable <- renderDataTable(seurat_object@meta.data, options = list(pageLength = 20))
-      export_metadata_RNA <<- seurat_object@meta.data
+      updateMetadata()
       session$sendCustomMessage("handler_startLoader", c("input_loader", 75))
       updateSelInpColor()
       #updateInputGeneList()
@@ -204,8 +203,7 @@ server <- function(input, output, session) {
       
       session$sendCustomMessage("handler_startLoader", c("input_loader", 50))
       
-      output$metadataTable <- renderDataTable(seurat_object@meta.data, options = list(pageLength = 20))
-      export_metadata_RNA <<- seurat_object@meta.data
+      updateMetadata()
       session$sendCustomMessage("handler_startLoader", c("input_loader", 75))
       updateSelInpColor()
       #updateInputGeneList()
@@ -274,10 +272,7 @@ server <- function(input, output, session) {
       
       session$sendCustomMessage("handler_startLoader", c("input_loader", 50))
       
-      updateTabsetPanel(session, inputId = "uploadTabPanel", selected = "scATAC-seq") #******
-      output$metadataTable <- renderDataTable(seurat_object@meta.data, options = list(pageLength = 20))
-      export_metadata_RNA <<- seurat_object@meta.data
-      export_metadata_RNA <<- seurat_object@meta.data
+      updateMetadata()
       session$sendCustomMessage("handler_startLoader", c("input_loader", 75))
       updateSelInpColor()
       #updateInputGeneList()
@@ -350,14 +345,7 @@ server <- function(input, output, session) {
       session$sendCustomMessage("handler_startLoader", c("input_loader", 50))
       session$sendCustomMessage("handler_startLoader", c("input_loader", 75))
       
-      df_meta_data <- as.data.frame(getCellColData(proj_default))
-      df_meta_data$cell_id <- rownames(df_meta_data)
-      rownames(df_meta_data) <- NULL
-       
-      output$metadataTableATAC <- renderDataTable(df_meta_data, options = list(pageLength = 10), rownames = F)
-      
-      #export table
-      export_metadata_ATAC <<- df_meta_data
+      upupdateMetadataATAC()
       
       addArchRThreads(threads = as.numeric(input$upload10xATACThreads))
       updateSelectizeInput(session, "visualizeTracksGene", choices = unique(proj_default@geneAnnotation$genes$symbol), server = T)
@@ -423,14 +411,7 @@ server <- function(input, output, session) {
         session$sendCustomMessage("handler_startLoader", c("input_loader", 50))
         session$sendCustomMessage("handler_startLoader", c("input_loader", 75))
         
-        df_meta_data <- as.data.frame(getCellColData(proj_default))
-        df_meta_data$cell_id <- rownames(df_meta_data)
-        rownames(df_meta_data) <- NULL
-        
-        output$metadataTableATAC <- renderDataTable(df_meta_data, options = list(pageLength = 10), rownames = F)
-        
-        #export table
-        export_metadata_ATAC <<- df_meta_data
+        updateMetadataATAC()
         
         addArchRThreads(threads = as.numeric(input$upload10xATACThreads))
         updateSelectizeInput(session, "visualizeTracksGene", choices = unique(proj_default@geneAnnotation$genes$symbol), server = T)
@@ -711,7 +692,7 @@ server <- function(input, output, session) {
         updateRegressOut()
         updateSelInpColor()
         session$sendCustomMessage("handler_disableTabs", "sidebarMenu")
-        output$metadataTable <- renderDataTable(seurat_object@meta.data, options = list(pageLength = 20))
+        updateMetadata()
         cleanAllPlots(F) # fromDataInput -> FALSE
         session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " QUALITY CONTROL", " DATA NORMALIZATION\n& SCALING", " UTILITY OPTIONS"))
       }
@@ -1109,7 +1090,7 @@ server <- function(input, output, session) {
         updateSelInpColor()
         updateInputLRclusters()
         #updateInpuTrajectoryClusters()
-        output$metadataTable <- renderDataTable(seurat_object@meta.data, options = list(pageLength = 20))
+        updateMetadata()
         session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " ADDITIONAL DIMENSIONALITY\nREDUCTION METHODS", " TRAJECTORY ANALYSIS",
                                                           " MARKERS' IDENTIFICATION", " LIGAND - RECEPTOR\nANALYSIS"))
       }
@@ -1285,7 +1266,7 @@ server <- function(input, output, session) {
     session$sendCustomMessage("handler_startLoader", c("clust4_loader", 75))
     
     output$clusterBarplotATAC <- renderPlotly({print(gp)})
-    
+    updateMetadataATAC()
     updateSelInpColorATAC()
     updateInpuTrajectoryClustersATAC()
     session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " ADDITIONAL DIMENSIONALITY\nREDUCTION METHODS", " TRAJECTORY ANALYSIS",
@@ -1770,7 +1751,7 @@ server <- function(input, output, session) {
         session$sendCustomMessage("handler_startLoader", c("DEA4_loader", 70))
         seurat_object <<- AddModuleScore_UCell(seurat_object, features = markers)
         updateSignatures()
-        output$metadataTable <- renderDataTable(seurat_object@meta.data, options = list(pageLength = 20))
+        updateMetadata()
         session$sendCustomMessage("handler_startLoader", c("DEA4_loader", 90))
         
       }
@@ -2245,7 +2226,7 @@ output$findMarkersPeaksATACExport <- downloadHandler(
         seurat_object <<- CellCycleScoring(seurat_object, s.features = s.genes, g2m.features = g2m.genes, set.ident = F)
         seurat_object@meta.data$CC.Difference <<- seurat_object$S.Score - seurat_object$G2M.Score
         seurat_object@meta.data$Phase <<- factor(seurat_object@meta.data$Phase, levels = c("G1", "S", "G2M"))
-        output$metadataTable <- renderDataTable(seurat_object@meta.data, options = list(pageLength = 20))
+        updateMetadata()
         
         output$cellCyclePCA <- renderPlotly(
           {
@@ -2675,7 +2656,7 @@ output$findMotifsATACExport <- downloadHandler(
         }
         
         updateInputLineageList(names(metaD$all_lin))
-        output$metadataTable <- renderDataTable(seurat_object@meta.data, options = list(pageLength = 20))
+        updateMetadata()
         session$sendCustomMessage("handler_startLoader", c("traj1_loader", 50))
         session$sendCustomMessage("handler_startLoader", c("traj2_loader", 50))
         #print(paste0("after update:", names(metaD$all_lin)))
@@ -2796,6 +2777,7 @@ output$findMotifsATACExport <- downloadHandler(
         output$trajectoryTextATAC <- renderPrint({ print(sds@lineages) }) #sds@metadata$lineages
         
         updateSelectInput(session, "trajectoryLineageSelectATAC", choices = names(sds@lineages)) #sds@metadata$lineages
+        updateMetadataATAC()
       }
     }, error = function(e) {
       print(paste("Error :  ", e))
@@ -3636,11 +3618,11 @@ output$findMotifsATACExport <- downloadHandler(
   updateUmapTypeChoices <- function(type)
   {
     reductions_choices <<- c(reductions_choices, type)
-    updateSelectInput(session, "umapType", choices = reductions_choices)  #umapType, findMarkersReductionType, cellCycleReduction, trajectoryReduction
-    updateSelectInput(session, "findMarkersReductionType", choices = reductions_choices)
-    updateSelectInput(session, "findMarkersFeaturePairReductionType", choices = reductions_choices)
-    updateSelectInput(session, "cellCycleReduction", choices = reductions_choices)
-    updateSelectInput(session, "trajectoryReduction", choices = reductions_choices)
+    updateSelectInput(session, "umapType", choices = reductions_choices, selected = type)  #umapType, findMarkersReductionType, cellCycleReduction, trajectoryReduction
+    updateSelectInput(session, "findMarkersReductionType", choices = reductions_choices, selected = type)
+    updateSelectInput(session, "findMarkersFeaturePairReductionType", choices = reductions_choices, selected = type)
+    updateSelectInput(session, "cellCycleReduction", choices = reductions_choices, selected = type)
+    updateSelectInput(session, "trajectoryReduction", choices = reductions_choices, selected = type)
   }
   
   updateSignatures <- function()
@@ -3779,8 +3761,35 @@ output$findMotifsATACExport <- downloadHandler(
     updateSelectInput(session, "findMarkersFeaturePairReductionType", choices = reductions_choices)
     updateSelectInput(session, "cellCycleReduction", choices = reductions_choices)
     updateSelectInput(session, "trajectoryReduction", choices = reductions_choices)
+    
+    #reset export table values
+    export_metadata_RNA <- ""
+    export_clustertable_RNA <- ""
+    export_markerGenes_RNA <- ""
+    export_enrichedTerms_RNA <- ""
+    export_annotation_RNA <- ""
+    export_ligandReceptor_full_RNA <- ""
+    export_ligandReceptor_short_RNA <- ""
   }
   
+  #update metadata RNA and export_RNA_table
+  updateMetadata <- function()
+  {
+    output$metadataTable <- renderDataTable(seurat_object@meta.data, options = list(pageLength = 20))
+    export_metadata_RNA <<- seurat_object@meta.data
+  }
+  
+  updateMetadataATAC <- function()
+  {
+    df_meta_data <- as.data.frame(getCellColData(proj_default))
+    df_meta_data$cell_id <- rownames(df_meta_data)
+    rownames(df_meta_data) <- NULL
+    
+    output$metadataTableATAC <- renderDataTable(df_meta_data, options = list(pageLength = 10), rownames = F)
+    
+    #export table
+    export_metadata_ATAC <<- df_meta_data
+  }
   
   #functions for optimal number of PCs
   #Initialize Functions
