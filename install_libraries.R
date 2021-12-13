@@ -45,6 +45,7 @@ libraries_CRAN <- c(
   "shiny",
   "shinyjs",
   "shinydashboard",
+  "shinycssloaders",
   "DT",
   "ggplot2",
   "ggpubr",
@@ -64,7 +65,7 @@ libraries_CRAN <- c(
   "pheatmap",
   "hdf5r",
   "missMDA",
-  "mrlMBO"
+  "dismo"
 )
 for (i in 1:length(libraries_CRAN))
 {
@@ -134,7 +135,12 @@ libraries_bioconductor <- c(
   "slingshot",
   "JASPAR2020",
   "JASPAR2018",
-  "JASPAR2016"
+  "JASPAR2016",
+  "MAST",
+  "BSgenome.Mmusculus.UCSC.mm9",
+  "BSgenome.Mmusculus.UCSC.mm10",
+  "BSgenome.Hsapiens.UCSC.hg19",
+  "BSgenome.Hsapiens.UCSC.hg38"
 )
 for (i in 1:length(libraries_bioconductor))
   {

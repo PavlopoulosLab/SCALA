@@ -29,6 +29,7 @@ $conda_path/envs/pyscenic/bin/pip install phate
 #install some dependencies that are needed by a few of the R packages
 apt-get install -y gsl-bin libgsl23 libgslcblas0 libgsl-dev
 apt-get install -y hdf5-tools hdf5-helpers libhdf5-dev
+apt-get install -y gdal-bin libgdal-dev
 
 
 #finally, check if user has R installed, if not, install it
