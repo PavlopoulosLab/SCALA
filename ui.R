@@ -15,7 +15,6 @@ ui <- dashboardPage(
   #------------------------------------------------------------Sidebar
   dashboardSidebar(
     width = "280px",
-    
     sidebarMenu(id = "sidebarMenu",
       menuItem(text = "HOME", tabName = "home", icon = icon("home")),
       tags$hr(),
@@ -78,6 +77,7 @@ ui <- dashboardPage(
       tabItem(tabName = "upload", #TODO 3 tabs
               # two boxes inside upload tab
               fluidRow(
+                #useShinyalert(),
                 box(
                   width = 4, status = "info", solidHeader = TRUE,
                   title = "Select input files",
@@ -144,7 +144,7 @@ ui <- dashboardPage(
                   title = "Metadata table",
                   div(class="ldBar", id="input_loader", "data-preset"="circle"),
                   
-                  tabsetPanel(type = "tabs",
+                  tabsetPanel(type = "tabs", id = "uploadTabPanel",
                               tabPanel("scRNA-seq",
                                        dataTableOutput("metadataTable", width = "100%", height = "100%"),
                                        downloadButton(outputId = "uploadMetadataExportRNA", label = "Save table")
@@ -158,34 +158,9 @@ ui <- dashboardPage(
               ),
       ),
       
-      #utilities tab
-      tabItem(tabName = "utilities",
-              fluidRow(
-                box(
-                  width = 12, status = "info", solidHeader = TRUE,
-                  title = "Edit/export working object",
-                  tags$h3("Rename cluster"),
-                  tags$hr(),
-                  selectInput(inputId = "utilitiesRenameOldName", label = "Cluster to be renamed (old name):", choices = "-", multiple = F),
-                  textInput(inputId = "utilitiesRenameNewName", label = "New name of the cluster:", value = "New_name_1"),
-                  actionButton(inputId = "utilitiesConfirmRename", label = "Rename"),
-                  tags$h3("Delete cluster"),
-                  tags$hr(),
-                  selectInput(inputId = "utilitiesDeleteCluster", label = "Cluster to be deleted:", choices = "-", multiple = F),
-                  actionButton(inputId = "utilitiesConfirmDelete", label = "Delete"),
-                  tags$h3("Export working object as .RDS file"),
-                  tags$hr(),
-                  downloadButton(outputId = "utilitiesConfirmExport", label = "Export .RDS"),
-                  #tags$h3("Select palette for cluster colors"),
-                  #tags$hr(),
-                  #actionButton(inputId = "utilitiesColorPicker", label = "choose palette")
-                  )
-                )
-              ),
-      
       #QC tab
       tabItem(tabName = "qc",
-              tabsetPanel(type = "tabs",
+              tabsetPanel(type = "tabs", id = "qcTabPanel",
                           tabPanel("scRNA-seq",
                                    #two boxes inside QC tab
                                    fluidRow(
@@ -210,6 +185,7 @@ ui <- dashboardPage(
                                      box(
                                        width = 9, status = "info", solidHeader = TRUE,
                                        title = "Quality control plots",
+
                                        div(class="ldBar", id="qc_loader", "data-preset"="circle"),
                                        div(
                                          column(tags$h3("Pre-filtering plots"), width=12),
@@ -279,6 +255,7 @@ ui <- dashboardPage(
                                                ), width = 6),
                                          column(verbatimTextOutput(outputId = "filteredCellStats"), width = 4),
                                        )
+
                                      )
                                    )
                           ),
@@ -304,7 +281,7 @@ ui <- dashboardPage(
                                      box(
                                        width = 9, status = "info", solidHeader = TRUE,
                                        title = "Quality control plots",
-                                       div(class="ldBar", id="qc_loader2", "data-preset"="circle"),
+                                       div(class="ldBar", id="qc_loader3", "data-preset"="circle"),
                                        div(
                                          column(tags$h3("Soft filtered plots"), width=12),
                                          column(tags$hr(), width = 12),
@@ -395,7 +372,7 @@ ui <- dashboardPage(
       
       #PCA tab
       tabItem(tabName = "pca", 
-              tabsetPanel(type = "tabs",
+              tabsetPanel(type = "tabs", id = "pcaTabPanel",
                           tabPanel("scRNA-seq: PCA",
                                    fluidRow(
                                      box(
@@ -473,7 +450,7 @@ ui <- dashboardPage(
       
       #Clustering tab
       tabItem(tabName = "clustering", 
-              tabsetPanel(type = "tabs",
+              tabsetPanel(type = "tabs", id = "clusteringTabPanel",
                           tabPanel("scRNA-seq",
                                    fluidRow(
                                      box(
@@ -561,7 +538,7 @@ ui <- dashboardPage(
       
       #UMAP tab
       tabItem(tabName = "umap", 
-              tabsetPanel(type = "tabs",
+              tabsetPanel(type = "tabs", id = "umapTabPanel",
                           tabPanel("scRNA-seq",
                                    fluidRow(
                                      box(width = 3, status = "info", solidHeader = TRUE,
@@ -644,7 +621,7 @@ ui <- dashboardPage(
       
       #DEA tab
       tabItem(tabName = "findMarkers", 
-              tabsetPanel(type = "tabs",
+              tabsetPanel(type = "tabs", id = "findMarkersTabPanel",
                           tabPanel("scRNA-seq",
                                    fluidRow(
                                      box(width = 3, status = "info", solidHeader = TRUE,
@@ -979,7 +956,7 @@ ui <- dashboardPage(
       
       #Enrichment analysis -gProfiler
       tabItem(tabName = "gProfiler", 
-              tabsetPanel(type = "tabs",
+              tabsetPanel(type = "tabs", id = "gProfilerTabPanel",
                           tabPanel("scRNA-seq",
                                    fluidRow(
                                      box(width = 2, status = "info", solidHeader = TRUE,
@@ -1130,7 +1107,7 @@ ui <- dashboardPage(
       
       #Trajectory analysis
       tabItem(tabName = "trajectory",
-              tabsetPanel(type="tabs",
+              tabsetPanel(type="tabs", id = "trajectoryTabPanel",
                           tabPanel("scRNA-seq", 
                                    fluidRow(
                                      box(
@@ -1248,7 +1225,7 @@ ui <- dashboardPage(
       
       #GRN analysis
       tabItem(tabName = "grn",
-              tabsetPanel(type="tabs",
+              tabsetPanel(type="tabs", id = "grnTabPanel",
                           tabPanel("scRNA-seq", #TODO for pyscenic ctx minimun number of genes per module, AUC+NES thresholds [for the update]
                                    fluidRow(
                                      box(width = 3, status = "info", solidHeader = TRUE, title = "GRN input parameters",
@@ -1290,6 +1267,7 @@ ui <- dashboardPage(
                                                               dataTableOutput(outputId="grnMatrixATAC", height = "500px"),
                                                               downloadButton(outputId = "grnPositiveRegulatorsATACExport", label = "Save table"),
                                                               tags$hr(),
+
                                                               div(id="grnHeatmapATAC_loader",
                                                                   shinycssloaders::withSpinner(
                                                                     plotlyOutput(outputId = "grnHeatmapATAC", height = "800px")
@@ -1300,6 +1278,7 @@ ui <- dashboardPage(
                                                                     plotOutput(outputId = "grnHeatmapATAC2", height = "800px") # TODO: remove? does not exist in server
                                                                   )
                                                               )
+
                                                               ),
                                                      tabPanel("Peak to gene links",
                                                               dataTableOutput(outputId="grnP2GlinksTable", height = "800px"),

@@ -1,5 +1,5 @@
 #SET THE NUMBER OF CPUs TO USE FOR PACKAGE INSTALLATION
-cpus=4
+cpus=8
 
 # Step 0: setup environmental values. ####
 #0.1 Set CRAN mirror: This is required if you want to run the script in the CMD/terminal with Rscript, instead of R-studio
@@ -10,7 +10,13 @@ options(repos=r)
 #0.2 Set number of cpus for compilation. This uses the 'cpus' variable defined above
 local({options(Ncpus=cpus)})
 
-# Step 1: check if remotes, devtools, BiocManager and reticulate are available. If not, install them, and load them with require ####
+# Step 1: check if RCurl remotes, devtools, BiocManager and reticulate are available. If not, install them, and load them with require ####
+if ("RCurl" %in% rownames(installed.packages()))
+{
+  print(sprintf("RCurl is already installed."))
+} else {
+  install.packages("RCurl")
+}
 if("remotes" %in% rownames(installed.packages()))
 {
   require(remotes)
@@ -45,6 +51,10 @@ libraries_CRAN <- c(
   "shiny",
   "shinyjs",
   "shinydashboard",
+  "shinycssloaders",
+  "shinyalert",
+  "bsplus",
+  "tidyverse",
   "DT",
   "ggplot2",
   "ggpubr",
@@ -64,7 +74,7 @@ libraries_CRAN <- c(
   "pheatmap",
   "hdf5r",
   "missMDA",
-  "mrlMBO"
+  "dismo"
 )
 for (i in 1:length(libraries_CRAN))
 {
@@ -80,6 +90,12 @@ for (i in 1:length(libraries_CRAN))
 
 
 # Step 3: Check and install (if required) libraries that need to be installed from GitHub with remotes or devtools ####
+if("chromVARmotifs" %in% rownames(installed.packages()))
+{
+  print("chromVARmotifs is installed")
+} else {  
+  devtools::install_github("GreenleafLab/chromVARmotifs", upgrade = c("never"))
+}
 if("SCopeLoomR" %in% rownames(installed.packages()))
 {
   print("SCopeLoomR is installed")
@@ -134,7 +150,12 @@ libraries_bioconductor <- c(
   "slingshot",
   "JASPAR2020",
   "JASPAR2018",
-  "JASPAR2016"
+  "JASPAR2016",
+  "MAST",
+  "BSgenome.Mmusculus.UCSC.mm9",
+  "BSgenome.Mmusculus.UCSC.mm10",
+  "BSgenome.Hsapiens.UCSC.hg19",
+  "BSgenome.Hsapiens.UCSC.hg38"
 )
 for (i in 1:length(libraries_bioconductor))
   {
@@ -185,3 +206,4 @@ if("ArchR" %in% rownames(installed.packages()))
   library(ArchR)
   ArchR::installExtraPackages() 
 }
+

@@ -13,6 +13,7 @@ server <- function(input, output, session) {
   
   #Fast debug mode
   observeEvent(input$debugRNA, {
+
     tryCatch({
       seurat_object <<- readRDS("processed_seurat_object-2021-12-11.RDS")
       session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " QUALITY CONTROL", " DATA NORMALIZATION\n& SCALING", " PRINCIPAL COMPONENT\nANALYSIS",
@@ -43,363 +44,378 @@ server <- function(input, output, session) {
   })
   
   #------------------Upload tab--------------------------------
-  observeEvent(input$uploadCountMatrixConfirm, { #TODO one dataset per session, deactivate options from other modality
-    session$sendCustomMessage("handler_disableTabs", "sidebarMenu") # disable all tab panels (except Data Input) until files are uploaded
-    session$sendCustomMessage("handler_startLoader", c("input_loader", 10))
-    session$sendCustomMessage("handler_disableButton", "uploadCountMatrixConfirm") 
-    tryCatch({
-      # Create the user directory for the input and output of the analysis
-      metaD$my_project_name <- input$uploadCountMatrixprojectID
-      minimum_cells <<- input$uploadCountMatrixminCells
-      minimum_features <<- input$uploadCountMatrixminFeatures
-      organism <<- input$uploadCountMatrixRadioSpecies
-      userId <- session$token
-      user_dir <- paste0("./", userId, metaD$my_project_name, gsub(pattern = "[ ]|[:]", replacement = "_", x = paste0("_", Sys.time()))) #TODO remove 2 random barcodes, does it crash?
-      dir.create(user_dir)
-      file.copy(from = input$countMatrix$datapath, to = paste0(user_dir, "/countMatrix.txt"), overwrite = TRUE)
-      setwd(user_dir)
-      
-      testMatrix <- read.table("countMatrix.txt")
-      seurat_object <<- CreateSeuratObject(counts = testMatrix, project = metaD$my_project_name, min.cells = as.numeric(minimum_cells), min.features = as.numeric(minimum_features))
+  observeEvent(input$uploadCountMatrixConfirm, { 
+    if(!is.null(proj_default) | !is.null(seurat_object))
+    {
+      showModal(modal_confirm)
+    }
+    else
+    {
+      session$sendCustomMessage("handler_disableTabs", "sidebarMenu") 
+      session$sendCustomMessage("handler_startLoader", c("input_loader", 10))
+      session$sendCustomMessage("handler_disableButton", "uploadCountMatrixConfirm") 
+      tryCatch({
         
-      init_seurat_object <<- CreateSeuratObject(counts = testMatrix, project = metaD$my_project_name, min.cells = as.numeric(minimum_cells), min.features = as.numeric(minimum_features))
-      
-      
-      session$sendCustomMessage("handler_startLoader", c("input_loader", 25))
-      if(organism == "mouse")
-      {
-        seurat_object[["percent.mt"]] <<- PercentageFeatureSet(seurat_object, pattern = "^mt-")
-        init_seurat_object[["percent.mt"]] <<- PercentageFeatureSet(init_seurat_object, pattern = "^mt-")
-      }
-      else
-      {
-        seurat_object[["percent.mt"]] <<- PercentageFeatureSet(seurat_object, pattern = "^MT-")
-        init_seurat_object[["percent.mt"]] <<- PercentageFeatureSet(init_seurat_object, pattern = "^MT-")
-      }
-      
-      session$sendCustomMessage("handler_startLoader", c("input_loader", 50))
-      
-      output$metadataTable <- renderDataTable(seurat_object@meta.data, options = list(pageLength = 20))
-      export_metadata_RNA <<- seurat_object@meta.data
-      session$sendCustomMessage("handler_startLoader", c("input_loader", 75))
-      updateSelInpColor()
-      #updateInputGeneList()
-      updateGeneSearchFP()
-      updateQC_choices()
-      cleanAllPlots(T) # fromDataInput -> TRUE
-      # updateInputLRclusters()
-      # updateInpuTrajectoryClusters()
-      # print(organism)
-      # saveRDS(seurat_object, "seurat_object.RDS")
-      session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " QUALITY CONTROL", " DATA NORMALIZATION\n& SCALING", " UTILITY OPTIONS"))
-    # }, warning = function(w) {
-    #   print(paste("Warning:  ", w))
-    }, error = function(e) {
-      print(paste("Error :  ", e))
-      session$sendCustomMessage("handler_alert", "Data Input error. Please, refer to the help pages for input format.")
-    }, finally = { # with or without error
-      session$sendCustomMessage("handler_startLoader", c("input_loader", 100))
-      Sys.sleep(1) # giving some time for renderer for smoother transition
-      session$sendCustomMessage("handler_finishLoader", "input_loader")
-      session$sendCustomMessage("handler_enableButton", "uploadCountMatrixConfirm")
-    })
+        # Create the user directory for the input and output of the analysis
+        metaD$my_project_name <- input$uploadCountMatrixprojectID
+        minimum_cells <<- input$uploadCountMatrixminCells
+        minimum_features <<- input$uploadCountMatrixminFeatures
+        organism <<- input$uploadCountMatrixRadioSpecies
+        userId <- session$token
+        user_dir <<- paste0("./usr_temp/", userId, metaD$my_project_name, gsub(pattern = "[ ]|[:]", replacement = "_", x = paste0("_", Sys.time()))) #TODO remove 2 random barcodes, does it crash?
+        dir.create(user_dir)
+        file.copy(from = input$countMatrix$datapath, to = paste0(user_dir, "/countMatrix.txt"), overwrite = TRUE)
+        
+        testMatrix <- read.table(paste0(user_dir, "/countMatrix.txt"))
+        seurat_object <<- CreateSeuratObject(counts = testMatrix, project = metaD$my_project_name, min.cells = as.numeric(minimum_cells), min.features = as.numeric(minimum_features))
+        
+        init_seurat_object <<- CreateSeuratObject(counts = testMatrix, project = metaD$my_project_name, min.cells = as.numeric(minimum_cells), min.features = as.numeric(minimum_features))
+        
+        
+        session$sendCustomMessage("handler_startLoader", c("input_loader", 25))
+        if(organism == "mouse")
+        {
+          seurat_object[["percent.mt"]] <<- PercentageFeatureSet(seurat_object, pattern = "^mt-")
+          init_seurat_object[["percent.mt"]] <<- PercentageFeatureSet(init_seurat_object, pattern = "^mt-")
+        }
+        else
+        {
+          seurat_object[["percent.mt"]] <<- PercentageFeatureSet(seurat_object, pattern = "^MT-")
+          init_seurat_object[["percent.mt"]] <<- PercentageFeatureSet(init_seurat_object, pattern = "^MT-")
+        }
+        
+        session$sendCustomMessage("handler_startLoader", c("input_loader", 50))
+        
+        updateMetadata()
+        session$sendCustomMessage("handler_startLoader", c("input_loader", 75))
+        updateSelInpColor()
+        #updateInputGeneList()
+        updateGeneSearchFP()
+        updateQC_choices()
+        #cleanAllPlots(T) # fromDataInput -> TRUE
+        disableTabsATAC()
+        # updateInputLRclusters()
+        # updateInpuTrajectoryClusters()
+        # print(organism)
+        # saveRDS(seurat_object, "seurat_object.RDS")
+        session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " QUALITY CONTROL", " DATA NORMALIZATION\n& SCALING", " UTILITY OPTIONS"))
+        
+        # }, warning = function(w) {
+        #   print(paste("Warning:  ", w))
+      }, error = function(e) {
+        print(paste("Error :  ", e))
+        session$sendCustomMessage("handler_alert", "Data Input error. Please, refer to the help pages for input format.")
+      }, finally = { # with or without error
+        session$sendCustomMessage("handler_startLoader", c("input_loader", 100))
+        Sys.sleep(1) # giving some time for renderer for smoother transition
+        session$sendCustomMessage("handler_finishLoader", "input_loader")
+        session$sendCustomMessage("handler_enableButton", "uploadCountMatrixConfirm")
+      })
+    }
   })
   
-  observeEvent(input$upload10xExampleRNACountMatrixConfirm, { #TODO one dataset per session, deactivate options from other modality
-    session$sendCustomMessage("handler_disableTabs", "sidebarMenu") # disable all tab panels (except Data Input) until files are uploaded
-    session$sendCustomMessage("handler_startLoader", c("input_loader", 10))
-    session$sendCustomMessage("handler_disableButton", "upload10xExampleRNACountMatrixConfirm") 
-    tryCatch({
-      # Create the user directory for the input and output of the analysis
-      metaD$my_project_name <- input$uploadCountMatrixprojectID
-      minimum_cells <<- input$uploadCountMatrixminCells
-      minimum_features <<- input$uploadCountMatrixminFeatures
-      organism <<- "human"
-      userId <- session$token
-      user_dir <- paste0("./", userId, metaD$my_project_name, gsub(pattern = "[ ]|[:]", replacement = "_", x = paste0("_", Sys.time()))) #TODO remove 2 random barcodes, does it crash?
-      dir.create(user_dir)
-      file.copy(from = "exampleRNA_matrix/exampleMatrix.txt", to = paste0(user_dir, "/countMatrix.txt"), overwrite = TRUE)
-      setwd(user_dir)
-      
-      testMatrix <- read.table("countMatrix.txt")
-      seurat_object <<- CreateSeuratObject(counts = testMatrix, project = metaD$my_project_name, min.cells = as.numeric(minimum_cells), min.features = as.numeric(minimum_features))
-      
-      init_seurat_object <<- CreateSeuratObject(counts = testMatrix, project = metaD$my_project_name, min.cells = as.numeric(minimum_cells), min.features = as.numeric(minimum_features))
-      
-      
-      session$sendCustomMessage("handler_startLoader", c("input_loader", 25))
-      if(organism == "mouse")
-      {
-        seurat_object[["percent.mt"]] <<- PercentageFeatureSet(seurat_object, pattern = "^mt-")
-        init_seurat_object[["percent.mt"]] <<- PercentageFeatureSet(init_seurat_object, pattern = "^mt-")
-      }
-      else
-      {
-        seurat_object[["percent.mt"]] <<- PercentageFeatureSet(seurat_object, pattern = "^MT-")
-        init_seurat_object[["percent.mt"]] <<- PercentageFeatureSet(init_seurat_object, pattern = "^MT-")
-      }
-      
-      session$sendCustomMessage("handler_startLoader", c("input_loader", 50))
-      
-      output$metadataTable <- renderDataTable(seurat_object@meta.data, options = list(pageLength = 20))
-      export_metadata_RNA <<- seurat_object@meta.data
-      session$sendCustomMessage("handler_startLoader", c("input_loader", 75))
-      updateSelInpColor()
-      #updateInputGeneList()
-      updateGeneSearchFP()
-      updateQC_choices()
-      cleanAllPlots(T) # fromDataInput -> TRUE
-      # updateInputLRclusters()
-      # updateInpuTrajectoryClusters()
-      # print(organism)
-      # saveRDS(seurat_object, "seurat_object.RDS")
-      session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " QUALITY CONTROL", " DATA NORMALIZATION\n& SCALING", " UTILITY OPTIONS"))
-      # }, warning = function(w) {
-      #   print(paste("Warning:  ", w))
-    }, error = function(e) {
-      print(paste("Error :  ", e))
-      session$sendCustomMessage("handler_alert", "Data Input error. Please, refer to the help pages for input format.")
-    }, finally = { # with or without error
-      session$sendCustomMessage("handler_startLoader", c("input_loader", 100))
-      Sys.sleep(1) # giving some time for renderer for smoother transition
-      session$sendCustomMessage("handler_finishLoader", "input_loader")
-      session$sendCustomMessage("handler_enableButton", "upload10xExampleRNACountMatrixConfirm")
-    })
+  observeEvent(input$upload10xExampleRNACountMatrixConfirm, { 
+    if(!is.null(proj_default) | !is.null(seurat_object))
+    {
+      showModal(modal_confirm)
+    }
+    else
+    {
+      #TODO one dataset per session, deactivate options from other modality
+      session$sendCustomMessage("handler_disableTabs", "sidebarMenu") # disable all tab panels (except Data Input) until files are uploaded
+      session$sendCustomMessage("handler_startLoader", c("input_loader", 10))
+      session$sendCustomMessage("handler_disableButton", "upload10xExampleRNACountMatrixConfirm") 
+      tryCatch({
+        # Create the user directory for the input and output of the analysis
+        metaD$my_project_name <- input$uploadCountMatrixprojectID
+        minimum_cells <<- input$uploadCountMatrixminCells
+        minimum_features <<- input$uploadCountMatrixminFeatures
+        organism <<- "human"
+        userId <- session$token
+        user_dir <- paste0("./usr_temp/", userId, metaD$my_project_name, gsub(pattern = "[ ]|[:]", replacement = "_", x = paste0("_", Sys.time()))) #TODO remove 2 random barcodes, does it crash?
+        dir.create(user_dir)
+        
+        testMatrix <- read.table("exampleRNA_matrix/exampleMatrix.txt")#read.table("countMatrix.txt")
+        seurat_object <<- CreateSeuratObject(counts = testMatrix, project = metaD$my_project_name, min.cells = as.numeric(minimum_cells), min.features = as.numeric(minimum_features))
+        
+        init_seurat_object <<- CreateSeuratObject(counts = testMatrix, project = metaD$my_project_name, min.cells = as.numeric(minimum_cells), min.features = as.numeric(minimum_features))
+        
+        
+        session$sendCustomMessage("handler_startLoader", c("input_loader", 25))
+        if(organism == "mouse")
+        {
+          seurat_object[["percent.mt"]] <<- PercentageFeatureSet(seurat_object, pattern = "^mt-")
+          init_seurat_object[["percent.mt"]] <<- PercentageFeatureSet(init_seurat_object, pattern = "^mt-")
+        }
+        else
+        {
+          seurat_object[["percent.mt"]] <<- PercentageFeatureSet(seurat_object, pattern = "^MT-")
+          init_seurat_object[["percent.mt"]] <<- PercentageFeatureSet(init_seurat_object, pattern = "^MT-")
+        }
+        
+        session$sendCustomMessage("handler_startLoader", c("input_loader", 50))
+        
+        updateMetadata()
+        session$sendCustomMessage("handler_startLoader", c("input_loader", 75))
+        updateSelInpColor()
+        #updateInputGeneList()
+        updateGeneSearchFP()
+        updateQC_choices()
+        #cleanAllPlots(T) # fromDataInput -> TRUE
+        disableTabsATAC()
+        # updateInputLRclusters()
+        # updateInpuTrajectoryClusters()
+        # print(organism)
+        # saveRDS(seurat_object, "seurat_object.RDS")
+        session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " QUALITY CONTROL", " DATA NORMALIZATION\n& SCALING", " UTILITY OPTIONS"))
+        # }, warning = function(w) {
+        #   print(paste("Warning:  ", w))
+      }, error = function(e) {
+        print(paste("Error :  ", e))
+        session$sendCustomMessage("handler_alert", "Data Input error. Please, refer to the help pages for input format.")
+      }, finally = { # with or without error
+        session$sendCustomMessage("handler_startLoader", c("input_loader", 100))
+        Sys.sleep(1) # giving some time for renderer for smoother transition
+        session$sendCustomMessage("handler_finishLoader", "input_loader")
+        session$sendCustomMessage("handler_enableButton", "upload10xExampleRNACountMatrixConfirm")
+      })
+    }
   })
   
   observeEvent(input$upload10xRNAConfirm, {
-    session$sendCustomMessage("handler_disableTabs", "sidebarMenu") # disable all tab panels (except Data Input) until files are uploaded
-    session$sendCustomMessage("handler_startLoader", c("input_loader", 10))
-    session$sendCustomMessage("handler_disableButton", "upload10xRNAConfirm")
-    tryCatch({
-      # Create the user directory for the input and output of the analysis
-      metaD$my_project_name <- input$upload10xRNAprojectID
-      minimum_cells <<- input$upload10xRNAminCells
-      minimum_features <<- input$upload10xRNAminFeatures
-      organism <<- input$upload10xRNARadioSpecies
-
+    if(!is.null(proj_default) | !is.null(seurat_object))
+    {
+      showModal(modal_confirm)
+    }
+    else
+    {
+      session$sendCustomMessage("handler_disableTabs", "sidebarMenu") # disable all tab panels (except Data Input) until files are uploaded
+      session$sendCustomMessage("handler_startLoader", c("input_loader", 10))
+      session$sendCustomMessage("handler_disableButton", "upload10xRNAConfirm")
+      tryCatch({
+        # Create the user directory for the input and output of the analysis
+        metaD$my_project_name <- input$upload10xRNAprojectID
+        minimum_cells <<- input$upload10xRNAminCells
+        minimum_features <<- input$upload10xRNAminFeatures
+        organism <<- input$upload10xRNARadioSpecies
+        
         
         userId <- session$token
-        user_dir <- paste0("./", userId, metaD$my_project_name, gsub(pattern = "[ ]|[:]", replacement = "_", x = paste0("_", Sys.time()))) 
+        user_dir <- paste0("./usr_temp/", userId, metaD$my_project_name, gsub(pattern = "[ ]|[:]", replacement = "_", x = paste0("_", Sys.time()))) 
         dir.create(user_dir)
         file.copy(from = input$matrix$datapath, to = paste0(user_dir, "/", input$matrix$name), overwrite = TRUE)
         file.copy(from = input$barcodes$datapath, to = paste0(user_dir, "/", input$barcodes$name), overwrite = TRUE)
         file.copy(from = input$genes$datapath, to = paste0(user_dir, "/", input$genes$name), overwrite = TRUE)
-        setwd(user_dir)
-        print(getwd())
-        # 
-        #  seurat_data <- Read10X(user_dir)
-      seurat_data <- Read10X("./")#"hg19/"
-      seurat_object <<- CreateSeuratObject(counts = seurat_data, project = metaD$my_project_name, min.cells = as.numeric(minimum_cells), min.features = as.numeric(minimum_features))
         
-      init_seurat_object <<- CreateSeuratObject(counts = seurat_data, project = metaD$my_project_name, min.cells = as.numeric(minimum_cells), min.features = as.numeric(minimum_features))
-      
-      session$sendCustomMessage("handler_startLoader", c("input_loader", 25))
-       if(organism == "mouse")
-       {
-         seurat_object[["percent.mt"]] <<- PercentageFeatureSet(seurat_object, pattern = "^mt-")
-         init_seurat_object[["percent.mt"]] <<- PercentageFeatureSet(init_seurat_object, pattern = "^mt-")
-       }
-       else
-       {
-         seurat_object[["percent.mt"]] <<- PercentageFeatureSet(seurat_object, pattern = "^MT-")
-         init_seurat_object[["percent.mt"]] <<- PercentageFeatureSet(init_seurat_object, pattern = "^MT-")
-       }
-      
-      #seurat_object <<- readRDS("../ScenicTutorial/myeloid_final_annotation_edited.RDS")
-      #init_seurat_object <<- readRDS("../ScenicTutorial/myeloid_final_annotation_edited.RDS")
-      
-      session$sendCustomMessage("handler_startLoader", c("input_loader", 50))
-      
-      output$metadataTable <- renderDataTable(seurat_object@meta.data, options = list(pageLength = 20))
-      export_metadata_RNA <<- seurat_object@meta.data
-      session$sendCustomMessage("handler_startLoader", c("input_loader", 75))
-      updateSelInpColor()
-      #updateInputGeneList()
-      updateGeneSearchFP()
-      updateQC_choices()
-      cleanAllPlots(T) # fromDataInput -> TRUE
-      # updateInputLRclusters()
-      # updateInpuTrajectoryClusters()
-      # print(organism)
-      # saveRDS(seurat_object, "seurat_object.RDS")
-      session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " QUALITY CONTROL", " DATA NORMALIZATION\n& SCALING", " UTILITY OPTIONS"))
-      # }, warning = function(w) {
-      #   print(paste("Warning:  ", w))
-    }, error = function(e) {
-      print(paste("Error :  ", e))
-      session$sendCustomMessage("handler_alert", "Data Input error. Please, refer to the help pages for input format.")
-    }, finally = { # with or without error
-      session$sendCustomMessage("handler_startLoader", c("input_loader", 100))
-      Sys.sleep(1) # giving some time for renderer for smoother transition
-      session$sendCustomMessage("handler_finishLoader", "input_loader")
-      session$sendCustomMessage("handler_enableButton", "upload10xRNAConfirm")
-    })
+        seurat_data <- Read10X(user_dir)#"hg19/"
+        seurat_object <<- CreateSeuratObject(counts = seurat_data, project = metaD$my_project_name, min.cells = as.numeric(minimum_cells), min.features = as.numeric(minimum_features))
+        
+        init_seurat_object <<- CreateSeuratObject(counts = seurat_data, project = metaD$my_project_name, min.cells = as.numeric(minimum_cells), min.features = as.numeric(minimum_features))
+        
+        session$sendCustomMessage("handler_startLoader", c("input_loader", 25))
+        if(organism == "mouse")
+        {
+          seurat_object[["percent.mt"]] <<- PercentageFeatureSet(seurat_object, pattern = "^mt-")
+          init_seurat_object[["percent.mt"]] <<- PercentageFeatureSet(init_seurat_object, pattern = "^mt-")
+        }
+        else
+        {
+          seurat_object[["percent.mt"]] <<- PercentageFeatureSet(seurat_object, pattern = "^MT-")
+          init_seurat_object[["percent.mt"]] <<- PercentageFeatureSet(init_seurat_object, pattern = "^MT-")
+        }
+        
+        session$sendCustomMessage("handler_startLoader", c("input_loader", 50))
+        
+        updateMetadata()
+        session$sendCustomMessage("handler_startLoader", c("input_loader", 75))
+        updateSelInpColor()
+        #updateInputGeneList()
+        updateGeneSearchFP()
+        updateQC_choices()
+        #cleanAllPlots(T) # fromDataInput -> TRUE
+        disableTabsATAC()
+        # updateInputLRclusters()
+        # updateInpuTrajectoryClusters()
+        # print(organism)
+        # saveRDS(seurat_object, "seurat_object.RDS")
+        session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " QUALITY CONTROL", " DATA NORMALIZATION\n& SCALING", " UTILITY OPTIONS"))
+        # }, warning = function(w) {
+        #   print(paste("Warning:  ", w))
+      }, error = function(e) {
+        print(paste("Error :  ", e))
+        session$sendCustomMessage("handler_alert", "Data Input error. Please, refer to the help pages for input format.")
+      }, finally = { # with or without error
+        session$sendCustomMessage("handler_startLoader", c("input_loader", 100))
+        Sys.sleep(1) # giving some time for renderer for smoother transition
+        session$sendCustomMessage("handler_finishLoader", "input_loader")
+        session$sendCustomMessage("handler_enableButton", "upload10xRNAConfirm")
+      })
+    }
   })
   
   observeEvent(input$upload10xExampleRNA10xFilesConfirm, {
-    session$sendCustomMessage("handler_disableTabs", "sidebarMenu") # disable all tab panels (except Data Input) until files are uploaded
-    session$sendCustomMessage("handler_startLoader", c("input_loader", 10))
-    session$sendCustomMessage("handler_disableButton", "upload10xExampleRNA10xFilesConfirm")
-    tryCatch({
-      # Create the user directory for the input and output of the analysis
-      metaD$my_project_name <- input$upload10xRNAprojectID
-      minimum_cells <<- input$upload10xRNAminCells
-      minimum_features <<- input$upload10xRNAminFeatures
-      organism <<- "human"
-      
-      
-      userId <- session$token
-      user_dir <- paste0("./", userId, metaD$my_project_name, gsub(pattern = "[ ]|[:]", replacement = "_", x = paste0("_", Sys.time()))) 
-      dir.create(user_dir)
-      file.copy(from = "exampleRNA_10xFiles/matrix.mtx", to = paste0(user_dir, "/matrix.mtx"), overwrite = TRUE)
-      file.copy(from = "exampleRNA_10xFiles/barcodes.tsv", to = paste0(user_dir, "/barcodes.tsv"), overwrite = TRUE)
-      file.copy(from = "exampleRNA_10xFiles/genes.tsv", to = paste0(user_dir, "/genes.tsv"), overwrite = TRUE)
-      setwd(user_dir)
-      print(getwd())
-      
-      seurat_data <- Read10X("./")
-      seurat_object <<- CreateSeuratObject(counts = seurat_data, project = metaD$my_project_name, min.cells = as.numeric(minimum_cells), min.features = as.numeric(minimum_features))
-      
-      init_seurat_object <<- CreateSeuratObject(counts = seurat_data, project = metaD$my_project_name, min.cells = as.numeric(minimum_cells), min.features = as.numeric(minimum_features))
-      
-      session$sendCustomMessage("handler_startLoader", c("input_loader", 25))
-      if(organism == "mouse")
-      {
-        seurat_object[["percent.mt"]] <<- PercentageFeatureSet(seurat_object, pattern = "^mt-")
-        init_seurat_object[["percent.mt"]] <<- PercentageFeatureSet(init_seurat_object, pattern = "^mt-")
-      }
-      else
-      {
-        seurat_object[["percent.mt"]] <<- PercentageFeatureSet(seurat_object, pattern = "^MT-")
-        init_seurat_object[["percent.mt"]] <<- PercentageFeatureSet(init_seurat_object, pattern = "^MT-")
-      }
-      
-      #seurat_object <<- readRDS("../ScenicTutorial/myeloid_final_annotation_edited.RDS")
-      #init_seurat_object <<- readRDS("../ScenicTutorial/myeloid_final_annotation_edited.RDS")
-      
-      session$sendCustomMessage("handler_startLoader", c("input_loader", 50))
-      
-      output$metadataTable <- renderDataTable(seurat_object@meta.data, options = list(pageLength = 20))
-      export_metadata_RNA <<- seurat_object@meta.data
-      export_metadata_RNA <<- seurat_object@meta.data
-      session$sendCustomMessage("handler_startLoader", c("input_loader", 75))
-      updateSelInpColor()
-      #updateInputGeneList()
-      updateGeneSearchFP()
-      updateQC_choices()
-      cleanAllPlots(T) # fromDataInput -> TRUE
-      # updateInputLRclusters()
-      # updateInpuTrajectoryClusters()
-      # print(organism)
-      # saveRDS(seurat_object, "seurat_object.RDS")
-      session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " QUALITY CONTROL", " DATA NORMALIZATION\n& SCALING", " UTILITY OPTIONS"))
-      # }, warning = function(w) {
-      #   print(paste("Warning:  ", w))
-    }, error = function(e) {
-      print(paste("Error :  ", e))
-      session$sendCustomMessage("handler_alert", "Data Input error. Please, refer to the help pages for input format.")
-    }, finally = { # with or without error
-      session$sendCustomMessage("handler_startLoader", c("input_loader", 100))
-      Sys.sleep(1) # giving some time for renderer for smoother transition
-      session$sendCustomMessage("handler_finishLoader", "input_loader")
-      session$sendCustomMessage("handler_enableButton", "upload10xExampleRNA10xFilesConfirm")
-    })
+    if(!is.null(proj_default) | !is.null(seurat_object))
+    {
+      showModal(modal_confirm)
+    }
+    else
+    {
+      session$sendCustomMessage("handler_disableTabs", "sidebarMenu") # disable all tab panels (except Data Input) until files are uploaded
+      session$sendCustomMessage("handler_startLoader", c("input_loader", 10))
+      session$sendCustomMessage("handler_disableButton", "upload10xExampleRNA10xFilesConfirm")
+      tryCatch({
+        # Create the user directory for the input and output of the analysis
+        metaD$my_project_name <- "PBMC3k"
+        minimum_cells <<- 3
+        minimum_features <<- 200
+        organism <<- "human"
+        
+        
+        userId <- session$token
+        user_dir <- paste0("./usr_temp/", userId, metaD$my_project_name, gsub(pattern = "[ ]|[:]", replacement = "_", x = paste0("_", Sys.time()))) 
+        dir.create(user_dir)
+        
+        seurat_data <- Read10X("exampleRNA_10xFiles/")
+        seurat_object <<- CreateSeuratObject(counts = seurat_data, project = metaD$my_project_name, min.cells = as.numeric(minimum_cells), min.features = as.numeric(minimum_features))
+        
+        init_seurat_object <<- CreateSeuratObject(counts = seurat_data, project = metaD$my_project_name, min.cells = as.numeric(minimum_cells), min.features = as.numeric(minimum_features))
+        
+        session$sendCustomMessage("handler_startLoader", c("input_loader", 25))
+        if(organism == "mouse")
+        {
+          seurat_object[["percent.mt"]] <<- PercentageFeatureSet(seurat_object, pattern = "^mt-")
+          init_seurat_object[["percent.mt"]] <<- PercentageFeatureSet(init_seurat_object, pattern = "^mt-")
+        }
+        else
+        {
+          seurat_object[["percent.mt"]] <<- PercentageFeatureSet(seurat_object, pattern = "^MT-")
+          init_seurat_object[["percent.mt"]] <<- PercentageFeatureSet(init_seurat_object, pattern = "^MT-")
+        }
+        
+        session$sendCustomMessage("handler_startLoader", c("input_loader", 50))
+        
+        updateMetadata()
+        session$sendCustomMessage("handler_startLoader", c("input_loader", 75))
+        updateSelInpColor()
+        #updateInputGeneList()
+        updateGeneSearchFP()
+        updateQC_choices()
+        #cleanAllPlots(T) # fromDataInput -> TRUE
+        disableTabsATAC()
+        # updateInputLRclusters()
+        # updateInpuTrajectoryClusters()
+        # print(organism)
+        # saveRDS(seurat_object, "seurat_object.RDS")
+        session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " QUALITY CONTROL", " DATA NORMALIZATION\n& SCALING", " UTILITY OPTIONS"))
+        # }, warning = function(w) {
+        #   print(paste("Warning:  ", w))
+      }, error = function(e) {
+        print(paste("Error :  ", e))
+        session$sendCustomMessage("handler_alert", "Data Input error. Please, refer to the help pages for input format.")
+      }, finally = { # with or without error
+        session$sendCustomMessage("handler_startLoader", c("input_loader", 100))
+        Sys.sleep(1) # giving some time for renderer for smoother transition
+        session$sendCustomMessage("handler_finishLoader", "input_loader")
+        session$sendCustomMessage("handler_enableButton", "upload10xExampleRNA10xFilesConfirm")
+      })
+    }
   })
   
   observeEvent(input$upload10xATACConfirm, {
-    session$sendCustomMessage("handler_disableTabs", "sidebarMenu") # disable all tab panels (except Data Input) until files are uploaded
-    session$sendCustomMessage("handler_startLoader", c("input_loader", 10))
-    session$sendCustomMessage("handler_disableButton", "upload10xATACConfirm")
-    tryCatch({
-      
-      session$sendCustomMessage("handler_startLoader", c("input_loader", 25))
-      
-      #user dir creation
-      projectNameATAC <<- input$uploadATACprojectID
-      userId <- session$token
-      user_dir <- paste0("./", userId, projectNameATAC, gsub(pattern = "[ ]|[:]", replacement = "_", x = paste0("_", Sys.time()))) #TODO remove 2 random barcodes, does it crash?
-      dir.create(user_dir)
-      print(paste0(user_dir, "/", input$uploadATACArrow$name))
-      file.copy(from = input$uploadATACArrow$datapath, to = paste0(user_dir, "/", input$uploadATACArrow$name), overwrite = TRUE)
-      setwd(user_dir)
-      dir.create("./default")
-      print(getwd())
-      #select genome version and organism
-      addArchRGenome(input$upload10xATACRadioSpecies)
-      if(grep("mm", input$upload10xATACRadioSpecies))
-      {
-        organism <<- "mouse"
-      }
-      else
-      {
-        organism <<- "human"
-      }
-      
-      #set number of threads, TODO set to 1 in server version
-      addArchRThreads(threads = 1) 
-      
-      ########################################
-      ######### Create Arch Project ##########
-      ########################################
-      proj_default <<- ArchRProject(
-        ArrowFiles = "arrowFile.arrow",
-        outputDirectory = "./default",
-        copyArrows = TRUE #This is recommened so that if you modify the Arrow files you have an original copy for later usage.
-      )
-       
-      saveArchRProject(proj_default)
-      print("Project saved")
-      
-      session$sendCustomMessage("handler_startLoader", c("input_loader", 50))
-      session$sendCustomMessage("handler_startLoader", c("input_loader", 75))
-      
-      df_meta_data <- as.data.frame(getCellColData(proj_default))
-      df_meta_data$cell_id <- rownames(df_meta_data)
-      rownames(df_meta_data) <- NULL
-       
-      output$metadataTableATAC <- renderDataTable(df_meta_data, options = list(pageLength = 10), rownames = F)
-      
-      #export table
-      export_metadata_ATAC <<- df_meta_data
-      
-      addArchRThreads(threads = as.numeric(input$upload10xATACThreads))
-      updateSelectizeInput(session, "visualizeTracksGene", choices = unique(proj_default@geneAnnotation$genes$symbol), server = T)
-      
-      cleanAllPlots(T) # fromDataInput -> TRUE
-      session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " QUALITY CONTROL", " UTILITY OPTIONS"))
-      # }, warning = function(w) {
-      #   print(paste("Warning:  ", w))
-    }, error = function(e) {
-      print(paste("Error :  ", e))
-      session$sendCustomMessage("handler_alert", "Data Input error. Please, refer to the help pages for input format.")
-    }, finally = { # with or without error
-      session$sendCustomMessage("handler_startLoader", c("input_loader", 100))
-      Sys.sleep(1) # giving some time for renderer for smoother transition
-      session$sendCustomMessage("handler_finishLoader", "input_loader")
-      session$sendCustomMessage("handler_enableButton", "upload10xATACConfirm")
-    })
+    if(!is.null(proj_default) | !is.null(seurat_object))
+    {
+      showModal(modal_confirm)
+    }
+    else
+    {
+      session$sendCustomMessage("handler_disableTabs", "sidebarMenu") # disable all tab panels (except Data Input) until files are uploaded
+      session$sendCustomMessage("handler_startLoader", c("input_loader", 10))
+      session$sendCustomMessage("handler_disableButton", "upload10xATACConfirm")
+      tryCatch({
+        
+        session$sendCustomMessage("handler_startLoader", c("input_loader", 25))
+        
+        #user dir creation
+        projectNameATAC <<- input$uploadATACprojectID
+        userId <- session$token
+        user_dir <<- paste0("./usr_temp/", userId, projectNameATAC, gsub(pattern = "[ ]|[:]", replacement = "_", x = paste0("_", Sys.time()))) #TODO remove 2 random barcodes, does it crash?
+        dir.create(user_dir)
+        file.copy(from = input$uploadATACArrow$datapath, to = paste0(user_dir, "/arrowFile.arrow"), overwrite = TRUE)
+        dir.create(paste0(user_dir, "/default"))
+        #select genome version and organism
+        addArchRGenome(input$upload10xATACRadioSpecies)
+        if(length(grep("mm", input$upload10xATACRadioSpecies)) == 1)
+        {
+          organism <<- "mouse"
+        }
+        else
+        {
+          organism <<- "human"
+        }
+        
+        #set number of threads, TODO set to 1 in server version
+        addArchRThreads(threads = 1) 
+        
+        ########################################
+        ######### Create Arch Project ##########
+        ########################################
+        proj_default <<- ArchRProject(
+          ArrowFiles = paste0(user_dir, "/arrowFile.arrow"),
+          outputDirectory = paste0(user_dir, "/default"),
+          copyArrows = FALSE #This is recommened so that if you modify the Arrow files you have an original copy for later usage.
+        )
+        
+        saveArchRProject(proj_default)
+        print("Project saved")
+        
+        session$sendCustomMessage("handler_startLoader", c("input_loader", 50))
+        session$sendCustomMessage("handler_startLoader", c("input_loader", 75))
+        
+        updateMetadataATAC()
+        
+        addArchRThreads(threads = as.numeric(input$upload10xATACThreads))
+        updateSelectizeInput(session, "visualizeTracksGene", choices = unique(proj_default@geneAnnotation$genes$symbol), server = T)
+        
+        disableTabsRNA()
+        session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " QUALITY CONTROL", " UTILITY OPTIONS"))
+        # }, warning = function(w) {
+        #   print(paste("Warning:  ", w))
+      }, error = function(e) {
+        print(paste("Error :  ", e))
+        session$sendCustomMessage("handler_alert", "Data Input error. Please, refer to the help pages for input format.")
+      }, finally = { # with or without error
+        session$sendCustomMessage("handler_startLoader", c("input_loader", 100))
+        Sys.sleep(1) # giving some time for renderer for smoother transition
+        session$sendCustomMessage("handler_finishLoader", "input_loader")
+        session$sendCustomMessage("handler_enableButton", "upload10xATACConfirm")
+      })
+    }
   })
   
   observeEvent(input$upload10xExampleATACConfirm, {
-    session$sendCustomMessage("handler_disableTabs", "sidebarMenu") # disable all tab panels (except Data Input) until files are uploaded
-    session$sendCustomMessage("handler_startLoader", c("input_loader", 10))
-    session$sendCustomMessage("handler_disableButton", "upload10xExampleATACConfirm")
-    tryCatch({
+    if(!is.null(proj_default) | !is.null(seurat_object))
+    {
+      showModal(modal_confirm)
+    }
+    else
+    {
+      session$sendCustomMessage("handler_disableTabs", "sidebarMenu") # disable all tab panels (except Data Input) until files are uploaded
+      session$sendCustomMessage("handler_startLoader", c("input_loader", 10))
+      session$sendCustomMessage("handler_disableButton", "upload10xExampleATACConfirm")
+      tryCatch({
         session$sendCustomMessage("handler_startLoader", c("input_loader", 25))
         
         #user dir creation
         projectNameATAC <<- "example"
         userId <- session$token
-        user_dir <- paste0("./", userId, projectNameATAC, gsub(pattern = "[ ]|[:]", replacement = "_", x = paste0("_", Sys.time()))) #TODO remove 2 random barcodes, does it crash?
+        user_dir <<- paste0("./usr_temp/", userId, projectNameATAC, gsub(pattern = "[ ]|[:]", replacement = "_", x = paste0("_", Sys.time()))) #TODO remove 2 random barcodes, does it crash?
         dir.create(user_dir)
-        file.copy(from = "./exampleATAC/arrowFile.arrow", to = paste0(user_dir, "/arrowFile.arrow"), overwrite = TRUE)
-        setwd(user_dir)
-        dir.create("./default")
-        print(getwd())
+        #file.copy(from = "./exampleATAC/arrowFile.arrow", to = paste0(user_dir, "/arrowFile.arrow"), overwrite = TRUE)
+        dir.create(paste0(user_dir, "/default"))
+        
         #select genome version and organism
         addArchRGenome("mm10")
-        if(grep("mm", input$upload10xATACRadioSpecies))
+        if(length(grep("mm", input$upload10xATACRadioSpecies)) == 1)
         {
           organism <<- "mouse"
         }
@@ -415,9 +431,9 @@ server <- function(input, output, session) {
         ######### Create Arch Project ##########
         ########################################
         proj_default <<- ArchRProject(
-          ArrowFiles = "arrowFile.arrow",
-          outputDirectory = "./default",
-          copyArrows = TRUE #This is recommened so that if you modify the Arrow files you have an original copy for later usage.
+          ArrowFiles = "exampleATAC/arrowFile.arrow",
+          outputDirectory = paste0(user_dir, "/default"),
+          copyArrows = FALSE #This is recommened so that if you modify the Arrow files you have an original copy for later usage.
         )
         
         saveArchRProject(proj_default)
@@ -426,31 +442,25 @@ server <- function(input, output, session) {
         session$sendCustomMessage("handler_startLoader", c("input_loader", 50))
         session$sendCustomMessage("handler_startLoader", c("input_loader", 75))
         
-        df_meta_data <- as.data.frame(getCellColData(proj_default))
-        df_meta_data$cell_id <- rownames(df_meta_data)
-        rownames(df_meta_data) <- NULL
-        
-        output$metadataTableATAC <- renderDataTable(df_meta_data, options = list(pageLength = 10), rownames = F)
-        
-        #export table
-        export_metadata_ATAC <<- df_meta_data
+        updateMetadataATAC()
         
         addArchRThreads(threads = as.numeric(input$upload10xATACThreads))
         updateSelectizeInput(session, "visualizeTracksGene", choices = unique(proj_default@geneAnnotation$genes$symbol), server = T)
         
-        cleanAllPlots(T) # fromDataInput -> TRUE
+        disableTabsRNA()
         session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " QUALITY CONTROL", " UTILITY OPTIONS"))
-      # }, warning = function(w) {
-      #   print(paste("Warning:  ", w))
-    }, error = function(e) {
-      print(paste("Error :  ", e))
-      session$sendCustomMessage("handler_alert", "Data Input error. Please, refer to the help pages for input format.")
-    }, finally = { # with or without error
-      session$sendCustomMessage("handler_startLoader", c("input_loader", 100))
-      Sys.sleep(1) # giving some time for renderer for smoother transition
-      session$sendCustomMessage("handler_finishLoader", "input_loader")
-      session$sendCustomMessage("handler_enableButton", "upload10xExampleATACConfirm")
-    })
+        # }, warning = function(w) {
+        #   print(paste("Warning:  ", w))
+      }, error = function(e) {
+        print(paste("Error :  ", e))
+        session$sendCustomMessage("handler_alert", "Data Input error. Please, refer to the help pages for input format.")
+      }, finally = { # with or without error
+        session$sendCustomMessage("handler_startLoader", c("input_loader", 100))
+        Sys.sleep(1) # giving some time for renderer for smoother transition
+        session$sendCustomMessage("handler_finishLoader", "input_loader")
+        session$sendCustomMessage("handler_enableButton", "upload10xExampleATACConfirm")
+      })
+    }
   })
   
   output$uploadMetadataExport <- downloadHandler(
@@ -466,7 +476,7 @@ server <- function(input, output, session) {
       paste("metadataTableRNA-", Sys.Date(), ".txt", sep="")
     },
     content = function(file) {
-      write.table(seurat_object@meta.data, file, sep = "\t", quote = F, row.names = F)
+      write.table(export_metadata_RNA, file, sep = "\t", quote = F, row.names = F)
     })
   
   #SOS SERVER ABSOLUTE PATHS
@@ -629,7 +639,7 @@ server <- function(input, output, session) {
   })
   
   observeEvent(input$qcConfirm, {
-    session$sendCustomMessage("handler_startLoader", c("qc_loader", 10))
+    session$sendCustomMessage("handler_startLoader", c("qc_loader2", 10))
     session$sendCustomMessage("handler_disableButton", "qcConfirm")
     tryCatch({
       if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
@@ -644,10 +654,10 @@ server <- function(input, output, session) {
         qc_maxFeatures <<- input$maxUniqueGenes
         qc_maxMtPercent <<- input$maxMtReads
         
-        session$sendCustomMessage("handler_startLoader", c("qc_loader", 50))
+        session$sendCustomMessage("handler_startLoader", c("qc_loader2", 50))
         seurat_object <<- subset(init_seurat_object, subset = nFeature_RNA > as.numeric(qc_minFeatures) & nFeature_RNA < as.numeric(qc_maxFeatures) & percent.mt < as.double(qc_maxMtPercent)) #filter object
         
-        session$sendCustomMessage("handler_startLoader", c("qc_loader", 75))
+        session$sendCustomMessage("handler_startLoader", c("qc_loader2", 75))
         output$filteredNFeatureViolin <- renderPlotly(
           {
             p <- VlnPlot(seurat_object, features = c("nFeature_RNA"), pt.size = 0.5, group.by = input$qcColorBy,
@@ -724,7 +734,7 @@ server <- function(input, output, session) {
         updateRegressOut()
         updateSelInpColor()
         session$sendCustomMessage("handler_disableTabs", "sidebarMenu")
-        output$metadataTable <- renderDataTable(seurat_object@meta.data, options = list(pageLength = 20))
+        updateMetadata()
         cleanAllPlots(F) # fromDataInput -> FALSE
         session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " QUALITY CONTROL", " DATA NORMALIZATION\n& SCALING", " UTILITY OPTIONS"))
       }
@@ -734,16 +744,16 @@ server <- function(input, output, session) {
       print(paste("Error :  ", e))
       session$sendCustomMessage("handler_alert", "The selected Quality Control arguments cannot produce meaningful visualizations.")
     }, finally = {
-      session$sendCustomMessage("handler_startLoader", c("qc_loader", 100))
+      session$sendCustomMessage("handler_startLoader", c("qc_loade2r", 100))
       Sys.sleep(1)
-      session$sendCustomMessage("handler_finishLoader", "qc_loader")
+      session$sendCustomMessage("handler_finishLoader", "qc_loader2")
       session$sendCustomMessage("handler_enableButton", "qcConfirm")
     })
   })
   
   #ATAC qc
   observeEvent(input$qcDisplayATAC, {
-    session$sendCustomMessage("handler_startLoader", c("qc_loader2", 10))
+    session$sendCustomMessage("handler_startLoader", c("qc_loader3", 10))
     session$sendCustomMessage("handler_disableButton", "qcDisplayATAC")
     tryCatch({
       if (identical(proj_default, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
@@ -763,7 +773,7 @@ server <- function(input, output, session) {
     )
     output$TSS_plot <- renderPlotly( expr =  ggplot(p1$data, aes(x=x, y=y, fill=x)) + geom_violin() + theme_bw() + labs(y="TSS Enrichment"))
     
-    session$sendCustomMessage("handler_startLoader", c("qc_loader2", 50))
+    session$sendCustomMessage("handler_startLoader", c("qc_loader3", 50))
     
     #nFrags plot
     p2 <- plotGroups(
@@ -776,7 +786,7 @@ server <- function(input, output, session) {
                                              width = 500, height = 500
                                           )
     
-    session$sendCustomMessage("handler_startLoader", c("qc_loader2", 75))
+    session$sendCustomMessage("handler_startLoader", c("qc_loader3", 75))
     
     #nFrags-TSS plot
     df <- getCellColData(proj_default, select = c("log10(nFrags)", "TSSEnrichment"))
@@ -811,9 +821,9 @@ server <- function(input, output, session) {
       print(paste("Error :  ", e))
       session$sendCustomMessage("handler_alert", "The selected Quality Control arguments cannot produce meaningful visualizations.")
     }, finally = {
-      session$sendCustomMessage("handler_startLoader", c("qc_loader2", 100))
+      session$sendCustomMessage("handler_startLoader", c("qc_loader3", 100))
       Sys.sleep(1)
-      session$sendCustomMessage("handler_finishLoader", "qc_loader2")
+      session$sendCustomMessage("handler_finishLoader", "qc_loader3")
       session$sendCustomMessage("handler_enableButton", "qcDisplayATAC")
     })
   })
@@ -1076,7 +1086,8 @@ server <- function(input, output, session) {
         session$sendCustomMessage("handler_startLoader", c("lsi_loader", 25))
         proj_default <<- addIterativeLSI(ArchRProj = proj_default, useMatrix = "TileMatrix", name = "IterativeLSI", force = T,
                                          iterations = as.numeric(input$lsiIterations), varFeatures = as.numeric(input$lsiVarFeatures),
-                                         clusterParams = list( resolution = as.numeric(input$lsiResolution), sampleCells = 10000, n.start = 10),dimsToUse=1:as.numeric(input$lsiDmensions))
+                                         clusterParams = list( resolution = as.numeric(input$lsiResolution), sampleCells = 10000, n.start = 10),dimsToUse=1:as.numeric(input$lsiDmensions), 
+                                         logFile = paste0(user_dir, "/LSI_file.log"))
         saveArchRProject(proj_default)
         session$sendCustomMessage("handler_startLoader", c("lsi_loader", 75))
         output$lsiOutput <- renderPrint(
@@ -1129,7 +1140,7 @@ server <- function(input, output, session) {
         updateSelInpColor()
         updateInputLRclusters()
         #updateInpuTrajectoryClusters()
-        output$metadataTable <- renderDataTable(seurat_object@meta.data, options = list(pageLength = 20))
+        updateMetadata()
         session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " ADDITIONAL DIMENSIONALITY\nREDUCTION METHODS", " TRAJECTORY ANALYSIS",
                                                           " MARKERS' IDENTIFICATION", " LIGAND - RECEPTOR\nANALYSIS"))
       }
@@ -1280,7 +1291,8 @@ server <- function(input, output, session) {
         shinyjs::show("clusterBarplotATAC_loader")
     #Run clustering
     proj_default <<- addClusters(input = proj_default, reducedDims = "IterativeLSI", method = "Seurat", neme = "Clusters", #name = paste0("Clusters_res_", input$clusterResATAC), 
-                                 resolution = as.numeric(input$clusterResATAC), dimsToUse = 1:as.numeric(input$clusterDimensionsATAC), force = T)
+                                 resolution = as.numeric(input$clusterResATAC), dimsToUse = 1:as.numeric(input$clusterDimensionsATAC), force = T, 
+                                 logFile =paste0(user_dir, "/Clusters_file.log"))
     saveArchRProject(proj_default)
     #Cluster table
     cluster_df <- as.data.frame(table(proj_default$Clusters))
@@ -1308,7 +1320,7 @@ server <- function(input, output, session) {
     session$sendCustomMessage("handler_startLoader", c("clust4_loader", 75))
     
     output$clusterBarplotATAC <- renderPlotly({print(gp)})
-    
+    updateMetadataATAC()
     updateSelInpColorATAC()
     updateInpuTrajectoryClustersATAC()
     session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " ADDITIONAL DIMENSIONALITY\nREDUCTION METHODS", " TRAJECTORY ANALYSIS",
@@ -1363,6 +1375,7 @@ server <- function(input, output, session) {
         session$sendCustomMessage("handler_startLoader", c("dim_red3_loader", 50))
         proj_default <<- addTSNE(ArchRProj = proj_default, reducedDims = "IterativeLSI", name = "tsne", perplexity = 30, force = T, 
                                  n_components = as.numeric(input$umapOutComponentsATAC), dimsToUse = 1:as.numeric(input$umapDimensionsATAC))
+        
         session$sendCustomMessage("handler_startLoader", c("dim_red3_loader", 75))
         saveArchRProject(proj_default)
         session$sendCustomMessage("handler_enableButton", "umapConfirmATAC")
@@ -1795,7 +1808,7 @@ server <- function(input, output, session) {
         session$sendCustomMessage("handler_startLoader", c("DEA4_loader", 70))
         seurat_object <<- AddModuleScore_UCell(seurat_object, features = markers)
         updateSignatures()
-        output$metadataTable <- renderDataTable(seurat_object@meta.data, options = list(pageLength = 20))
+        updateMetadata()
         session$sendCustomMessage("handler_startLoader", c("DEA4_loader", 90))
         
       }
@@ -2066,7 +2079,8 @@ observeEvent(input$findMarkersConfirmATAC, { #ADD loading bar
         useMatrix = "GeneScoreMatrix",
         groupBy = "Clusters",
         bias = c("TSSEnrichment", "log10(nFrags)"),
-        testMethod = input$findMarkersTestATAC
+        testMethod = input$findMarkersTestATAC, 
+        logFile =paste0(user_dir, "/Marker_Genes_file.log")
       )
       
       session$sendCustomMessage("handler_startLoader", c("DEA7_loader", 50))
@@ -2077,7 +2091,8 @@ observeEvent(input$findMarkersConfirmATAC, { #ADD loading bar
       markers_clusters_all$Clusters <- gsub(pattern = "[.][0-9]+", replacement = "", x = markers_clusters_all$Clusters)
       rownames(markers_clusters_all) <- NULL
       
-      proj_default <<- addImputeWeights(proj_default,sampleCells = 5000)
+      proj_default <<- addImputeWeights(proj_default,sampleCells = 5000, 
+                                        logFile =paste0(user_dir, "/Impute_weights_file.log"))
       updateSelectizeInput(session, "findMarkersGeneSelectATAC", choices = unique(proj_default@geneAnnotation$genes$symbol), server = T)
       
       session$sendCustomMessage("handler_startLoader", c("DEA7_loader", 80))
@@ -2092,7 +2107,8 @@ observeEvent(input$findMarkersConfirmATAC, { #ADD loading bar
         cutOff = paste0("FDR <= ",input$findMarkersFDRATAC," & Log2FC >= ",input$findMarkersLogFCATAC),
         labelMarkers = NULL,
         transpose = TRUE,
-        returnMatrix = TRUE
+        returnMatrix = TRUE, #plotLog2FC = 
+        logFile =paste0(user_dir, "/Marker_Heatmap_file.log")
       )
       output$findMarkersGenesHeatmapATAC <- renderPlotly(expr = heatmaply(heatmap_matrix[, markers_clusterList10$name])) 
       saveArchRProject(proj_default)
@@ -2127,7 +2143,8 @@ observeEvent(input$findMarkersPeaksConfirmATAC, {
       {
         pathToMacs2_a<-system("bash -c 'find /home -name macs2'", intern = TRUE)
         
-        proj_default <<- addGroupCoverages(ArchRProj = proj_default, groupBy = "Clusters",force = TRUE)
+        proj_default <<- addGroupCoverages(ArchRProj = proj_default, groupBy = "Clusters",force = TRUE, 
+                                           logFile =paste0(user_dir, "/Group_Coverages_file.log"))
         proj_default <<- addReproduciblePeakSet_win(
           ArchRProj = proj_default,
           groupBy = "Clusters",
@@ -2136,20 +2153,23 @@ observeEvent(input$findMarkersPeaksConfirmATAC, {
       }
       else
       {
-        proj_default <<- addGroupCoverages(ArchRProj = proj_default, groupBy = "Clusters", force = T)
+        proj_default <<- addGroupCoverages(ArchRProj = proj_default, groupBy = "Clusters", force = T, 
+                                           logFile =paste0(user_dir, "/Group_Coverages_file.log"))
         
         proj_default <<- addReproduciblePeakSet(
           ArchRProj = proj_default,
           groupBy = "Clusters",
           pathToMacs2 = input$pathToMacs2, #"/home/user/anaconda3/bin/macs2",
-          force = T
+          force = T, 
+          logFile =paste0(user_dir, "/Rep_Peakset_file.log")
         )
         print("Peakset finished L")
       }
       
       session$sendCustomMessage("handler_startLoader", c("DEA7_loader", 40))
       
-      proj_default <<- addPeakMatrix(proj_default, force = TRUE)
+      proj_default <<- addPeakMatrix(proj_default, force = TRUE, 
+                                     logFile =paste0(user_dir, "/Peak_Matrix_file.log"))
       print(getPeakSet(proj_default))
       saveArchRProject(proj_default)
       
@@ -2160,7 +2180,8 @@ observeEvent(input$findMarkersPeaksConfirmATAC, {
         useMatrix = "PeakMatrix",
         groupBy = "Clusters",
         bias = c("TSSEnrichment", "log10(nFrags)"),
-        testMethod = input$findMarkersPeaksTestATAC
+        testMethod = input$findMarkersPeaksTestATAC, 
+        logFile =paste0(user_dir, "/Marker_Peaks_file.log")
       )
       
       session$sendCustomMessage("handler_startLoader", c("DEA7_loader", 80))
@@ -2181,7 +2202,8 @@ observeEvent(input$findMarkersPeaksConfirmATAC, {
       markerListheatmapPeaks <- plotMarkerHeatmap(
         seMarker = markersPeaks, 
         cutOff = paste0("FDR <= ",input$findMarkersPeaksFDRATAC," & Log2FC >= ",input$findMarkersPeaksLogFCATAC), returnMatrix = T,
-        transpose = TRUE
+        transpose = TRUE, 
+        logFile =paste0(user_dir, "/Marker_Peaks_heatmap_file.log")
       )
       to_plot <- markerListheatmapPeaks[, top10peaks$names]
       
@@ -2213,7 +2235,8 @@ observeEvent(input$findMarkersFPConfirmATAC, {
         colorBy = "GeneScoreMatrix", 
         name = input$findMarkersGeneSelectATAC, 
         embedding = input$findMarkersReductionTypeATAC,
-        imputeWeights = getImputeWeights(proj_default)
+        imputeWeights = getImputeWeights(proj_default),
+        logFile =paste0(user_dir, "/Plot_embedding_file.log")
       )
     
       output$findMarkersFeaturePlotATAC <- renderPlot(expr = p)
@@ -2284,7 +2307,7 @@ output$findMarkersPeaksATACExport <- downloadHandler(
         seurat_object <<- CellCycleScoring(seurat_object, s.features = s.genes, g2m.features = g2m.genes, set.ident = F)
         seurat_object@meta.data$CC.Difference <<- seurat_object$S.Score - seurat_object$G2M.Score
         seurat_object@meta.data$Phase <<- factor(seurat_object@meta.data$Phase, levels = c("G1", "S", "G2M"))
-        output$metadataTable <- renderDataTable(seurat_object@meta.data, options = list(pageLength = 20))
+        updateMetadata()
         
         output$cellCyclePCA <- renderPlotly(
           {
@@ -2553,7 +2576,8 @@ observeEvent(input$findMotifsConfirmATAC, {
         useMatrix = "PeakMatrix",
         groupBy = "Clusters",
         bias = c("TSSEnrichment", "log10(nFrags)"),
-        testMethod = input$findMarkersPeaksTestATAC
+        testMethod = input$findMarkersPeaksTestATAC,
+        logFile =paste0(user_dir, "/Marker_Peaks_file.log")
       )
       session$sendCustomMessage("handler_startLoader", c("motif_loader", 50))
       proj_default <<- addMotifAnnotations(ArchRProj = proj_default, motifSet = input$findMotifsSetATAC, name = "Motif", force = T)
@@ -2562,7 +2586,8 @@ observeEvent(input$findMotifsConfirmATAC, {
         seMarker = markersPeaks,
         ArchRProj = proj_default,
         peakAnnotation = "Motif",
-        cutOff = paste0("FDR <= ",input$findMotifsFDRATAC," & Log2FC >= ",input$findMotifsLogFCATAC)
+        cutOff = paste0("FDR <= ",input$findMotifsFDRATAC," & Log2FC >= ",input$findMotifsLogFCATAC), 
+        logFile =paste0(user_dir, "/Motif_file.log")
       )
       
       print("afterPeakAno")
@@ -2723,7 +2748,7 @@ output$findMotifsATACExport <- downloadHandler(
         }
         
         updateInputLineageList(names(metaD$all_lin))
-        output$metadataTable <- renderDataTable(seurat_object@meta.data, options = list(pageLength = 20))
+        updateMetadata()
         session$sendCustomMessage("handler_startLoader", c("traj1_loader", 50))
         session$sendCustomMessage("handler_startLoader", c("traj2_loader", 50))
         #print(paste0("after update:", names(metaD$all_lin)))
@@ -2837,13 +2862,15 @@ output$findMotifsATACExport <- downloadHandler(
         {
           current_lineage <- sds@lineages[[i]] #sds@metadata$lineages[[i]]
           current_name <- paste0("Lineage", i)
-          proj_default <<- addTrajectory(proj_default, trajectory = current_lineage, groupBy = "Clusters", name = current_name, force = T)
+          proj_default <<- addTrajectory(proj_default, trajectory = current_lineage, groupBy = "Clusters", name = current_name, force = T, 
+                                         logFile =paste0(user_dir, "/Trajectory_file.log"))
         }
         
         #for verbatim text
         output$trajectoryTextATAC <- renderPrint({ print(sds@lineages) }) #sds@metadata$lineages
         
         updateSelectInput(session, "trajectoryLineageSelectATAC", choices = names(sds@lineages)) #sds@metadata$lineages
+        updateMetadataATAC()
       }
     }, error = function(e) {
       print(paste("Error :  ", e))
@@ -2891,9 +2918,9 @@ output$findMotifsATACExport <- downloadHandler(
         shinyjs::show("ligandReceptorFullHeatmap_loader")
         shinyjs::show("ligandReceptorCuratedHeatmap_loader")
         #load interactions
-        ligand_target_matrix = readRDS("../ligand_target_matrix.rds")
-        lr_network = readRDS("../lr_network.rds")
-        weighted_networks = readRDS("../weighted_networks.rds")
+        ligand_target_matrix = readRDS("ligand_target_matrix.rds")
+        lr_network = readRDS("lr_network.rds")
+        weighted_networks = readRDS("weighted_networks.rds")
         
         weighted_networks_lr = weighted_networks$lr_sig %>% inner_join(lr_network %>% distinct(from,to), by = c("from","to"))
         
@@ -3305,10 +3332,13 @@ output$findMotifsATACExport <- downloadHandler(
         ######################### Positive regulators ############################
         ##########################################################################
         proj_default <<- addBgdPeaks(proj_default)
-        proj_default <<- addMotifAnnotations(ArchRProj = proj_default, motifSet = input$findMotifsSetATAC, name = "Motif", force = TRUE)
-        proj_default <<- addDeviationsMatrix(ArchRProj = proj_default, peakAnnotation = "Motif", force = TRUE)
+        proj_default <<- addMotifAnnotations(ArchRProj = proj_default, motifSet = input$findMotifsSetATAC, name = "Motif", force = TRUE, 
+                                             logFile =paste0(user_dir, "/Add_motifs_file.log"))
+        proj_default <<- addDeviationsMatrix(ArchRProj = proj_default, peakAnnotation = "Motif", force = TRUE, 
+                                             logFile =paste0(user_dir, "/Deveations_file.log"))
         ## Deviant Motifs ##
-        seGroupMotif_proj_default_condition <- getGroupSE(ArchRProj = proj_default, useMatrix = "MotifMatrix", groupBy = "Clusters")
+        seGroupMotif_proj_default_condition <- getGroupSE(ArchRProj = proj_default, useMatrix = "MotifMatrix", groupBy = "Clusters", 
+                                                          logFile =paste0(user_dir, "/GroupSE_file.log"))
         ## Keep z-scores or deviation scores ##
         session$sendCustomMessage("handler_startLoader", c("grn2_loader", 30))
         seZ_proj_default_condition <- seGroupMotif_proj_default_condition[rowData(seGroupMotif_proj_default_condition)$seqnames=="z",]
@@ -3318,11 +3348,12 @@ output$findMotifsATACExport <- downloadHandler(
           rowMaxs(assay(seZ_proj_default_condition) - assay(seZ_proj_default_condition)[,x],na.rm=TRUE)
         }) %>% Reduce("cbind", .) %>% rowMaxs
         ## Correlate TF Accessibility with Genescore ##
-        corGSM_MM_proj_default <- correlateMatrices(
+        corGSM_MM_proj_default <<- correlateMatrices(
           ArchRProj = proj_default,
           useMatrix1 = "GeneScoreMatrix",
           useMatrix2 = "MotifMatrix",
-          reducedDims = "IterativeLSI"
+          reducedDims = "IterativeLSI",
+          logFile =paste0(user_dir, "/Correlation_file.log")
         )
         session$sendCustomMessage("handler_startLoader", c("grn2_loader", 50))
         ## Add Maximum Delta Deviation to the Correlation Data Frame ##
@@ -3350,9 +3381,12 @@ output$findMotifsATACExport <- downloadHandler(
         
         ### P2G links ###
         session$sendCustomMessage("handler_startLoader", c("grn2_loader", 70))
-        proj_default <- addCoAccessibility(ArchRProj = proj_default, reducedDims = "IterativeLSI")
-        proj_default <- addPeak2GeneLinks(ArchRProj = proj_default,reducedDims = "IterativeLSI", useMatrix = "GeneScoreMatrix")
-        p <- plotPeak2GeneHeatmap(ArchRProj = proj_default, nPlot = 5000, groupBy = "Clusters", returnMatrices = T, corCutOff = corr_lim, FDRCutOff = fdr_lim)
+        proj_default <<- addCoAccessibility(ArchRProj = proj_default, reducedDims = "IterativeLSI", 
+                                           logFile =paste0(user_dir, "/Coaccessibility_file.log"))
+        proj_default <<- addPeak2GeneLinks(ArchRProj = proj_default,reducedDims = "IterativeLSI", useMatrix = "GeneScoreMatrix", 
+                                           logFile =paste0(user_dir, "/P2G_file.log"))
+        p <- plotPeak2GeneHeatmap(ArchRProj = proj_default, nPlot = 5000, groupBy = "Clusters", returnMatrices = T, corCutOff = corr_lim, FDRCutOff = fdr_lim, 
+                                  logFile =paste0(user_dir, "/P2Gheatmap_file.log"))
         p2g_table <- as.data.frame(p$Peak2GeneLinks)
         session$sendCustomMessage("handler_startLoader", c("grn2_loader", 90))
         
@@ -3412,7 +3446,8 @@ output$findMotifsATACExport <- downloadHandler(
           downstream = as.numeric(input$visualizeTracksBPdownstream),
           baseSize = 15, 
           facetbaseSize = 10, 
-          sizes = c(10, 4, 3, 4)
+          sizes = c(10, 4, 3, 4), 
+          logFile =paste0(user_dir, "/Tracks_file.log")
         )
         output$visualizeTracksOutput <- renderPlot({ plot(p[[input$visualizeTracksGene]]) })
       }
@@ -3696,11 +3731,11 @@ output$findMotifsATACExport <- downloadHandler(
   updateUmapTypeChoices <- function(type)
   {
     reductions_choices <<- c(reductions_choices, type)
-    updateSelectInput(session, "umapType", choices = reductions_choices)  #umapType, findMarkersReductionType, cellCycleReduction, trajectoryReduction
-    updateSelectInput(session, "findMarkersReductionType", choices = reductions_choices)
-    updateSelectInput(session, "findMarkersFeaturePairReductionType", choices = reductions_choices)
-    updateSelectInput(session, "cellCycleReduction", choices = reductions_choices)
-    updateSelectInput(session, "trajectoryReduction", choices = reductions_choices)
+    updateSelectInput(session, "umapType", choices = reductions_choices, selected = type)  #umapType, findMarkersReductionType, cellCycleReduction, trajectoryReduction
+    updateSelectInput(session, "findMarkersReductionType", choices = reductions_choices, selected = type)
+    updateSelectInput(session, "findMarkersFeaturePairReductionType", choices = reductions_choices, selected = type)
+    updateSelectInput(session, "cellCycleReduction", choices = reductions_choices, selected = type)
+    updateSelectInput(session, "trajectoryReduction", choices = reductions_choices, selected = type)
   }
   
   updateSignatures <- function()
@@ -3776,7 +3811,7 @@ output$findMotifsATACExport <- downloadHandler(
   
   # This function is called after a new input file has been uploaded
   # and is responsible for clearing all generated plots across all tabs
-  # @param fromDataInput: If TRUE, clears all, including QC, else skips clearing QC
+  # @param fromDataInput: If TRUE, clears all, including QC, else skips clearing QC and metadata table
   cleanAllPlots <- function(fromDataInput){
     # renderPlotly
     if (fromDataInput){
@@ -3792,6 +3827,7 @@ output$findMotifsATACExport <- downloadHandler(
       output$filteredMtCounts <- NULL
       output$filteredGenesCounts <- NULL
       output$filteredCellStats <- NULL
+      output$metadataTable <- NULL
     }
     output$elbowPlotPCA <- NULL
     output$PCAscatter <- NULL
@@ -3839,8 +3875,75 @@ output$findMotifsATACExport <- downloadHandler(
     updateSelectInput(session, "findMarkersFeaturePairReductionType", choices = reductions_choices)
     updateSelectInput(session, "cellCycleReduction", choices = reductions_choices)
     updateSelectInput(session, "trajectoryReduction", choices = reductions_choices)
+    
+    #reset export table values
+    export_metadata_RNA <- ""
+    export_clustertable_RNA <- ""
+    export_markerGenes_RNA <- ""
+    export_enrichedTerms_RNA <- ""
+    export_annotation_RNA <- ""
+    export_ligandReceptor_full_RNA <- ""
+    export_ligandReceptor_short_RNA <- ""
   }
   
+  cleanAllPlotsATAC <- function()
+  {
+    #renderPlotly
+    output$TSS_plot <- NULL
+    output$TSS_nFrag_plot <- NULL
+    output$nFrag_plot <- NULL
+    output$CellStatsATAC <- NULL
+    output$lsiOutput <- NULL
+    output$clusterBarplotATAC <- NULL
+    output$umapPlotATAC <- NULL
+    output$findMarkersGenesHeatmapATAC <- NULL
+    output$findMarkersPeaksHeatmapATAC <- NULL
+    output$findMotifsHeatmapATAC <- NULL
+    output$trajectoryTextATAC <- NULL
+    output$grnHeatmapATAC <- NULL
+    
+    #renderPlot
+    output$findMarkersFeaturePlotATAC <- NULL
+    output$trajectoryPseudotimePlotATAC <- NULL
+    
+    #datatable	
+    output$clusterTableATAC <- NULL
+    output$findMarkersGenesTableATAC <- NULL
+    output$findMarkersPeaksTableATAC <- NULL
+    output$findMotifsTableATAC <- NULL
+    output$grnMatrixATAC <- NULL
+    output$grnP2GlinksTable <- NULL
+    output$metadataTableATAC <- NULL
+    
+    #export tables
+    export_metadata_ATAC <- ""
+    export_clustertable_ATAC <- ""
+    export_markerGenes_ATAC <- ""
+    export_markerPeaks_ATAC <- ""
+    export_motifs_ATAC <- ""
+    export_positiveRegulators_ATAC <- ""
+    export_peakToGenelinks_ATAC <- ""
+    
+  }
+  
+  #update metadata RNA and export_RNA_table
+  updateMetadata <- function()
+  {
+    output$metadataTable <- renderDataTable(seurat_object@meta.data, options = list(pageLength = 20))
+    export_metadata_RNA <<- seurat_object@meta.data
+  }
+  
+  updateMetadataATAC <- function()
+  {
+    df_meta_data <- as.data.frame(getCellColData(proj_default))
+    df_meta_data$cell_id <- rownames(df_meta_data)
+    rownames(df_meta_data) <- NULL
+    
+    output$metadataTableATAC <- renderDataTable(df_meta_data, options = list(pageLength = 10), rownames = F)
+    
+    #export table
+    export_metadata_ATAC <<- df_meta_data
+  }
   
   #functions for optimal number of PCs
   #Initialize Functions
@@ -3909,6 +4012,80 @@ output$findMotifsATACExport <- downloadHandler(
     return(nPC)
   }
   
+  ###disable Tabs
+  
+  disableTabsRNA <- function()
+  {
+    hideTab(inputId="uploadTabPanel", target="scRNA-seq", session = session)
+    hideTab(inputId="qcTabPanel", target="scRNA-seq", session = session)
+    hideTab(inputId="pcaTabPanel", target="scRNA-seq: PCA", session = session)
+    hideTab(inputId="clusteringTabPanel", target="scRNA-seq", session = session)
+    hideTab(inputId="umapTabPanel", target="scRNA-seq", session = session)
+    hideTab(inputId="findMarkersTabPanel", target="scRNA-seq", session = session)
+    hideTab(inputId="gProfilerTabPanel", target="scRNA-seq", session = session)
+    hideTab(inputId="trajectoryTabPanel", target="scRNA-seq", session = session)
+    hideTab(inputId="grnTabPanel", target="scRNA-seq", session = session)
+    
+    
+    ############################ show ATAC and make it selected
+    
+    showTab(inputId="uploadTabPanel", target="scATAC-seq", session = session)
+    showTab(inputId="qcTabPanel", target="scATAC-seq", session = session)
+    showTab(inputId="pcaTabPanel", target="scATAC-seq: LSI", session = session)
+    showTab(inputId="clusteringTabPanel", target="scATAC-seq", session = session)
+    showTab(inputId="umapTabPanel", target="scATAC-seq", session = session)
+    showTab(inputId="findMarkersTabPanel", target="scATAC-seq", session = session)
+    showTab(inputId="gProfilerTabPanel", target="scATAC-seq", session = session)
+    showTab(inputId="trajectoryTabPanel", target="scATAC-seq", session = session)
+    showTab(inputId="grnTabPanel", target="scATAC-seq", session = session)
+    
+    updateTabsetPanel(inputId="uploadTabPanel", selected="scATAC-seq", session = session)
+    updateTabsetPanel(inputId="qcTabPanel", selected="scATAC-seq", session = session)
+    updateTabsetPanel(inputId="pcaTabPanel", selected="scATAC-seq: LSI", session = session)
+    updateTabsetPanel(inputId="clusteringTabPanel", selected="scATAC-seq", session = session)
+    updateTabsetPanel(inputId="umapTabPanel", selected="scATAC-seq", session = session)
+    updateTabsetPanel(inputId="findMarkersTabPanel", selected="scATAC-seq", session = session)
+    updateTabsetPanel(inputId="gProfilerTabPanel", selected="scATAC-seq", session = session)
+    updateTabsetPanel(inputId="trajectoryTabPanel", selected="scATAC-seq", session = session)
+    updateTabsetPanel(inputId="grnTabPanel", selected="scATAC-seq", session = session)
+  }
+  
+  disableTabsATAC <- function()
+  {
+    hideTab(inputId="uploadTabPanel", target="scATAC-seq", session = session)
+    hideTab(inputId="qcTabPanel", target="scATAC-seq", session = session)
+    hideTab(inputId="pcaTabPanel", target="scATAC-seq: LSI", session = session)
+    hideTab(inputId="clusteringTabPanel", target="scATAC-seq", session = session)
+    hideTab(inputId="umapTabPanel", target="scATAC-seq", session = session)
+    hideTab(inputId="findMarkersTabPanel", target="scATAC-seq", session = session)
+    hideTab(inputId="gProfilerTabPanel", target="scATAC-seq", session = session)
+    hideTab(inputId="trajectoryTabPanel", target="scATAC-seq", session = session)
+    hideTab(inputId="grnTabPanel", target="scATAC-seq", session = session)
+    
+    ############################ show RNA and make it selected
+    
+    showTab(inputId="uploadTabPanel", target="scRNA-seq", session = session)
+    showTab(inputId="qcTabPanel", target="scRNA-seq", session = session)
+    showTab(inputId="pcaTabPanel", target="scRNA-seq: PCA", session = session)
+    showTab(inputId="clusteringTabPanel", target="scRNA-seq", session = session)
+    showTab(inputId="umapTabPanel", target="scRNA-seq", session = session)
+    showTab(inputId="findMarkersTabPanel", target="scRNA-seq", session = session)
+    showTab(inputId="gProfilerTabPanel", target="scRNA-seq", session = session)
+    showTab(inputId="trajectoryTabPanel", target="scRNA-seq", session = session)
+    showTab(inputId="grnTabPanel", target="scRNA-seq", session = session)
+    
+    updateTabsetPanel(inputId="uploadTabPanel", selected="scRNA-seq", session = session)
+    updateTabsetPanel(inputId="qcTabPanel", selected="scRNA-seq", session = session)
+    updateTabsetPanel(inputId="pcaTabPanel", selected="scRNA-seq: PCA", session = session)
+    updateTabsetPanel(inputId="clusteringTabPanel", selected="scRNA-seq", session = session)
+    updateTabsetPanel(inputId="umapTabPanel", selected="scRNA-seq", session = session)
+    updateTabsetPanel(inputId="findMarkersTabPanel", selected="scRNA-seq", session = session)
+    updateTabsetPanel(inputId="gProfilerTabPanel", selected="scRNA-seq", session = session)
+    updateTabsetPanel(inputId="trajectoryTabPanel", selected="scRNA-seq", session = session)
+    updateTabsetPanel(inputId="grnTabPanel", selected="scRNA-seq", session = session)
+  }
+  
+  
   #ATAC
   #function update selectInput
   updateSelInpColorATAC <- function()
@@ -3934,6 +4111,37 @@ output$findMotifsATACExport <- downloadHandler(
     updateSelectInput(session, "trajectoryStartATAC", choices = cluster_names)
     updateSelectInput(session, "trajectoryEndATAC", choices = cluster_names)
   }
+  
+  #alert
+  observeEvent(input$removeProject, {
+    #remove RNAseq project
+    init_seurat_object <<- NULL
+    seurat_object <<- NULL
+    cleanAllPlots(TRUE)
+    
+    #remove ATAC-seq project
+    proj_default <<- NULL
+    cleanAllPlotsATAC()
+    
+    #showModal(modalDialog(span('Project removed succesfully. You can now start a new project.', style='color:lightseagreen'), footer = NULL, 
+    #                      style = 'font-size:20px; text-align:center;position:absolute;top:50%;left:50%'))
+    showNotification("Project removed succesfully. You can now upload a new project.", type = "message", closeButton = T)
+    removeModal()
+  })
+  observeEvent(input$cancelProjectRemoval, {
+    removeModal()
+  })
+  
+  modal_confirm <- modalDialog(
+    "This operation cannot be completed, because another project is already loaded. Do you want to replace it?",
+    title = "New project",
+    footer = tagList(
+      actionButton(inputId="removeProject", label="Yes"),
+      actionButton("cancelProjectRemoval", "No")
+    )
+  )
+  
 }
 
-
+#showModal(modalDialog(span('Analysis in Progress, please wait...', style='color:lightseagreen'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;top:50%;left:50%'))
+#removeModal()
