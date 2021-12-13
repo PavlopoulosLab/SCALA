@@ -8,30 +8,39 @@ server <- function(input, output, session) {
   source("global.R", local=TRUE)
   
   session$sendCustomMessage("handler_disableTabs", "sidebarMenu") # disable all tab panels (except Data Input) until files are uploaded
+  hideAllLoaders() # helper function (in global.R) that initially hides all loaders (TODO: needs to be executed while switching form RNA to ATAC)
   metaD <- reactiveValues(my_project_name="-", all_lin="0")
   
   #Fast debug mode
   observeEvent(input$debugRNA, {
-    seurat_object <<- readRDS("processed_seurat_object-2021-12-11.RDS")
-    init_seurat_object <<- readRDS("processed_seurat_object-2021-12-11.RDS")
-    session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " QUALITY CONTROL", " DATA NORMALIZATION\n& SCALING", " PRINCIPAL COMPONENT\nANALYSIS",
-                                                      " CLUSTERING", " CELL CYCLE PHASE ANALYSIS", " ADDITIONAL DIMENSIONALITY\nREDUCTION METHODS", " TRAJECTORY ANALYSIS",
-                                                      " MARKERS' IDENTIFICATION", " LIGAND - RECEPTOR\nANALYSIS", " FUNCTIONAL ENRICHMENT\nANALYSIS", " CLUSTERS' ANNOTATION"))
-    
-    output$metadataTable <- renderDataTable(seurat_object@meta.data, options = list(pageLength = 20))
-    updateClusterTab()
-    output$findMarkersTable <- renderDataTable(seurat_object@misc$markers, options = list(pageLength = 20), filter = 'top', rownames = FALSE) 
-    updateUmapTypeChoices(c("pca", "umap", "tsne", "phate", "dfm"))
-    updateSignatures()
-    updateSelInpColor()
-    updateRegressOut()
-    updateGeneSearchFP()
-    updateInputLRclusters()
-    #setwd("exampleRNA_10xFiles/")
-    organism <<- "human"
-    disableTabsATAC()
-    
-    print("Load complete")
+
+    tryCatch({
+      seurat_object <<- readRDS("processed_seurat_object-2021-12-11.RDS")
+      session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " QUALITY CONTROL", " DATA NORMALIZATION\n& SCALING", " PRINCIPAL COMPONENT\nANALYSIS",
+                                                        " CLUSTERING", " CELL CYCLE PHASE ANALYSIS", " ADDITIONAL DIMENSIONALITY\nREDUCTION METHODS", " TRAJECTORY ANALYSIS",
+                                                        " MARKERS' IDENTIFICATION", " LIGAND - RECEPTOR\nANALYSIS", " FUNCTIONAL ENRICHMENT\nANALYSIS", " CLUSTERS' ANNOTATION"))
+      
+      output$metadataTable <- renderDataTable(seurat_object@meta.data, options = list(pageLength = 20))
+      updateClusterTab()
+      output$findMarkersTable <- renderDataTable(seurat_object@misc$markers, options = list(pageLength = 20), filter = 'top', rownames = FALSE) 
+      updateUmapTypeChoices(c("pca", "umap", "tsne", "phate", "dfm"))
+      updateSignatures()
+      updateSelInpColor()
+      updateRegressOut()
+      updateGeneSearchFP()
+      #updateInputGeneList()
+      updateInputLRclusters()
+      #updateInpuTrajectoryClusters()
+      # setwd("exampleRNA_10xFiles/") # TODO remove this, never use setwd() on server apps. create a path with paste() instead
+      organism <<- "human"
+      
+      print("Load complete")
+    }, error = function(e) {
+      print(paste("Error :  ", e))
+      session$sendCustomMessage("handler_alert", "Error.")
+    }, finally = { # with or without error
+      
+    })
   })
   
   #------------------Upload tab--------------------------------
@@ -524,6 +533,12 @@ server <- function(input, output, session) {
     tryCatch({
       if (identical(init_seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else{
+        shinyjs::show("nFeatureViolin_loader")
+        shinyjs::show("totalCountsViolin_loader")
+        shinyjs::show("mitoViolin_loader")
+        shinyjs::show("genesCounts_loader")
+        shinyjs::show("mtCounts_loader")
+        
         output$nFeatureViolin <- renderPlotly(
           {
             p <- VlnPlot(init_seurat_object, features = c("nFeature_RNA"), pt.size = 0.5, group.by = "orig.ident",
@@ -629,6 +644,11 @@ server <- function(input, output, session) {
     tryCatch({
       if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else{
+        shinyjs::show("filteredNFeatureViolin_loader")
+        shinyjs::show("filteredTotalCountsViolin_loader")
+        shinyjs::show("filteredMitoViolin_loader")
+        shinyjs::show("filteredGenesCounts_loader")
+        shinyjs::show("filteredMtCounts_loader")
         
         qc_minFeatures <<- input$minUniqueGenes
         qc_maxFeatures <<- input$maxUniqueGenes
@@ -738,6 +758,10 @@ server <- function(input, output, session) {
     tryCatch({
       if (identical(proj_default, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else{
+        
+        shinyjs::show("TSS_plot_loader")
+        shinyjs::show("nFrag_plot_loader")
+        shinyjs::show("TSS_nFrag_plot_loader")
     #TSS plot
     p1 <- plotGroups(
       ArchRProj = proj_default,
@@ -812,6 +836,8 @@ server <- function(input, output, session) {
     tryCatch({
       if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else{
+        shinyjs::show("hvgScatter_loader")
+        
         normalize_normMethod <- normalize_normMethod
         normalize_normScaleFactor <- input$normScaleFactor
         seurat_object <<- NormalizeData(seurat_object, normalization.method = normalize_normMethod, scale.factor = as.numeric(normalize_normScaleFactor))
@@ -832,50 +858,45 @@ server <- function(input, output, session) {
         session$sendCustomMessage("handler_startLoader", c("normalize_loader", 75))
         updateSignatures()
         
-        output$hvgScatter <- renderPlotly(#tooltip example TODO the same in all plots
-          {
-            if(length(VariableFeatures(seurat_object)) != 0)
-            {
-              plot1 <- VariableFeaturePlot(seurat_object)
-              varplot <- plot1$data
-              varplot$gene <- rownames(varplot)
-              varplot$colors[varplot$colors == "yes"] <- paste0("Highly Variable genes(", length(VariableFeatures(seurat_object)), ")")
-              varplot$colors[varplot$colors == "no"] <- paste0("Not Variable genes(", length(rownames(seurat_object)) - length(VariableFeatures(seurat_object)), ")")
-              
-              if(normalize_hvgMethod == "vst")
-              {
-                #p <- ggplot(varplot, aes(x=log10(mean), y=variance.standardized, color=colors, label=gene)) + 
-                p <- ggplot(varplot, aes(x=log10(mean), y=variance.standardized, color=colors, text = paste0("log10(mean expression): ", log10(mean),
-                                                                                                             "\nstandardized variance: ", variance.standardized,
-                                                                                                             "\ngene: ", gene)
-                                         )) +
-                  geom_point() +
-                  theme_bw() +
-                  #scale_color_manual(values = c("black", "red")) +
-                  scale_color_manual(
-                    values = c("red", "black")
-                  )+
-                  labs(x="Average Expression", y="Standardized Variance", color="")  
-              }
-              else
-              {
-                p <- ggplot(varplot, aes(x=mean, y=dispersion.scaled, color=colors, text = paste0("mean expression: ", mean,
-                                                                                                  "\nscaled dispersion: ", dispersion.scaled,
-                                                                                                  "\ngene: ", gene)
-                )) +
-                  geom_point() +
-                  theme_bw() +
-                  scale_color_manual(
-                    values = c("red", "black")
-                  )+ 
-                  labs(x="Average Expression", y="Scaled Dispersion", color="")
-              }
-              
-              gp <- plotly::ggplotly(p, tooltip = "text")#c("label", "x", "y"))
-              print(gp)  
+        # Rendering
+        output$hvgScatter <- renderPlotly({ # tooltip example TODO the same in all plots
+          if(length(VariableFeatures(seurat_object)) != 0){
+            plot1 <- VariableFeaturePlot(seurat_object)
+            varplot <- plot1$data
+            varplot$gene <- rownames(varplot)
+            varplot$colors[varplot$colors == "yes"] <- paste0("Highly Variable genes(", length(VariableFeatures(seurat_object)), ")")
+            varplot$colors[varplot$colors == "no"] <- paste0("Not Variable genes(", length(rownames(seurat_object)) - length(VariableFeatures(seurat_object)), ")")
+            
+            if(normalize_hvgMethod == "vst"){
+              #p <- ggplot(varplot, aes(x=log10(mean), y=variance.standardized, color=colors, label=gene)) + 
+              p <- ggplot(varplot, aes(x=log10(mean), y=variance.standardized, color=colors, text = paste0("log10(mean expression): ", log10(mean),
+                                                                                                           "\nstandardized variance: ", variance.standardized,
+                                                                                                           "\ngene: ", gene)
+              )) +
+                geom_point() +
+                theme_bw() +
+                #scale_color_manual(values = c("black", "red")) +
+                scale_color_manual(
+                  values = c("red", "black")
+                )+
+                labs(x="Average Expression", y="Standardized Variance", color="")
+            } else { # TODO DeBUG
+              p <- ggplot(varplot, aes(x=mean, y=dispersion.scaled, color=colors, text = paste0("mean expression: ", mean,
+                                                                                                "\nscaled dispersion: ", dispersion.scaled,
+                                                                                                "\ngene: ", gene)
+              )) +
+                geom_point() +
+                theme_bw() +
+                scale_color_manual(
+                  values = c("red", "black")
+                )+ 
+                labs(x="Average Expression", y="Scaled Dispersion", color="")
             }
-          }
-        )
+            gp <- plotly::ggplotly(p, tooltip = "text") #c("label", "x", "y"))
+            return(gp)
+          } else session$sendCustomMessage("handler_alert", "There are no variable features in the Seaurat object.")
+        }) # End Rendering
+        
         session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " PRINCIPAL COMPONENT\nANALYSIS"))
       }
     # }, warning = function(w) {
@@ -901,6 +922,9 @@ server <- function(input, output, session) {
       if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else if (!"ScaleData.RNA" %in% names(seurat_object@commands)) session$sendCustomMessage("handler_alert", "Data need to be scaled first. Please, execute the previous step in DATA NORMALIZATION & SCALING.")
       else {
+        shinyjs::show("elbowPlotPCA_loader")
+        shinyjs::show("PCAscatter_loader")
+        
         seurat_object <<- RunPCA(seurat_object, features = VariableFeatures(object = seurat_object))
         
         optimal_nPCs <- 0 #only for visualization purposes
@@ -1001,6 +1025,9 @@ server <- function(input, output, session) {
       if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else if (!"pca" %in% names(seurat_object)) session$sendCustomMessage("handler_alert", "Please, first Run PCA above.")
       else {
+        shinyjs::show("PCAloadings_loader")
+        shinyjs::show("PCAheatmap_loader")
+        
         activePC <- as.numeric(input$PCin)
         
         output$PCAloadings <- renderPlotly(
@@ -1137,6 +1164,8 @@ server <- function(input, output, session) {
       if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else if (identical(seurat_object@meta.data$seurat_clusters, NULL)) session$sendCustomMessage("handler_alert", "Please, execute CLUSTERING first.")
       else {
+        shinyjs::show("clusterBarplot_loader")
+        
         if(input$clusterGroupBy == "seurat_clusters")
         {
           #barplot for cell distribution per cluster
@@ -1208,6 +1237,7 @@ server <- function(input, output, session) {
     tryCatch({
       if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else{
+        shinyjs::show("snnSNN_loader")
         
         session$sendCustomMessage("handler_startLoader", c("clust3_loader", 20))
         session$sendCustomMessage("handler_startLoader", c("clust3_loader", 50))
@@ -1258,7 +1288,7 @@ server <- function(input, output, session) {
     tryCatch({
       if (identical(proj_default, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else {
-        
+        shinyjs::show("clusterBarplotATAC_loader")
     #Run clustering
     proj_default <<- addClusters(input = proj_default, reducedDims = "IterativeLSI", method = "Seurat", neme = "Clusters", #name = paste0("Clusters_res_", input$clusterResATAC), 
                                  resolution = as.numeric(input$clusterResATAC), dimsToUse = 1:as.numeric(input$clusterDimensionsATAC), force = T, 
@@ -1367,7 +1397,7 @@ server <- function(input, output, session) {
     tryCatch({
       if (identical(proj_default, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else {
-        
+        shinyjs::show("umapPlotATAC_loader")
         #get input
         dims <- as.numeric(input$umapDimensionsPlotATAC)
         type <- input$umapTypeATAC
@@ -1687,6 +1717,8 @@ server <- function(input, output, session) {
     tryCatch({
       if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else{
+        shinyjs::show("findMarkersHeatmap_loader")
+        
         top10 <- seurat_object@misc$markers %>% group_by(cluster) %>% top_n(n = 10, wt = eval(parse(text=markers_logFCBase))) #wt = avg_logFC)
         set.seed(9)
         downsampled <- subset(seurat_object, cells = sample(Cells(seurat_object), 1500))
@@ -1738,7 +1770,7 @@ server <- function(input, output, session) {
     tryCatch({
       if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else{
-        
+        shinyjs::show("findMarkersDotplot_loader")
         output$findMarkersDotplot <- renderPlotly(
           {
             top10 <- seurat_object@misc$markers %>% group_by(cluster) %>% top_n(n = 10, wt = eval(parse(text=markers_logFCBase))) #wt = avg_logFC)
@@ -1797,6 +1829,7 @@ observeEvent(input$findMarkersFPConfirm, {
   tryCatch({
     if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
     else{
+      shinyjs::show("findMarkersFeaturePlot_loader")
       
       if(input$findMarkersReductionType != "-")
       {
@@ -1879,6 +1912,11 @@ observeEvent(input$findMarkersFeaturePairConfirm, {
   tryCatch({
     if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
     else{
+      shinyjs::show("findMarkersFPfeature1_loader")
+      shinyjs::show("findMarkersFPfeature2_loader")
+      shinyjs::show("findMarkersFPfeature1_2_loader")
+      shinyjs::show("findMarkersFPcolorbox_loader")
+      
       updateFeaturePair()
     }
   }, error = function(e) {
@@ -1898,7 +1936,7 @@ observeEvent(input$findMarkersViolinConfirm, {
   tryCatch({
     if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
     else{
-      
+      shinyjs::show("findMarkersViolinPlot_loader")
       if ((input$findMarkersViolinFeaturesSignature == "gene" & !identical(input$findMarkersGeneSelect2, NULL))
           | (input$findMarkersViolinFeaturesSignature == "signature" & input$findMarkersViolinSignatureSelect != "-")){
         output$findMarkersViolinPlot <- renderPlotly(
@@ -1948,7 +1986,7 @@ observeEvent(input$findMarkersVolcanoConfirm, {
   tryCatch({
     if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
     else{
-      
+      shinyjs::show("findMarkersVolcanoPlot_loader")
       diff_exp_genes <- seurat_object@misc$markers
       cluster_degs <- diff_exp_genes[which(diff_exp_genes$cluster == input$findMarkersClusterSelect), ]
       cluster_degs$status <- "Down regulated"
@@ -2033,6 +2071,8 @@ observeEvent(input$findMarkersConfirmATAC, { #ADD loading bar
   tryCatch({
     if (identical(proj_default, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
     else {
+      shinyjs::show("findMarkersGenesHeatmapATAC_loader")
+      
       session$sendCustomMessage("handler_startLoader", c("DEA7_loader", 10))
       markers_cluster <- getMarkerFeatures(
         ArchRProj = proj_default,
@@ -2091,6 +2131,8 @@ observeEvent(input$findMarkersPeaksConfirmATAC, {
   tryCatch({
     if (identical(proj_default, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
     else {
+      shinyjs::show("findMarkersPeaksHeatmapATAC_loader")
+      
       source("../Peaks_ArchR_windows.R")
       
       addArchRThreads(threads = 1)
@@ -2186,6 +2228,8 @@ observeEvent(input$findMarkersFPConfirmATAC, {
   tryCatch({
     if (identical(proj_default, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
     else {
+      shinyjs::show("findMarkersFeaturePlotATAC_loader")
+      
       p <- plotEmbedding(
         ArchRProj = proj_default, 
         colorBy = "GeneScoreMatrix", 
@@ -2241,6 +2285,8 @@ output$findMarkersPeaksATACExport <- downloadHandler(
       if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else if (!"pca" %in% names(seurat_object)) session$sendCustomMessage("handler_alert", "Please, first execute PRINCIPAL COMPONENT ANALYSIS.") # TODO add if conditions for UMAP, tSNE etc
       else {
+        shinyjs::show("cellCyclePCA_loader")
+        shinyjs::show("cellCycleBarplot_loader")
         #******cell cycle analysis #TODO before and after regression plot
         if(organism == "mouse")
         {
@@ -2375,6 +2421,8 @@ output$findMarkersPeaksATACExport <- downloadHandler(
       if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else if (identical(seurat_object@misc$markers, NULL)) session$sendCustomMessage("handler_alert", "Please, execute the gene differential analysis at the MARKERS' IDENTIFICATION tab first.")
       else {
+        shinyjs::show("gProfilerManhatan_loader")
+        
         cluster_temp <- input$gProfilerList
         temp_df <- data.frame()
         # if(cluster_temp == "all_clusters")
@@ -2521,6 +2569,8 @@ observeEvent(input$findMotifsConfirmATAC, {
   tryCatch({
     if (identical(proj_default, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
     else {
+      shinyjs::show("findMotifsHeatmapATAC_loader")
+      
       markersPeaks <- getMarkerFeatures(
         ArchRProj = proj_default,
         useMatrix = "PeakMatrix",
@@ -2590,6 +2640,8 @@ output$findMotifsATACExport <- downloadHandler(
       if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else if (identical(seurat_object@misc$markers, NULL)) session$sendCustomMessage("handler_alert", "Please, execute the gene differential analysis at the MARKERS' IDENTIFICATION tab first.")
       else {
+        shinyjs::show("annotateClustersCIPRDotplot_loader")
+        
         marker_genes <- seurat_object@misc$markers
         
         avgexp <- AverageExpression(seurat_object)
@@ -2667,6 +2719,9 @@ output$findMotifsATACExport <- downloadHandler(
       else if (identical(seurat_object@meta.data$seurat_clusters, NULL)) session$sendCustomMessage("handler_alert", "Please, execute CLUSTERING first and then run UMAP, in the NON LINEAR DIMENSIONALITY REDUCTION tab.")
       else if (identical(seurat_object$umap, NULL)) session$sendCustomMessage("handler_alert", "Please, calculate UMAP first, in the NON LINEAR DIMENSIONALITY REDUCTION tab.")
       else {
+        shinyjs::show("trajectoryPlot_loader")
+        shinyjs::show("trajectoryPseudotimePlot_loader")
+        
         #delete previous lineages columns
         for_delete <- grep("Lineage", colnames(seurat_object@meta.data))
         if(length(for_delete) != 0)
@@ -2834,6 +2889,8 @@ output$findMotifsATACExport <- downloadHandler(
     tryCatch({
       if (identical(proj_default, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else {
+        shinyjs::test("trajectoryPseudotimePlotATAC_loader")
+        
         session$sendCustomMessage("handler_startLoader", c("traj4_loader", 50))
         p <- plotTrajectory(proj_default, trajectory = input$trajectoryLineageSelectATAC, colorBy = "cellColData", name = input$trajectoryLineageSelectATAC, embedding = "UMAP")
         output$trajectoryPseudotimePlotATAC <- renderPlot({ plot(p[[1]]) })
@@ -2858,6 +2915,8 @@ output$findMotifsATACExport <- downloadHandler(
       if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else if (identical(seurat_object@meta.data$seurat_clusters, NULL)) session$sendCustomMessage("handler_alert", "Please, execute CLUSTERING first.")
       else {
+        shinyjs::show("ligandReceptorFullHeatmap_loader")
+        shinyjs::show("ligandReceptorCuratedHeatmap_loader")
         #load interactions
         ligand_target_matrix = readRDS("ligand_target_matrix.rds")
         lr_network = readRDS("lr_network.rds")
@@ -3235,6 +3294,8 @@ output$findMotifsATACExport <- downloadHandler(
    })
    
   observeEvent(input$grnConfirmVisualizationRNA, {
+    shinyjs::show("grnHeatmapRNA_loader")
+    
      rss.seurat_object <- read.delim("rss_regulon_by_cell_type_FULL_TABLE.txt", check.names = F)
      regulonActivity_byCellType_Scaled.seurat_object <- read.delim("scaled_regulon_activity_by_cell_type_FULL_TABLE.txt", check.names = F)
      
@@ -3262,6 +3323,8 @@ output$findMotifsATACExport <- downloadHandler(
     tryCatch({
       if (identical(proj_default, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else {
+        shinyjs::show("grnHeatmapATAC_loader")
+        
         fdr_lim <- input$grnFdrATAC
         corr_lim <- input$grnCorrlationATTAC
         
@@ -3373,6 +3436,8 @@ output$findMotifsATACExport <- downloadHandler(
     tryCatch({
       if (identical(proj_default, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else {
+        shinyjs::show("visualizeTracksOutput_loader")
+        
         p <- plotBrowserTrack(
           ArchRProj = proj_default,
           groupBy = "Clusters",
@@ -3417,6 +3482,8 @@ output$findMotifsATACExport <- downloadHandler(
       if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else if (identical(seurat_object@meta.data$seurat_clusters, NULL)) session$sendCustomMessage("handler_alert", "Please, execute CLUSTERING first and then re-run UMAP or tSNE or Diffusion Map above.")
       else {
+        shinyjs::show("umapPlot_loader")
+        
         #get input
         dims <- as.numeric(input$umapDimensions)
         type <- input$umapType

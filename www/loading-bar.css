@@ -1,7 +1,7 @@
 .ldBar {
   position: absolute;
-  left: 40%;
-  top: 40%;
+  left: 5%;
+  top: 30%;
   z-index: 1000;
   -webkit-transform: scale(2);
   transform: scale(2);
@@ -16,9 +16,15 @@
   text-shadow: 0 0 3px #fff;
 }
 .ldBar-label{
+  font-size: 13px;
+  text-align: center;
   color: black;
-  margin-top: -65%; 
-  margin-left: 40%; 
+  margin-top: -70%; 
+  margin-left: 5%;
+}
+.ldBar-label:before {
+  content: "Calculating... ";
+  display: inline;
 }
 .ldBar-label:after {
   content: "%";
