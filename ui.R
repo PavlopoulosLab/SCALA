@@ -1059,7 +1059,6 @@ ui <- dashboardPage(
                                                               downloadButton(outputId = "grnPositiveRegulatorsATACExport", label = "Save table"),
                                                               tags$hr(),
                                                               plotlyOutput(outputId = "grnHeatmapATAC", height = "800px"),
-                                                              plotOutput(outputId = "grnHeatmapATAC2", height = "800px")
                                                               ),
                                                      tabPanel("Peak to gene links",
                                                               dataTableOutput(outputId="grnP2GlinksTable", height = "800px"),

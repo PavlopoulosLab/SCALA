@@ -44,6 +44,7 @@ library(JASPAR2018)
 library(JASPAR2016) #BiocManager::install("JASPAR2020"), BiocManager::install("JASPAR2018"), BiocManager::install("JASPAR2016")
 
 #Global variables
+user_dir <- "" #user's folder in temp
 
 #tab Upload
 #objectInputType <- "Input10x"
