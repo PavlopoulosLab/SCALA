@@ -214,19 +214,69 @@ ui <- dashboardPage(
                                        div(
                                          column(tags$h3("Pre-filtering plots"), width=12),
                                          column(tags$hr(), width = 12),
-                                         column(plotlyOutput(outputId = "nFeatureViolin", height = "100%"), width = 4),
-                                         column(plotlyOutput(outputId = "totalCountsViolin", height = "100%"), width = 4),
-                                         column(plotlyOutput(outputId = "mitoViolin", height = "100%"), width = 4),
-                                         column(plotlyOutput(outputId = "genesCounts", height= "100%"), width = 6),
-                                         column(plotlyOutput(outputId = "mtCounts", height= "100%"), width = 6),
+                                         column(
+                                           div(id="nFeatureViolin_loader",
+                                               shinycssloaders::withSpinner(
+                                                 plotlyOutput(outputId = "nFeatureViolin", height = "100%")
+                                                 )
+                                               ), width = 4),
+                                         column(
+                                           div(id="totalCountsViolin_loader",
+                                               shinycssloaders::withSpinner(
+                                                 plotlyOutput(outputId = "totalCountsViolin", height = "100%")
+                                                 )
+                                               ), width = 4),
+                                         column(
+                                           div(id="mitoViolin_loader",
+                                               shinycssloaders::withSpinner(
+                                                 plotlyOutput(outputId = "mitoViolin", height = "100%")
+                                                 )
+                                               ), width = 4),
+                                         column(
+                                           div(id="genesCounts_loader",
+                                               shinycssloaders::withSpinner(
+                                                 plotlyOutput(outputId = "genesCounts", height= "100%")
+                                                 )
+                                               ), width = 6),
+                                         column(
+                                           div(id="mtCounts_loader",
+                                               shinycssloaders::withSpinner(
+                                                 plotlyOutput(outputId = "mtCounts", height= "100%")
+                                                 )
+                                               ), width = 6),
                                          column(verbatimTextOutput(outputId = "cellStats"), width = 4),
                                          column(tags$h3("Post-filtering plots"), width=12),
                                          column(tags$hr(), width = 12),
-                                         column(plotlyOutput(outputId = "filteredNFeatureViolin", height = "100%"), width = 4),
-                                         column(plotlyOutput(outputId = "filteredTotalCountsViolin", height = "100%"), width = 4),
-                                         column(plotlyOutput(outputId = "filteredMitoViolin", height = "100%"), width = 4),
-                                         column(plotlyOutput(outputId = "filteredGenesCounts", height= "100%"), width = 6),
-                                         column(plotlyOutput(outputId = "filteredMtCounts", height= "100%"), width = 6),
+                                         column(
+                                           div(id="filteredNFeatureViolin_loader",
+                                               shinycssloaders::withSpinner(
+                                                 plotlyOutput(outputId = "filteredNFeatureViolin", height = "100%")
+                                                 )
+                                               ), width = 4),
+                                         column(
+                                           div(id="filteredTotalCountsViolin_loader",
+                                               shinycssloaders::withSpinner(
+                                                 plotlyOutput(outputId = "filteredTotalCountsViolin", height = "100%")
+                                                 )
+                                               ), width = 4),
+                                         column(
+                                           div(id="filteredMitoViolin_loader",
+                                               shinycssloaders::withSpinner(
+                                                 plotlyOutput(outputId = "filteredMitoViolin", height = "100%")
+                                                 )
+                                               ), width = 4),
+                                         column(
+                                           div(id="filteredGenesCounts_loader",
+                                               shinycssloaders::withSpinner(
+                                                 plotlyOutput(outputId = "filteredGenesCounts", height= "100%")
+                                                 )
+                                               ), width = 6),
+                                         column(
+                                           div(id="filteredMtCounts_loader",
+                                               shinycssloaders::withSpinner(
+                                                 plotlyOutput(outputId = "filteredMtCounts", height= "100%")
+                                                 )
+                                               ), width = 6),
                                          column(verbatimTextOutput(outputId = "filteredCellStats"), width = 4),
                                        )
                                      )
@@ -258,9 +308,24 @@ ui <- dashboardPage(
                                        div(
                                          column(tags$h3("Soft filtered plots"), width=12),
                                          column(tags$hr(), width = 12),
-                                         column(plotlyOutput(outputId = "TSS_plot", height = "100%"), width = 4),
-                                         column(plotOutput(outputId = "nFrag_plot", height = "100%"), width = 4),
-                                         column(plotlyOutput(outputId = "TSS_nFrag_plot", height = "100%"), width = 4),
+                                         column(
+                                           div(id="TSS_plot_loader",
+                                               shinycssloaders::withSpinner(
+                                                 plotlyOutput(outputId = "TSS_plot", height = "100%")
+                                                 )
+                                               ), width = 4),
+                                         column(
+                                           div(id="nFrag_plot_loader",
+                                               shinycssloaders::withSpinner(
+                                                 plotOutput(outputId = "nFrag_plot", height = "100%")
+                                                 )
+                                               ), width = 4),
+                                         column(
+                                           div(id="TSS_nFrag_plot_loader",
+                                               shinycssloaders::withSpinner(
+                                                 plotlyOutput(outputId = "TSS_nFrag_plot", height = "100%")
+                                                 )
+                                               ), width = 4),
                                          column(verbatimTextOutput(outputId = "CellStatsATAC"), width = 5)
                                          # column(tags$h3("Custom filtered plots"), width=12),
                                          # column(tags$hr(), width = 12),
@@ -319,7 +384,11 @@ ui <- dashboardPage(
                   width = 8, status = "info", solidHeader = TRUE,
                   title = "Highly variable genes",
                   div(class="ldBar", id="normalize_loader", "data-preset"="circle"),
-                  plotlyOutput(outputId = "hvgScatter", height = "800px")
+                  div(id="hvgScatter_loader",
+                      shinycssloaders::withSpinner(
+                        plotlyOutput(outputId = "hvgScatter", height = "800px")
+                      )
+                  )
                 ),  
               )
       ),
@@ -340,8 +409,18 @@ ui <- dashboardPage(
                                        column(actionButton(inputId = "PCrunPCA", label = "Run PCA"), width = 12),
                                        div(class="ldBar", id="PCA1_loader", "data-preset"="circle"),
                                        div(
-                                         column(plotlyOutput(outputId = "elbowPlotPCA", height = "790px"), width = 6),
-                                         column(plotlyOutput(outputId = "PCAscatter", height = "790px"), width = 6)
+                                         column(
+                                           div(id="elbowPlotPCA_loader",
+                                               shinycssloaders::withSpinner(
+                                                 plotlyOutput(outputId = "elbowPlotPCA", height = "790px")
+                                                 )
+                                               ), width = 6),
+                                         column(
+                                           div(id="PCAscatter_loader",
+                                               shinycssloaders::withSpinner(
+                                                 plotlyOutput(outputId = "PCAscatter", height = "790px")
+                                                 )
+                                               ), width = 6)
                                        )
                                      ),
                                      box(
@@ -352,8 +431,18 @@ ui <- dashboardPage(
                                        column(actionButton(inputId = "PCconfirm", label = "OK"), width = 12),
                                        div(class="ldBar", id="PCA2_loader", "data-preset"="circle"),
                                        div(
-                                         column(plotlyOutput(outputId = "PCAloadings", height = "790px"), width = 6),
-                                         column(plotlyOutput(outputId = "PCAheatmap", height = "790px"), width = 6)
+                                         column(
+                                           div(id="PCAloadings_loader",
+                                               shinycssloaders::withSpinner(
+                                                 plotlyOutput(outputId = "PCAloadings", height = "790px")
+                                                 )
+                                               ), width = 6),
+                                         column(
+                                           div(id="PCAheatmap_loader",
+                                               shinycssloaders::withSpinner(
+                                                 plotlyOutput(outputId = "PCAheatmap", height = "790px")
+                                                 )
+                                               ), width = 6)
                                        )
                                      )
                                    )
@@ -415,11 +504,21 @@ ui <- dashboardPage(
                                                                         c("orig.ident" = "orig.ident")),
                                                             actionButton(inputId = "clusterBarplotConfirm", label = "Display barchart"),
                                                             div(class="ldBar", id="clust2_loader", "data-preset"="circle"),
-                                                            plotlyOutput(outputId = "clusterBarplot", height = "700px")),
+                                                            div(id="clusterBarplot_loader",
+                                                                shinycssloaders::withSpinner(
+                                                                  plotlyOutput(outputId = "clusterBarplot", height = "700px")
+                                                                )
+                                                            )
+                                                   ),
                                                    tabPanel("Shared Nearest Neighbour Graph", 
                                                             div(class="ldBar", id="clust3_loader", "data-preset"="circle"),
                                                             actionButton(inputId = "snnDisplayConfirm", label = "Display SNN graph"),
-                                                            visNetworkOutput(outputId="snnSNN", height = "1300px"))
+                                                            div(id="snnSNN_loader",
+                                                                shinycssloaders::withSpinner(
+                                                                  visNetworkOutput(outputId="snnSNN", height = "1300px")
+                                                                  )
+                                                            )
+                                                   )
                                        ),
                                      ),
                                    )
@@ -443,7 +542,12 @@ ui <- dashboardPage(
                                                             #selectInput("clusterGroupBy", "Grouping variable:",
                                                             #            c("Sample" = "Sample")),
                                                             #actionButton(inputId = "clusterBarplotConfirmATAC", label = "Display barchart"),
-                                                            plotlyOutput(outputId = "clusterBarplotATAC", height = "700px"))#,
+                                                            div(id="clusterBarplotATAC_loader",
+                                                                shinycssloaders::withSpinner(
+                                                                  plotlyOutput(outputId = "clusterBarplotATAC", height = "700px")
+                                                                )
+                                                            )
+                                                   )#,
                                                    #tabPanel("Confusion matrix", plotlyOutput(outputId="confusionMatrixATAC", height = "1300px"))
                                        ),
                                      ),
@@ -488,7 +592,11 @@ ui <- dashboardPage(
                                      
                                      box(width = 9, status = "info", solidHeader = TRUE, title = "Plot", height = "1200px",
                                          div(class="ldBar", id="dim_red2_loader", "data-preset"="circle"),
-                                         plotlyOutput(outputId = "umapPlot", height = "1100px")
+                                         div(id="umapPlot_loader",
+                                             shinycssloaders::withSpinner(
+                                               plotlyOutput(outputId = "umapPlot", height = "1100px")
+                                             )
+                                         )
                                      )
                                    )
                           ),
@@ -520,7 +628,11 @@ ui <- dashboardPage(
                                      
                                      box(width = 9, status = "info", solidHeader = TRUE, title = "Plot", height = "1200px",
                                          div(class="ldBar", id="dim_red4_loader", "data-preset"="circle"),
-                                         plotlyOutput(outputId = "umapPlotATAC", height = "1100px")
+                                         div(id="umapPlotATAC_loader",
+                                             shinycssloaders::withSpinner(
+                                               plotlyOutput(outputId = "umapPlotATAC", height = "1100px")
+                                             )
+                                         )
                                      )
                                    )
                           )
@@ -569,12 +681,22 @@ ui <- dashboardPage(
                                                    tabPanel("Heatmap", 
                                                             div(class="ldBar", id="DEA2_loader", "data-preset"="circle"),
                                                             actionButton(inputId = "findMarkersTop10HeatmapConfirm", label = "Display top10 marker genes heatmap"),
-                                                            plotlyOutput(outputId = "findMarkersHeatmap", height = "1300px")),
+                                                            div(id="findMarkersHeatmap_loader",
+                                                                shinycssloaders::withSpinner(
+                                                                  plotlyOutput(outputId = "findMarkersHeatmap", height = "1300px")
+                                                                  )
+                                                                )
+                                                            ),
                                                    
                                                    tabPanel("Dotplot", 
                                                             div(class="ldBar", id="DEA3_loader", "data-preset"="circle"),
                                                             actionButton(inputId = "findMarkersTop10DotplotConfirm", label = "Display top10 marker genes dotplot"),
-                                                            plotlyOutput(outputId = "findMarkersDotplot", height = "1300px")),
+                                                            div(id="findMarkersDotplot_loader",
+                                                                shinycssloaders::withSpinner(
+                                                                  plotlyOutput(outputId = "findMarkersDotplot", height = "1300px")
+                                                                )
+                                                            )
+                                                   ),
                                                    
                                                    tabPanel("Feature plot", fluidRow(
                                                      box(width = 3, status = "info", solidHeader = TRUE, title = "Options",
@@ -615,7 +737,11 @@ ui <- dashboardPage(
                                                      ),
                                                      box(width = 9, status = "info", solidHeader = TRUE, title = "Plot",
                                                          div(class="ldBar", id="DEA4_loader", "data-preset"="circle"),
-                                                         plotlyOutput(outputId = "findMarkersFeaturePlot", height = "1300px")
+                                                         div(id="findMarkersFeaturePlot_loader",
+                                                             shinycssloaders::withSpinner(
+                                                               plotlyOutput(outputId = "findMarkersFeaturePlot", height = "1300px")
+                                                             )
+                                                         )
                                                      )
                                                    )),
                                                    tabPanel("Gene-pair expression", fluidRow(
@@ -649,10 +775,30 @@ ui <- dashboardPage(
                                                      box(width=9, status="info", solidHeader=TRUE, title="Plot",
                                                          div(class="ldBar", id="DEA5_loader", "data-preset"="circle"),
                                                          div(
-                                                           column(plotlyOutput(outputId="findMarkersFPfeature1", height = "650px"), width = 6),
-                                                           column(plotlyOutput(outputId="findMarkersFPfeature2", height = "650px"), width = 6),
-                                                           column(plotlyOutput(outputId="findMarkersFPfeature1_2", height = "650px"), width = 6),
-                                                           column(plotlyOutput(outputId="findMarkersFPcolorbox", height = "650px"), width = 6),
+                                                           column(
+                                                             div(id="findMarkersFPfeature1_loader",
+                                                                 shinycssloaders::withSpinner(
+                                                                   plotlyOutput(outputId="findMarkersFPfeature1", height = "650px")
+                                                                   )
+                                                                 ), width = 6),
+                                                           column(
+                                                             div(id="findMarkersFPfeature2_loader",
+                                                                 shinycssloaders::withSpinner(
+                                                                   plotlyOutput(outputId="findMarkersFPfeature2", height = "650px")
+                                                                   )
+                                                                 ), width = 6),
+                                                           column(
+                                                             div(id="findMarkersFPfeature1_2_loader",
+                                                                 shinycssloaders::withSpinner(
+                                                                   plotlyOutput(outputId="findMarkersFPfeature1_2", height = "650px")
+                                                                   )
+                                                                 ), width = 6),
+                                                           column(
+                                                             div(id="findMarkersFPcolorbox_loader",
+                                                                 shinycssloaders::withSpinner(
+                                                                   plotlyOutput(outputId="findMarkersFPcolorbox", height = "650px")
+                                                                   )
+                                                                 ), width = 6),
                                                          )
                                                      )
                                                    )
@@ -679,7 +825,11 @@ ui <- dashboardPage(
                                                      ),
                                                      box(width = 9, status = "info", solidHeader = TRUE, title = "Plot",
                                                          div(class="ldBar", id="DEA6_loader", "data-preset"="circle"),
-                                                         plotlyOutput(outputId = "findMarkersViolinPlot", height = "1300px")
+                                                         div(id="findMarkersViolinPlot_loader",
+                                                             shinycssloaders::withSpinner(
+                                                               plotlyOutput(outputId = "findMarkersViolinPlot", height = "1300px")
+                                                             )
+                                                         )
                                                      )
                                                    )),
                                                    tabPanel("VolcanoPlot", fluidRow(
@@ -690,7 +840,12 @@ ui <- dashboardPage(
                                                      
                                                      box(width = 9, status = "info", solidHeader = TRUE, title = "Volcano plot",
                                                          div(class="ldBar", id="DEA7_loader", "data-preset"="circle"),
-                                                         plotlyOutput(outputId = "findMarkersVolcanoPlot", height = "1300px"))
+                                                         div(id="findMarkersVolcanoPlot_loader",
+                                                             shinycssloaders::withSpinner(
+                                                               plotlyOutput(outputId = "findMarkersVolcanoPlot", height = "1300px")
+                                                               )
+                                                         )
+                                                     )
                                                    ))
                                        )
                                      )
@@ -741,7 +896,11 @@ ui <- dashboardPage(
                                                      dataTableOutput(outputId="findMarkersGenesTableATAC", height = "800px"),
                                                      downloadButton(outputId = "findMarkersGenesATACExport", label = "Save table"),
                                                      tags$hr(),
-                                                     plotlyOutput(outputId = "findMarkersGenesHeatmapATAC", height = "800px")
+                                                     div(id="findMarkersGenesHeatmapATAC_loader",
+                                                         shinycssloaders::withSpinner(
+                                                            plotlyOutput(outputId = "findMarkersGenesHeatmapATAC", height = "800px")
+                                                         )
+                                                     )
                                                     ) 
                                                    ),
                                                    tabPanel("Marker peaks table (ATAC)", fluidRow(
@@ -749,7 +908,11 @@ ui <- dashboardPage(
                                                      dataTableOutput(outputId="findMarkersPeaksTableATAC", height = "800px"),
                                                      downloadButton(outputId = "findMarkersPeaksATACExport", label = "Save table"),
                                                      tags$hr(),
-                                                     plotlyOutput(outputId = "findMarkersPeaksHeatmapATAC", height = "800px")
+                                                     div(id="findMarkersPeaksHeatmapATAC_loader",
+                                                         shinycssloaders::withSpinner(
+                                                            plotlyOutput(outputId = "findMarkersPeaksHeatmapATAC", height = "800px")
+                                                         )
+                                                     )
                                                     ) 
                                                    ),
                                                    tabPanel("Gene-score plot", fluidRow(
@@ -767,7 +930,11 @@ ui <- dashboardPage(
                                                      ),
                                                      box(width = 9, status = "info", solidHeader = TRUE, title = "Plot",
                                                          div(class="ldBar", id="DEA9_loader", "data-preset"="circle"),
-                                                         plotOutput(outputId = "findMarkersFeaturePlotATAC", height = "1300px")
+                                                         div(id="findMarkersFeaturePlotATAC_loader",
+                                                             shinycssloaders::withSpinner(
+                                                               plotOutput(outputId = "findMarkersFeaturePlotATAC", height = "1300px")
+                                                             )
+                                                         )
                                                      )
                                                    )
                                                   )
@@ -788,13 +955,24 @@ ui <- dashboardPage(
                               tabPanel("Dimensionality reduction plot", 
                                        selectInput("cellCycleReduction", "Plot type:", # TODO observe this selectbox instead, default value "-" -> do nothing
                                                    c("-" = "-")
-                                                   ),
+                                       ),
                                        actionButton(inputId = "cellCycleRun", label = "Run cell cycle analysis"), # TODO remove this button
                                        div(class="ldBar", id="CC1_loader", "data-preset"="circle"),
-                                       plotlyOutput(outputId = "cellCyclePCA", height = "1100px")),
+                                       div(id="cellCyclePCA_loader",
+                                           shinycssloaders::withSpinner(
+                                             plotlyOutput(outputId = "cellCyclePCA", height = "1100px")
+                                           )
+                                       )
+                              ),
                               tabPanel("Barplot", # TODO this should appear together with cellCyclePCA output, by observed event cellCycleReduction
                                        div(class="ldBar", id="CC2_loader", "data-preset"="circle"),
-                                       plotlyOutput(outputId = "cellCycleBarplot", height = "1100px")))
+                                       div(id="cellCycleBarplot_loader",
+                                           shinycssloaders::withSpinner(
+                                             plotlyOutput(outputId = "cellCycleBarplot", height = "1100px")
+                                           )
+                                       )
+                              )
+                  )
                 )
               )
       ),
@@ -853,7 +1031,12 @@ ui <- dashboardPage(
                                                             downloadButton(outputId = "gProfilerRNAExport", label = "Save table")),
                                                    tabPanel("Manhatan plot", 
                                                             div(class="ldBar", id="gprof2_loader", "data-preset"="circle"),
-                                                            plotlyOutput(outputId = "gProfilerManhatan"))
+                                                            div(id="gProfilerManhatan_loader",
+                                                                shinycssloaders::withSpinner(
+                                                                  plotlyOutput(outputId = "gProfilerManhatan")
+                                                                )
+                                                            )
+                                                   )
                                        )
                                      )
                                    )
@@ -881,7 +1064,11 @@ ui <- dashboardPage(
                                          dataTableOutput(outputId="findMotifsTableATAC", height = "800px"),
                                          downloadButton(outputId = "findMotifsATACExport", label = "Save table"),
                                          tags$hr(),
-                                         plotlyOutput(outputId = "findMotifsHeatmapATAC", height = "800px")
+                                         div(id="findMotifsHeatmapATAC_loader",
+                                             shinycssloaders::withSpinner(
+                                               plotlyOutput(outputId = "findMotifsHeatmapATAC", height = "800px")
+                                             )
+                                         )
                                      )
                                    )
                           )
@@ -930,7 +1117,12 @@ ui <- dashboardPage(
                                        ),
                               tabPanel("Top-5 hits dotplot", 
                                        div(class="ldBar", id="annot2_loader", "data-preset"="circle"),
-                                       plotlyOutput(outputId="annotateClustersCIPRDotplot", height = "1100px"))
+                                       div(id="annotateClustersCIPRDotplot_loader",
+                                           shinycssloaders::withSpinner(
+                                             plotlyOutput(outputId="annotateClustersCIPRDotplot", height = "1100px")
+                                             )
+                                           )
+                                       )
                   )
                 )
               )
@@ -957,7 +1149,11 @@ ui <- dashboardPage(
                                      tabsetPanel(type = "tabs",
                                                  tabPanel("Structure overview", 
                                                           div(class="ldBar", id="traj1_loader", "data-preset"="circle"),
-                                                          plotOutput(outputId="trajectoryPlot", height = "1100px"),
+                                                          div(id="trajectoryPlot_loader",
+                                                              shinycssloaders::withSpinner(
+                                                                plotOutput(outputId="trajectoryPlot", height = "1100px")
+                                                                )
+                                                              ),
                                                           verbatimTextOutput(outputId="trajectoryText")),
                                                  tabPanel("Lineage-Pseudotime view", fluidRow(
                                                    box(width = 3, status = "info", solidHeader = TRUE, title = "Options",
@@ -970,7 +1166,12 @@ ui <- dashboardPage(
                                                    ),
                                                    box(width = 9, status = "info", solidHeader = TRUE, title = "Pseudotime plot",
                                                        div(class="ldBar", id="traj2_loader", "data-preset"="circle"),
-                                                       plotOutput(outputId = "trajectoryPseudotimePlot", height = "1100px"))
+                                                       div(id="trajectoryPseudotimePlot_loader",
+                                                           shinycssloaders::withSpinner(
+                                                             plotOutput(outputId = "trajectoryPseudotimePlot", height = "1100px")
+                                                             )
+                                                           )
+                                                       )
                                                  )
                                                 )
                                    )
@@ -997,7 +1198,11 @@ ui <- dashboardPage(
                                          multiple = FALSE),
                              actionButton(inputId = "trajectoryConfirmLineageATAC", label = "OK"),
                              div(class="ldBar", id="traj4_loader", "data-preset"="circle"),
-                             plotOutput(outputId = "trajectoryPseudotimePlotATAC", height = "1100px"),
+                             div(id="trajectoryPseudotimePlotATAC_loader",
+                                 shinycssloaders::withSpinner(
+                                   plotOutput(outputId = "trajectoryPseudotimePlotATAC", height = "1100px")
+                                   )
+                                 ),
                              div(class="ldBar", id="traj3_loader", "data-preset"="circle"),
                              verbatimTextOutput(outputId="trajectoryTextATAC")
                            )
@@ -1022,10 +1227,18 @@ ui <- dashboardPage(
                    div(
                      tabsetPanel(type = "tabs",
                                  tabPanel("All interactions",
-                                          plotlyOutput(outputId="ligandReceptorFullHeatmap", height = "1100px"),
+                                          div(id="ligandReceptorFullHeatmap_loader",
+                                              shinycssloaders::withSpinner(
+                                                plotlyOutput(outputId="ligandReceptorFullHeatmap", height = "1100px")
+                                                )
+                                              ),
                                           downloadButton(outputId = "ligandReceptorFullExport", label = "Save table")),
                                  tabPanel("Curated interactions (documented in literature and publicly available databases)",
-                                          plotlyOutput(outputId="ligandReceptorCuratedHeatmap", height = "1100px"),
+                                          div(id="ligandReceptorCuratedHeatmap_loader",
+                                              shinycssloaders::withSpinner(
+                                                plotlyOutput(outputId="ligandReceptorCuratedHeatmap", height = "1100px")
+                                                )
+                                              ),
                                           downloadButton(outputId = "ligandReceptorShortExport", label = "Save table"))
                                  )
                    )
@@ -1054,7 +1267,11 @@ ui <- dashboardPage(
                                      box(width = 9, status = "info", solidHeader = TRUE, title = "GRN output",
                                         dataTableOutput(outputId="grnMatrixRNA", height = "500px"),
                                         tags$hr(),
-                                        plotlyOutput(outputId = "grnHeatmapRNA", height = "800px")
+                                        div(id="grnHeatmapRNA_loader",
+                                            shinycssloaders::withSpinner(
+                                              plotlyOutput(outputId = "grnHeatmapRNA", height = "800px")
+                                            )
+                                        )
                                      )
                                    )
                           ),
@@ -1073,8 +1290,16 @@ ui <- dashboardPage(
                                                               dataTableOutput(outputId="grnMatrixATAC", height = "500px"),
                                                               downloadButton(outputId = "grnPositiveRegulatorsATACExport", label = "Save table"),
                                                               tags$hr(),
-                                                              plotlyOutput(outputId = "grnHeatmapATAC", height = "800px"),
-                                                              plotOutput(outputId = "grnHeatmapATAC2", height = "800px")
+                                                              div(id="grnHeatmapATAC_loader",
+                                                                  shinycssloaders::withSpinner(
+                                                                    plotlyOutput(outputId = "grnHeatmapATAC", height = "800px")
+                                                                    )
+                                                                  ),
+                                                              div(id="grnHeatmapATAC2_loader",
+                                                                  shinycssloaders::withSpinner(
+                                                                    plotOutput(outputId = "grnHeatmapATAC2", height = "800px") # TODO: remove? does not exist in server
+                                                                  )
+                                                              )
                                                               ),
                                                      tabPanel("Peak to gene links",
                                                               dataTableOutput(outputId="grnP2GlinksTable", height = "800px"),
@@ -1104,7 +1329,11 @@ ui <- dashboardPage(
                 box(width = 9, status = "info", solidHeader = TRUE,
                     title = "scATAC-seq tracks",
                     div(class="ldBar", id="tracks_loader", "data-preset"="circle"),
-                    plotOutput(outputId="visualizeTracksOutput", height = "1100px")
+                    div(id="visualizeTracksOutput_loader",
+                        shinycssloaders::withSpinner(
+                          plotOutput(outputId="visualizeTracksOutput", height = "1100px")
+                        )
+                    )
                 )
               )
             ),
