@@ -18,8 +18,18 @@ function shinyLog(message){
 // click it multiple times before current function execution is finished
 // @param btn: button element id
 function disableButton(btn){
-  var button = document.getElementById(btn);
+  var button = document.getElementsByClassName(btn);
   button.style.display = "none";
+  return true;
+}
+
+// This function disappears all action buttons so the user does not
+// click it multiple times before current function execution is finished
+// @param flag: t
+function disableAllButtons(flag){
+  var i,
+      buttons = document.getElementsByClassName("action-button");
+  for (i = 0; i < buttons.length; i++) buttons[i].style.display = "none";
   return true;
 }
 
@@ -29,6 +39,17 @@ function disableButton(btn){
 function enableButton(btn){
   var button = document.getElementById(btn);
   button.style.display = "inline-block";
+  return true;
+}
+
+
+// This function re-appears all action buttons so the user does not
+// click it multiple times before current function execution is finished
+// @param flag: t
+function enableAllButtons(flag){
+  var i,
+      buttons = document.getElementsByClassName("action-button");
+  for (i = 0; i < buttons.length; i++) buttons[i].style.display = "inline-block";
   return true;
 }
 
@@ -100,6 +121,8 @@ Shiny.addCustomMessageHandler("handler_alert", shinyAlert);
 Shiny.addCustomMessageHandler("handler_log", shinyLog);
 Shiny.addCustomMessageHandler("handler_disableButton", disableButton);
 Shiny.addCustomMessageHandler("handler_enableButton", enableButton);
+Shiny.addCustomMessageHandler("handler_disableAllButtons", disableAllButtons);
+Shiny.addCustomMessageHandler("handler_enableAllButtons", enableAllButtons);
 Shiny.addCustomMessageHandler("handler_startLoader", startLoader);
 Shiny.addCustomMessageHandler("handler_finishLoader", finishLoader);
 Shiny.addCustomMessageHandler("handler_fixHeight", fixHeight);

@@ -53,7 +53,7 @@ server <- function(input, output, session) {
     {
       session$sendCustomMessage("handler_disableTabs", "sidebarMenu") 
       session$sendCustomMessage("handler_startLoader", c("input_loader", 10))
-      session$sendCustomMessage("handler_disableButton", "uploadCountMatrixConfirm") 
+      session$sendCustomMessage("handler_disableAllButtons", "uploadCountMatrixConfirm") 
       tryCatch({
         
         # Create the user directory for the input and output of the analysis
@@ -109,7 +109,7 @@ server <- function(input, output, session) {
         session$sendCustomMessage("handler_startLoader", c("input_loader", 100))
         Sys.sleep(1) # giving some time for renderer for smoother transition
         session$sendCustomMessage("handler_finishLoader", "input_loader")
-        session$sendCustomMessage("handler_enableButton", "uploadCountMatrixConfirm")
+        session$sendCustomMessage("handler_enableAllButtons", "uploadCountMatrixConfirm")
       })
     }
   })
@@ -124,7 +124,7 @@ server <- function(input, output, session) {
       #TODO one dataset per session, deactivate options from other modality
       session$sendCustomMessage("handler_disableTabs", "sidebarMenu") # disable all tab panels (except Data Input) until files are uploaded
       session$sendCustomMessage("handler_startLoader", c("input_loader", 10))
-      session$sendCustomMessage("handler_disableButton", "upload10xExampleRNACountMatrixConfirm") 
+      session$sendCustomMessage("handler_disableAllButtons", "upload10xExampleRNACountMatrixConfirm") 
       tryCatch({
         # Create the user directory for the input and output of the analysis
         metaD$my_project_name <- input$uploadCountMatrixprojectID
@@ -177,7 +177,7 @@ server <- function(input, output, session) {
         session$sendCustomMessage("handler_startLoader", c("input_loader", 100))
         Sys.sleep(1) # giving some time for renderer for smoother transition
         session$sendCustomMessage("handler_finishLoader", "input_loader")
-        session$sendCustomMessage("handler_enableButton", "upload10xExampleRNACountMatrixConfirm")
+        session$sendCustomMessage("handler_enableAllButtons", "upload10xExampleRNACountMatrixConfirm")
       })
     }
   })
@@ -191,7 +191,7 @@ server <- function(input, output, session) {
     {
       session$sendCustomMessage("handler_disableTabs", "sidebarMenu") # disable all tab panels (except Data Input) until files are uploaded
       session$sendCustomMessage("handler_startLoader", c("input_loader", 10))
-      session$sendCustomMessage("handler_disableButton", "upload10xRNAConfirm")
+      session$sendCustomMessage("handler_disableAllButtons", "upload10xRNAConfirm")
       tryCatch({
         # Create the user directory for the input and output of the analysis
         metaD$my_project_name <- input$upload10xRNAprojectID
@@ -248,7 +248,7 @@ server <- function(input, output, session) {
         session$sendCustomMessage("handler_startLoader", c("input_loader", 100))
         Sys.sleep(1) # giving some time for renderer for smoother transition
         session$sendCustomMessage("handler_finishLoader", "input_loader")
-        session$sendCustomMessage("handler_enableButton", "upload10xRNAConfirm")
+        session$sendCustomMessage("handler_enableAllButtons", "upload10xRNAConfirm")
       })
     }
   })
@@ -262,7 +262,7 @@ server <- function(input, output, session) {
     {
       session$sendCustomMessage("handler_disableTabs", "sidebarMenu") # disable all tab panels (except Data Input) until files are uploaded
       session$sendCustomMessage("handler_startLoader", c("input_loader", 10))
-      session$sendCustomMessage("handler_disableButton", "upload10xExampleRNA10xFilesConfirm")
+      session$sendCustomMessage("handler_disableAllButtons", "upload10xExampleRNA10xFilesConfirm")
       tryCatch({
         # Create the user directory for the input and output of the analysis
         metaD$my_project_name <- "PBMC3k"
@@ -316,7 +316,7 @@ server <- function(input, output, session) {
         session$sendCustomMessage("handler_startLoader", c("input_loader", 100))
         Sys.sleep(1) # giving some time for renderer for smoother transition
         session$sendCustomMessage("handler_finishLoader", "input_loader")
-        session$sendCustomMessage("handler_enableButton", "upload10xExampleRNA10xFilesConfirm")
+        session$sendCustomMessage("handler_enableAllButtons", "upload10xExampleRNA10xFilesConfirm")
       })
     }
   })
@@ -330,7 +330,7 @@ server <- function(input, output, session) {
     {
       session$sendCustomMessage("handler_disableTabs", "sidebarMenu") # disable all tab panels (except Data Input) until files are uploaded
       session$sendCustomMessage("handler_startLoader", c("input_loader", 10))
-      session$sendCustomMessage("handler_disableButton", "upload10xATACConfirm")
+      session$sendCustomMessage("handler_disableAllButtons", "upload10xATACConfirm")
       tryCatch({
         
         session$sendCustomMessage("handler_startLoader", c("input_loader", 25))
@@ -387,7 +387,7 @@ server <- function(input, output, session) {
         session$sendCustomMessage("handler_startLoader", c("input_loader", 100))
         Sys.sleep(1) # giving some time for renderer for smoother transition
         session$sendCustomMessage("handler_finishLoader", "input_loader")
-        session$sendCustomMessage("handler_enableButton", "upload10xATACConfirm")
+        session$sendCustomMessage("handler_enableAllButtons", "upload10xATACConfirm")
       })
     }
   })
@@ -401,7 +401,7 @@ server <- function(input, output, session) {
     {
       session$sendCustomMessage("handler_disableTabs", "sidebarMenu") # disable all tab panels (except Data Input) until files are uploaded
       session$sendCustomMessage("handler_startLoader", c("input_loader", 10))
-      session$sendCustomMessage("handler_disableButton", "upload10xExampleATACConfirm")
+      session$sendCustomMessage("handler_disableAllButtons", "upload10xExampleATACConfirm")
       tryCatch({
         session$sendCustomMessage("handler_startLoader", c("input_loader", 25))
         
@@ -458,7 +458,7 @@ server <- function(input, output, session) {
         session$sendCustomMessage("handler_startLoader", c("input_loader", 100))
         Sys.sleep(1) # giving some time for renderer for smoother transition
         session$sendCustomMessage("handler_finishLoader", "input_loader")
-        session$sendCustomMessage("handler_enableButton", "upload10xExampleATACConfirm")
+        session$sendCustomMessage("handler_enableAllButtons", "upload10xExampleATACConfirm")
       })
     }
   })
@@ -529,7 +529,7 @@ server <- function(input, output, session) {
   #------------------Quality Control tab--------------------------------
   observeEvent(input$qcDisplay, {
     session$sendCustomMessage("handler_startLoader", c("qc_loader", 10))
-    session$sendCustomMessage("handler_disableButton", "qcDisplay")
+    session$sendCustomMessage("handler_disableAllButtons", "qcDisplay")
     tryCatch({
       if (identical(init_seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else{
@@ -634,13 +634,13 @@ server <- function(input, output, session) {
       session$sendCustomMessage("handler_startLoader", c("qc_loader", 100))
       Sys.sleep(1)
       session$sendCustomMessage("handler_finishLoader", "qc_loader")
-      session$sendCustomMessage("handler_enableButton", "qcDisplay")
+      session$sendCustomMessage("handler_enableAllButtons", "qcDisplay")
     })
   })
   
   observeEvent(input$qcConfirm, {
     session$sendCustomMessage("handler_startLoader", c("qc_loader2", 10))
-    session$sendCustomMessage("handler_disableButton", "qcConfirm")
+    session$sendCustomMessage("handler_disableAllButtons", "qcConfirm")
     tryCatch({
       if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else{
@@ -747,14 +747,14 @@ server <- function(input, output, session) {
       session$sendCustomMessage("handler_startLoader", c("qc_loade2r", 100))
       Sys.sleep(1)
       session$sendCustomMessage("handler_finishLoader", "qc_loader2")
-      session$sendCustomMessage("handler_enableButton", "qcConfirm")
+      session$sendCustomMessage("handler_enableAllButtons", "qcConfirm")
     })
   })
   
   #ATAC qc
   observeEvent(input$qcDisplayATAC, {
     session$sendCustomMessage("handler_startLoader", c("qc_loader3", 10))
-    session$sendCustomMessage("handler_disableButton", "qcDisplayATAC")
+    session$sendCustomMessage("handler_disableAllButtons", "qcDisplayATAC")
     tryCatch({
       if (identical(proj_default, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else{
@@ -824,7 +824,7 @@ server <- function(input, output, session) {
       session$sendCustomMessage("handler_startLoader", c("qc_loader3", 100))
       Sys.sleep(1)
       session$sendCustomMessage("handler_finishLoader", "qc_loader3")
-      session$sendCustomMessage("handler_enableButton", "qcDisplayATAC")
+      session$sendCustomMessage("handler_enableAllButtons", "qcDisplayATAC")
     })
   })
   
@@ -832,7 +832,7 @@ server <- function(input, output, session) {
   observeEvent(input$normalizeConfirm, {
     session$sendCustomMessage("handler_log", " ### Starting normalization procedure ###")
     session$sendCustomMessage("handler_startLoader", c("normalize_loader", 10))
-    session$sendCustomMessage("handler_disableButton", "normalizeConfirm")
+    session$sendCustomMessage("handler_disableAllButtons", "normalizeConfirm")
     tryCatch({
       if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else{
@@ -908,7 +908,7 @@ server <- function(input, output, session) {
       session$sendCustomMessage("handler_startLoader", c("normalize_loader", 100))
       Sys.sleep(1)
       session$sendCustomMessage("handler_finishLoader", "normalize_loader")
-      session$sendCustomMessage("handler_enableButton", "normalizeConfirm")
+      session$sendCustomMessage("handler_enableAllButtons", "normalizeConfirm")
       session$sendCustomMessage("handler_log", " ### Finished normalization procedure ###")
     })
   }) 
@@ -917,7 +917,7 @@ server <- function(input, output, session) {
   observeEvent(input$PCrunPCA, {
     session$sendCustomMessage("handler_log", " ### Starting PCA Analysis ###")
     session$sendCustomMessage("handler_startLoader", c("PCA1_loader", 10))
-    session$sendCustomMessage("handler_disableButton", "PCrunPCA")
+    session$sendCustomMessage("handler_disableAllButtons", "PCrunPCA")
     tryCatch({
       if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else if (!"ScaleData.RNA" %in% names(seurat_object@commands)) session$sendCustomMessage("handler_alert", "Data need to be scaled first. Please, execute the previous step in DATA NORMALIZATION & SCALING.")
@@ -1012,7 +1012,7 @@ server <- function(input, output, session) {
       session$sendCustomMessage("handler_startLoader", c("PCA1_loader", 75))
       Sys.sleep(1)
       session$sendCustomMessage("handler_finishLoader", "PCA1_loader")
-      session$sendCustomMessage("handler_enableButton", "PCrunPCA")
+      session$sendCustomMessage("handler_enableAllButtons", "PCrunPCA")
       session$sendCustomMessage("handler_log", " ### Finished PCA Analysis ###")
     })
   })
@@ -1020,7 +1020,7 @@ server <- function(input, output, session) {
   observeEvent(input$PCconfirm, {
     session$sendCustomMessage("handler_log", " ### Starting PC Exploration ###")
     session$sendCustomMessage("handler_startLoader", c("PCA2_loader", 10))
-    session$sendCustomMessage("handler_disableButton", "PCconfirm")
+    session$sendCustomMessage("handler_disableAllButtons", "PCconfirm")
     tryCatch({
       if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else if (!"pca" %in% names(seurat_object)) session$sendCustomMessage("handler_alert", "Please, first Run PCA above.")
@@ -1069,7 +1069,7 @@ server <- function(input, output, session) {
       session$sendCustomMessage("handler_startLoader", c("PCA2_loader", 100))
       Sys.sleep(1)
       session$sendCustomMessage("handler_finishLoader", "PCA2_loader")
-      session$sendCustomMessage("handler_enableButton", "PCconfirm")
+      session$sendCustomMessage("handler_enableAllButtons", "PCconfirm")
       session$sendCustomMessage("handler_log", " ### Finished PC Exploration ###")
     })
   })
@@ -1078,7 +1078,7 @@ server <- function(input, output, session) {
   observeEvent(input$lsiConfirm, {
     session$sendCustomMessage("handler_log", " ### Starting PC Exploration ###")
     session$sendCustomMessage("handler_startLoader", c("lsi_loader", 10))
-    session$sendCustomMessage("handler_disableButton", "lsiConfirm")
+    session$sendCustomMessage("handler_disableAllButtons", "lsiConfirm")
     tryCatch({
       if (identical(proj_default, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else
@@ -1104,7 +1104,7 @@ server <- function(input, output, session) {
       session$sendCustomMessage("handler_startLoader", c("lsi_loader", 100))
       Sys.sleep(1)
       session$sendCustomMessage("handler_finishLoader", "lsi_loader")
-      session$sendCustomMessage("handler_enableButton", "lsiConfirm")
+      session$sendCustomMessage("handler_enableAllButtons", "lsiConfirm")
       session$sendCustomMessage("handler_log", " ### Finished LSI ###")
     })
   })
@@ -1112,7 +1112,7 @@ server <- function(input, output, session) {
   #------------------Clustering tab------------------------------------------
   observeEvent(input$snnConfirm, {
     session$sendCustomMessage("handler_startLoader", c("clust1_loader", 10))
-    session$sendCustomMessage("handler_disableButton", "snnConfirm")
+    session$sendCustomMessage("handler_disableAllButtons", "snnConfirm")
     tryCatch({
       if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else if (!"pca" %in% names(seurat_object)) session$sendCustomMessage("handler_alert", "Please, first execute PRINCIPAL COMPONENT ANALYSIS.")
@@ -1153,13 +1153,13 @@ server <- function(input, output, session) {
       session$sendCustomMessage("handler_startLoader", c("clust1_loader", 100))
       Sys.sleep(1)
       session$sendCustomMessage("handler_finishLoader", "clust1_loader")
-      session$sendCustomMessage("handler_enableButton", "snnConfirm")
+      session$sendCustomMessage("handler_enableAllButtons", "snnConfirm")
     })
   })
   
   observeEvent(input$clusterBarplotConfirm, {
     session$sendCustomMessage("handler_startLoader", c("clust2_loader", 10))
-    session$sendCustomMessage("handler_disableButton", "clusterBarplotConfirm")
+    session$sendCustomMessage("handler_disableAllButtons", "clusterBarplotConfirm")
     tryCatch({
       if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else if (identical(seurat_object@meta.data$seurat_clusters, NULL)) session$sendCustomMessage("handler_alert", "Please, execute CLUSTERING first.")
@@ -1227,13 +1227,13 @@ server <- function(input, output, session) {
       session$sendCustomMessage("handler_startLoader", c("clust2_loader", 100))
       Sys.sleep(1)
       session$sendCustomMessage("handler_finishLoader", "clust2_loader")
-      session$sendCustomMessage("handler_enableButton", "clusterBarplotConfirm")
+      session$sendCustomMessage("handler_enableAllButtons", "clusterBarplotConfirm")
     })
   })
   
   observeEvent(input$snnDisplayConfirm, {
     session$sendCustomMessage("handler_startLoader", c("clust3_loader", 10))
-    session$sendCustomMessage("handler_disableButton", "snnDisplayConfirm")
+    session$sendCustomMessage("handler_disableAllButtons", "snnDisplayConfirm")
     tryCatch({
       if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else{
@@ -1277,14 +1277,14 @@ server <- function(input, output, session) {
       session$sendCustomMessage("handler_startLoader", c("clust3_loader", 100))
       Sys.sleep(1)
       session$sendCustomMessage("handler_finishLoader", "clust3_loader")
-      session$sendCustomMessage("handler_enableButton", "snnDisplayConfirm")
+      session$sendCustomMessage("handler_enableAllButtons", "snnDisplayConfirm")
     })
   }) 
   
   #ATAC clustering
   observeEvent(input$clusterConfirmATAC, {
     session$sendCustomMessage("handler_startLoader", c("clust4_loader", 10))
-    session$sendCustomMessage("handler_disableButton", "clusterConfirmATAC")
+    session$sendCustomMessage("handler_disableAllButtons", "clusterConfirmATAC")
     tryCatch({
       if (identical(proj_default, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else {
@@ -1325,7 +1325,7 @@ server <- function(input, output, session) {
     updateInpuTrajectoryClustersATAC()
     session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " ADDITIONAL DIMENSIONALITY\nREDUCTION METHODS", " TRAJECTORY ANALYSIS",
                                                       " MARKERS' IDENTIFICATION"))
-    session$sendCustomMessage("handler_disableButton", "umapConfirmATAC")
+    session$sendCustomMessage("handler_disableAllButtons", "umapConfirmATAC")
     }
       }, error = function(e) {
         print(paste("Error :  ", e))
@@ -1334,7 +1334,7 @@ server <- function(input, output, session) {
         session$sendCustomMessage("handler_startLoader", c("clust4_loader", 100))
         Sys.sleep(1)
         session$sendCustomMessage("handler_finishLoader", "clust4_loader")
-        session$sendCustomMessage("handler_enableButton", "clusterConfirmATAC")
+        session$sendCustomMessage("handler_enableAllButtons", "clusterConfirmATAC")
       })
   })
   
@@ -1357,7 +1357,7 @@ server <- function(input, output, session) {
   #------------------Umap/tSNE/DFM tab---------------------------------------
   observeEvent(input$umapRunUmapTsneATAC, {
     session$sendCustomMessage("handler_startLoader", c("dim_red3_loader", 10))
-    session$sendCustomMessage("handler_disableButton", "umapRunUmapTsneATAC")
+    session$sendCustomMessage("handler_disableAllButtons", "umapRunUmapTsneATAC")
     tryCatch({
       if (identical(proj_default, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else {
@@ -1378,7 +1378,7 @@ server <- function(input, output, session) {
         
         session$sendCustomMessage("handler_startLoader", c("dim_red3_loader", 75))
         saveArchRProject(proj_default)
-        session$sendCustomMessage("handler_enableButton", "umapConfirmATAC")
+        session$sendCustomMessage("handler_enableAllButtons", "umapConfirmATAC")
         }
       }, error = function(e) {
         print(paste("Error :  ", e))
@@ -1387,13 +1387,13 @@ server <- function(input, output, session) {
         session$sendCustomMessage("handler_startLoader", c("dim_red3_loader", 100))
         Sys.sleep(1)
         session$sendCustomMessage("handler_finishLoader", "dim_red3_loader")
-        session$sendCustomMessage("handler_enableButton", "umapRunUmapTsneATAC")
+        session$sendCustomMessage("handler_enableAllButtons", "umapRunUmapTsneATAC")
       })
   })
   
   observeEvent(input$umapConfirmATAC, {
     session$sendCustomMessage("handler_startLoader", c("dim_red4_loader", 10))
-    session$sendCustomMessage("handler_disableButton", "umapConfirmATAC")
+    session$sendCustomMessage("handler_disableAllButtons", "umapConfirmATAC")
     tryCatch({
       if (identical(proj_default, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else {
@@ -1484,16 +1484,16 @@ server <- function(input, output, session) {
       session$sendCustomMessage("handler_startLoader", c("dim_red4_loader", 100))
       Sys.sleep(1)
       session$sendCustomMessage("handler_finishLoader", "dim_red4_loader")
-      session$sendCustomMessage("handler_enableButton", "umapConfirmATAC")
+      session$sendCustomMessage("handler_enableAllButtons", "umapConfirmATAC")
     })
   })
   
   observeEvent(input$umapRunUmap, {
     session$sendCustomMessage("handler_startLoader", c("dim_red1_loader", 10))
-    session$sendCustomMessage("handler_disableButton", "umapRunUmap")
-    session$sendCustomMessage("handler_disableButton", "umapRunTsne")
-    session$sendCustomMessage("handler_disableButton", "umapRunDFM")
-    session$sendCustomMessage("handler_disableButton", "umapRunPhate")
+    session$sendCustomMessage("handler_disableAllButtons", "umapRunUmap")
+    session$sendCustomMessage("handler_disableAllButtons", "umapRunTsne")
+    session$sendCustomMessage("handler_disableAllButtons", "umapRunDFM")
+    session$sendCustomMessage("handler_disableAllButtons", "umapRunPhate")
     tryCatch({
       if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else if (!"pca" %in% names(seurat_object)) session$sendCustomMessage("handler_alert", "Please, first execute PRINCIPAL COMPONENT ANALYSIS.")
@@ -1512,19 +1512,19 @@ server <- function(input, output, session) {
       session$sendCustomMessage("handler_startLoader", c("dim_red1_loader", 100))
       Sys.sleep(1)
       session$sendCustomMessage("handler_finishLoader", "dim_red1_loader")
-      session$sendCustomMessage("handler_enableButton", "umapRunUmap")
-      session$sendCustomMessage("handler_enableButton", "umapRunTsne")
-      session$sendCustomMessage("handler_enableButton", "umapRunDFM")
-      session$sendCustomMessage("handler_enableButton", "umapRunPhate")
+      session$sendCustomMessage("handler_enableAllButtons", "umapRunUmap")
+      session$sendCustomMessage("handler_enableAllButtons", "umapRunTsne")
+      session$sendCustomMessage("handler_enableAllButtons", "umapRunDFM")
+      session$sendCustomMessage("handler_enableAllButtons", "umapRunPhate")
     })
   })
   
   observeEvent(input$umapRunTsne, {
     session$sendCustomMessage("handler_startLoader", c("dim_red1_loader", 10))
-    session$sendCustomMessage("handler_disableButton", "umapRunUmap")
-    session$sendCustomMessage("handler_disableButton", "umapRunTsne")
-    session$sendCustomMessage("handler_disableButton", "umapRunDFM")
-    session$sendCustomMessage("handler_disableButton", "umapRunPhate")
+    session$sendCustomMessage("handler_disableAllButtons", "umapRunUmap")
+    session$sendCustomMessage("handler_disableAllButtons", "umapRunTsne")
+    session$sendCustomMessage("handler_disableAllButtons", "umapRunDFM")
+    session$sendCustomMessage("handler_disableAllButtons", "umapRunPhate")
     tryCatch({
       if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else if (!"pca" %in% names(seurat_object)) session$sendCustomMessage("handler_alert", "Please, first execute PRINCIPAL COMPONENT ANALYSIS.")
@@ -1543,19 +1543,19 @@ server <- function(input, output, session) {
       session$sendCustomMessage("handler_startLoader", c("dim_red1_loader", 100))
       Sys.sleep(1)
       session$sendCustomMessage("handler_finishLoader", "dim_red1_loader")
-      session$sendCustomMessage("handler_enableButton", "umapRunUmap")
-      session$sendCustomMessage("handler_enableButton", "umapRunTsne")
-      session$sendCustomMessage("handler_enableButton", "umapRunDFM")
-      session$sendCustomMessage("handler_enableButton", "umapRunPhate")
+      session$sendCustomMessage("handler_enableAllButtons", "umapRunUmap")
+      session$sendCustomMessage("handler_enableAllButtons", "umapRunTsne")
+      session$sendCustomMessage("handler_enableAllButtons", "umapRunDFM")
+      session$sendCustomMessage("handler_enableAllButtons", "umapRunPhate")
     })
   })
   
   observeEvent(input$umapRunDFM, {
     session$sendCustomMessage("handler_startLoader", c("dim_red1_loader", 10))
-    session$sendCustomMessage("handler_disableButton", "umapRunUmap")
-    session$sendCustomMessage("handler_disableButton", "umapRunTsne")
-    session$sendCustomMessage("handler_disableButton", "umapRunDFM")
-    session$sendCustomMessage("handler_disableButton", "umapRunPhate")
+    session$sendCustomMessage("handler_disableAllButtons", "umapRunUmap")
+    session$sendCustomMessage("handler_disableAllButtons", "umapRunTsne")
+    session$sendCustomMessage("handler_disableAllButtons", "umapRunDFM")
+    session$sendCustomMessage("handler_disableAllButtons", "umapRunPhate")
     tryCatch({
       if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else if (!"pca" %in% names(seurat_object)) session$sendCustomMessage("handler_alert", "Please, first execute PRINCIPAL COMPONENT ANALYSIS.")
@@ -1588,19 +1588,19 @@ server <- function(input, output, session) {
       session$sendCustomMessage("handler_startLoader", c("dim_red1_loader", 100))
       Sys.sleep(1)
       session$sendCustomMessage("handler_finishLoader", "dim_red1_loader")
-      session$sendCustomMessage("handler_enableButton", "umapRunUmap")
-      session$sendCustomMessage("handler_enableButton", "umapRunTsne")
-      session$sendCustomMessage("handler_enableButton", "umapRunDFM")
-      session$sendCustomMessage("handler_enableButton", "umapRunPhate")
+      session$sendCustomMessage("handler_enableAllButtons", "umapRunUmap")
+      session$sendCustomMessage("handler_enableAllButtons", "umapRunTsne")
+      session$sendCustomMessage("handler_enableAllButtons", "umapRunDFM")
+      session$sendCustomMessage("handler_enableAllButtons", "umapRunPhate")
     })
   })
   
   observeEvent(input$umapRunPhate, {
     session$sendCustomMessage("handler_startLoader", c("dim_red1_loader", 10))
-    session$sendCustomMessage("handler_disableButton", "umapRunUmap")
-    session$sendCustomMessage("handler_disableButton", "umapRunTsne")
-    session$sendCustomMessage("handler_disableButton", "umapRunDFM")
-    session$sendCustomMessage("handler_disableButton", "umapRunPhate")
+    session$sendCustomMessage("handler_disableAllButtons", "umapRunUmap")
+    session$sendCustomMessage("handler_disableAllButtons", "umapRunTsne")
+    session$sendCustomMessage("handler_disableAllButtons", "umapRunDFM")
+    session$sendCustomMessage("handler_disableAllButtons", "umapRunPhate")
     tryCatch({
       if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else if (!"pca" %in% names(seurat_object)) session$sendCustomMessage("handler_alert", "Please, first execute PRINCIPAL COMPONENT ANALYSIS.")
@@ -1619,10 +1619,10 @@ server <- function(input, output, session) {
       session$sendCustomMessage("handler_startLoader", c("dim_red1_loader", 100))
       Sys.sleep(1)
       session$sendCustomMessage("handler_finishLoader", "dim_red1_loader")
-      session$sendCustomMessage("handler_enableButton", "umapRunUmap")
-      session$sendCustomMessage("handler_enableButton", "umapRunTsne")
-      session$sendCustomMessage("handler_enableButton", "umapRunDFM")
-      session$sendCustomMessage("handler_enableButton", "umapRunPhate")
+      session$sendCustomMessage("handler_enableAllButtons", "umapRunUmap")
+      session$sendCustomMessage("handler_enableAllButtons", "umapRunTsne")
+      session$sendCustomMessage("handler_enableAllButtons", "umapRunDFM")
+      session$sendCustomMessage("handler_enableAllButtons", "umapRunPhate")
     })
   })
   
@@ -1664,7 +1664,7 @@ server <- function(input, output, session) {
   #------------------DEA tab-----------------------------------------------
   observeEvent(input$findMarkersConfirm, { #TODO selectinput gia clustering column + check for errors in extra tabs with readRDS("seurat_processed.RDS")
     session$sendCustomMessage("handler_startLoader", c("DEA1_loader", 10))
-    session$sendCustomMessage("handler_disableButton", "findMarkersConfirm")
+    session$sendCustomMessage("handler_disableAllButtons", "findMarkersConfirm")
     tryCatch({
       if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else if (identical(seurat_object@meta.data$seurat_clusters, NULL)) session$sendCustomMessage("handler_alert", "Please, execute CLUSTERING first and then re-run UMAP or tSNE or Diffusion Map above.")
@@ -1705,7 +1705,7 @@ server <- function(input, output, session) {
       session$sendCustomMessage("handler_startLoader", c("DEA1_loader", 100))
       Sys.sleep(1)
       session$sendCustomMessage("handler_finishLoader", c("DEA1_loader"))
-      session$sendCustomMessage("handler_enableButton", "findMarkersConfirm")
+      session$sendCustomMessage("handler_enableAllButtons", "findMarkersConfirm")
     })
   })
 
@@ -1713,7 +1713,7 @@ server <- function(input, output, session) {
     #DEA output rendering
     
     session$sendCustomMessage("handler_startLoader", c("DEA2_loader", 10))
-    session$sendCustomMessage("handler_disableButton", "findMarkersTop10HeatmapConfirm")
+    session$sendCustomMessage("handler_disableAllButtons", "findMarkersTop10HeatmapConfirm")
     tryCatch({
       if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else{
@@ -1759,14 +1759,14 @@ server <- function(input, output, session) {
       session$sendCustomMessage("handler_startLoader", c("DEA2_loader", 100))
       Sys.sleep(1)
       session$sendCustomMessage("handler_finishLoader", "DEA2_loader")
-      session$sendCustomMessage("handler_enableButton", "findMarkersTop10HeatmapConfirm")
+      session$sendCustomMessage("handler_enableAllButtons", "findMarkersTop10HeatmapConfirm")
     })  
       
   })
   
   observeEvent(input$findMarkersTop10DotplotConfirm, {
     session$sendCustomMessage("handler_startLoader", c("DEA3_loader", 10))
-    session$sendCustomMessage("handler_disableButton", "findMarkersTop10DotplotConfirm")
+    session$sendCustomMessage("handler_disableAllButtons", "findMarkersTop10DotplotConfirm")
     tryCatch({
       if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else{
@@ -1787,13 +1787,13 @@ server <- function(input, output, session) {
       session$sendCustomMessage("handler_startLoader", c("DEA3_loader", 100))
       Sys.sleep(1)
       session$sendCustomMessage("handler_finishLoader", "DEA3_loader")
-      session$sendCustomMessage("handler_enableButton", "findMarkersTop10DotplotConfirm")
+      session$sendCustomMessage("handler_enableAllButtons", "findMarkersTop10DotplotConfirm")
     })
   })
   
   observeEvent(input$findMarkersSignatureAdd, {
     session$sendCustomMessage("handler_startLoader", c("DEA4_loader", 10))
-    session$sendCustomMessage("handler_disableButton", "findMarkersSignatureAdd")
+    session$sendCustomMessage("handler_disableAllButtons", "findMarkersSignatureAdd")
     tryCatch({
       if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else{
@@ -1819,13 +1819,13 @@ server <- function(input, output, session) {
       session$sendCustomMessage("handler_startLoader", c("DEA4_loader", 100))
       Sys.sleep(1)
       session$sendCustomMessage("handler_finishLoader", "DEA4_loader")
-      session$sendCustomMessage("handler_enableButton", "findMarkersSignatureAdd")
+      session$sendCustomMessage("handler_enableAllButtons", "findMarkersSignatureAdd")
     })
   })
     
 observeEvent(input$findMarkersFPConfirm, {
   session$sendCustomMessage("handler_startLoader", c("DEA4_loader", 10))
-  session$sendCustomMessage("handler_disableButton", "findMarkersFPConfirm")
+  session$sendCustomMessage("handler_disableAllButtons", "findMarkersFPConfirm")
   tryCatch({
     if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
     else{
@@ -1902,13 +1902,13 @@ observeEvent(input$findMarkersFPConfirm, {
     session$sendCustomMessage("handler_startLoader", c("DEA4_loader", 100))
     Sys.sleep(1)
     session$sendCustomMessage("handler_finishLoader", "DEA4_loader")
-    session$sendCustomMessage("handler_enableButton", "findMarkersFPConfirm")
+    session$sendCustomMessage("handler_enableAllButtons", "findMarkersFPConfirm")
   })
 })
 
 observeEvent(input$findMarkersFeaturePairConfirm, {
   session$sendCustomMessage("handler_startLoader", c("DEA5_loader", 10))
-  session$sendCustomMessage("handler_disableButton", "findMarkersFeaturePairConfirm")
+  session$sendCustomMessage("handler_disableAllButtons", "findMarkersFeaturePairConfirm")
   tryCatch({
     if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
     else{
@@ -1926,13 +1926,13 @@ observeEvent(input$findMarkersFeaturePairConfirm, {
     session$sendCustomMessage("handler_startLoader", c("DEA5_loader", 100))
     Sys.sleep(1)
     session$sendCustomMessage("handler_finishLoader", "DEA5_loader")
-    session$sendCustomMessage("handler_enableButton", "findMarkersFeaturePairConfirm")
+    session$sendCustomMessage("handler_enableAllButtons", "findMarkersFeaturePairConfirm")
   })
 })
 
 observeEvent(input$findMarkersViolinConfirm, {
   session$sendCustomMessage("handler_startLoader", c("DEA6_loader", 10))
-  session$sendCustomMessage("handler_disableButton", "findMarkersViolinConfirm")
+  session$sendCustomMessage("handler_disableAllButtons", "findMarkersViolinConfirm")
   tryCatch({
     if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
     else{
@@ -1976,13 +1976,13 @@ observeEvent(input$findMarkersViolinConfirm, {
     session$sendCustomMessage("handler_startLoader", c("DEA6_loader", 100))
     Sys.sleep(1)
     session$sendCustomMessage("handler_finishLoader", "DEA6_loader")
-    session$sendCustomMessage("handler_enableButton", "findMarkersViolinConfirm")
+    session$sendCustomMessage("handler_enableAllButtons", "findMarkersViolinConfirm")
   })
 })
 
 observeEvent(input$findMarkersVolcanoConfirm, {
   session$sendCustomMessage("handler_startLoader", c("DEA7_loader", 10))
-  session$sendCustomMessage("handler_disableButton", "findMarkersVolcanoConfirm")
+  session$sendCustomMessage("handler_disableAllButtons", "findMarkersVolcanoConfirm")
   tryCatch({
     if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
     else{
@@ -2027,7 +2027,7 @@ observeEvent(input$findMarkersVolcanoConfirm, {
     session$sendCustomMessage("handler_startLoader", c("DEA7_loader", 100))
     Sys.sleep(1)
     session$sendCustomMessage("handler_finishLoader", "DEA7_loader")
-    session$sendCustomMessage("handler_enableButton", "findMarkersVolcanoConfirm")
+    session$sendCustomMessage("handler_enableAllButtons", "findMarkersVolcanoConfirm")
   })
 })
 
@@ -2067,7 +2067,7 @@ observeEvent(input$findMarkersVolcanoConfirm, {
 #ATAC   
 observeEvent(input$findMarkersConfirmATAC, { #ADD loading bar
   session$sendCustomMessage("handler_startLoader", c("DEA7_loader", 10))
-  session$sendCustomMessage("handler_disableButton", "findMarkersConfirmATAC")
+  session$sendCustomMessage("handler_disableAllButtons", "findMarkersConfirmATAC")
   tryCatch({
     if (identical(proj_default, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
     else {
@@ -2121,13 +2121,13 @@ observeEvent(input$findMarkersConfirmATAC, { #ADD loading bar
     session$sendCustomMessage("handler_startLoader", c("DEA7_loader", 100))
     Sys.sleep(1)
     session$sendCustomMessage("handler_finishLoader", "DEA7_loader")
-    session$sendCustomMessage("handler_enableButton", "findMarkersConfirmATAC")
+    session$sendCustomMessage("handler_enableAllButtons", "findMarkersConfirmATAC")
   })	
 })
 
 observeEvent(input$findMarkersPeaksConfirmATAC, {
   session$sendCustomMessage("handler_startLoader", c("DEA7_loader", 10))
-  session$sendCustomMessage("handler_disableButton", "findMarkersPeaksConfirmATAC")
+  session$sendCustomMessage("handler_disableAllButtons", "findMarkersPeaksConfirmATAC")
   tryCatch({
     if (identical(proj_default, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
     else {
@@ -2218,13 +2218,13 @@ observeEvent(input$findMarkersPeaksConfirmATAC, {
     session$sendCustomMessage("handler_startLoader", c("DEA7_loader", 100))
     Sys.sleep(1)
     session$sendCustomMessage("handler_finishLoader", "DEA7_loader")
-    session$sendCustomMessage("handler_enableButton", "findMarkersPeaksConfirmATAC")
+    session$sendCustomMessage("handler_enableAllButtons", "findMarkersPeaksConfirmATAC")
   })	
 })
 
 observeEvent(input$findMarkersFPConfirmATAC, {
   session$sendCustomMessage("handler_startLoader", c("DEA9_loader", 10))
-  session$sendCustomMessage("handler_disableButton", "findMarkersFPConfirmATAC")
+  session$sendCustomMessage("handler_disableAllButtons", "findMarkersFPConfirmATAC")
   tryCatch({
     if (identical(proj_default, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
     else {
@@ -2248,7 +2248,7 @@ observeEvent(input$findMarkersFPConfirmATAC, {
     session$sendCustomMessage("handler_startLoader", c("DEA9_loader", 100))
     Sys.sleep(1)
     session$sendCustomMessage("handler_finishLoader", "DEA9_loader")
-    session$sendCustomMessage("handler_enableButton", "findMarkersFPConfirmATAC")
+    session$sendCustomMessage("handler_enableAllButtons", "findMarkersFPConfirmATAC")
   })
 })
 
@@ -2280,7 +2280,7 @@ output$findMarkersPeaksATACExport <- downloadHandler(
   observeEvent(input$cellCycleRun, { # observe selectInput cellCycleReduction instead of cellCycleRun actionButton
     session$sendCustomMessage("handler_startLoader", c("CC1_loader", 10))
     session$sendCustomMessage("handler_startLoader", c("CC2_loader", 10))
-    session$sendCustomMessage("handler_disableButton", "cellCycleRun")
+    session$sendCustomMessage("handler_disableAllButtons", "cellCycleRun")
     tryCatch({
       if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else if (!"pca" %in% names(seurat_object)) session$sendCustomMessage("handler_alert", "Please, first execute PRINCIPAL COMPONENT ANALYSIS.") # TODO add if conditions for UMAP, tSNE etc
@@ -2408,7 +2408,7 @@ output$findMarkersPeaksATACExport <- downloadHandler(
       Sys.sleep(1)
       session$sendCustomMessage("handler_finishLoader", "CC1_loader")
       session$sendCustomMessage("handler_finishLoader", "CC2_loader")
-      session$sendCustomMessage("handler_enableButton", "cellCycleRun")
+      session$sendCustomMessage("handler_enableAllButtons", "cellCycleRun")
     })
   })
   
@@ -2416,7 +2416,7 @@ output$findMarkersPeaksATACExport <- downloadHandler(
   observeEvent(input$gProfilerConfirm, {
     session$sendCustomMessage("handler_startLoader", c("gprof1_loader", 10))
     session$sendCustomMessage("handler_startLoader", c("gprof2_loader", 10))
-    session$sendCustomMessage("handler_disableButton", "gProfilerConfirm")
+    session$sendCustomMessage("handler_disableAllButtons", "gProfilerConfirm")
     tryCatch({
       if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else if (identical(seurat_object@misc$markers, NULL)) session$sendCustomMessage("handler_alert", "Please, execute the gene differential analysis at the MARKERS' IDENTIFICATION tab first.")
@@ -2529,7 +2529,7 @@ output$findMarkersPeaksATACExport <- downloadHandler(
       Sys.sleep(1)
       session$sendCustomMessage("handler_finishLoader", "gprof1_loader")
       session$sendCustomMessage("handler_finishLoader", "gprof2_loader")
-      session$sendCustomMessage("handler_enableButton", "gProfilerConfirm")
+      session$sendCustomMessage("handler_enableAllButtons", "gProfilerConfirm")
     })
   })
 
@@ -2565,7 +2565,7 @@ observeEvent(input$sendToFlame, {
 
 observeEvent(input$findMotifsConfirmATAC, {
   session$sendCustomMessage("handler_startLoader", c("motif_loader", 10))
-  session$sendCustomMessage("handler_disableButton", "findMarkersFPConfirmATAC")
+  session$sendCustomMessage("handler_disableAllButtons", "findMarkersFPConfirmATAC")
   tryCatch({
     if (identical(proj_default, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
     else {
@@ -2610,7 +2610,7 @@ observeEvent(input$findMotifsConfirmATAC, {
     session$sendCustomMessage("handler_startLoader", c("motif_loader", 100))
     Sys.sleep(1)
     session$sendCustomMessage("handler_finishLoader", "motif_loader")
-    session$sendCustomMessage("handler_enableButton", "findMarkersFPConfirmATAC")
+    session$sendCustomMessage("handler_enableAllButtons", "findMarkersFPConfirmATAC")
   })	
   
 })  
@@ -2635,7 +2635,7 @@ output$findMotifsATACExport <- downloadHandler(
   observeEvent(input$annotateClustersConfirm, {
     session$sendCustomMessage("handler_startLoader", c("annot1_loader", 10))
     session$sendCustomMessage("handler_startLoader", c("annot2_loader", 10))
-    session$sendCustomMessage("handler_disableButton", "annotateClustersConfirm")
+    session$sendCustomMessage("handler_disableAllButtons", "annotateClustersConfirm")
     tryCatch({
       if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else if (identical(seurat_object@misc$markers, NULL)) session$sendCustomMessage("handler_alert", "Please, execute the gene differential analysis at the MARKERS' IDENTIFICATION tab first.")
@@ -2696,7 +2696,7 @@ output$findMotifsATACExport <- downloadHandler(
       Sys.sleep(1)
       session$sendCustomMessage("handler_finishLoader", "annot1_loader")
       session$sendCustomMessage("handler_finishLoader", "annot2_loader")
-      session$sendCustomMessage("handler_enableButton", "annotateClustersConfirm")
+      session$sendCustomMessage("handler_enableAllButtons", "annotateClustersConfirm")
     })
   })
   
@@ -2713,7 +2713,7 @@ output$findMotifsATACExport <- downloadHandler(
 
     session$sendCustomMessage("handler_startLoader", c("traj1_loader", 10))
     session$sendCustomMessage("handler_startLoader", c("traj2_loader", 10))
-    session$sendCustomMessage("handler_disableButton", "trajectoryConfirm")
+    session$sendCustomMessage("handler_disableAllButtons", "trajectoryConfirm")
     tryCatch({
       if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else if (identical(seurat_object@meta.data$seurat_clusters, NULL)) session$sendCustomMessage("handler_alert", "Please, execute CLUSTERING first and then run UMAP, in the NON LINEAR DIMENSIONALITY REDUCTION tab.")
@@ -2790,13 +2790,13 @@ output$findMotifsATACExport <- downloadHandler(
       Sys.sleep(1)
       session$sendCustomMessage("handler_finishLoader", "traj1_loader")
       session$sendCustomMessage("handler_finishLoader", "traj2_loader")
-      session$sendCustomMessage("handler_enableButton", "trajectoryConfirm")
+      session$sendCustomMessage("handler_enableAllButtons", "trajectoryConfirm")
     })
   })
   
   observeEvent(input$trajectoryConfirmLineage, {
     session$sendCustomMessage("handler_startLoader", c("traj2_loader", 10))
-    session$sendCustomMessage("handler_disableButton", "trajectoryConfirmLineage")
+    session$sendCustomMessage("handler_disableAllButtons", "trajectoryConfirmLineage")
     tryCatch({
       if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else {
@@ -2824,13 +2824,13 @@ output$findMotifsATACExport <- downloadHandler(
       session$sendCustomMessage("handler_startLoader", c("traj2_loader", 100))
       Sys.sleep(1)
       session$sendCustomMessage("handler_finishLoader", "traj2_loader")
-      session$sendCustomMessage("handler_enableButton", "trajectoryConfirmLineage")
+      session$sendCustomMessage("handler_enableAllButtons", "trajectoryConfirmLineage")
     })
   })
   
   observeEvent(input$trajectoryConfirmATAC, {
     session$sendCustomMessage("handler_startLoader", c("traj3_loader", 10))
-    session$sendCustomMessage("handler_disableButton", "trajectoryConfirmATAC")
+    session$sendCustomMessage("handler_disableAllButtons", "trajectoryConfirmATAC")
     tryCatch({
       if (identical(proj_default, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else {
@@ -2879,13 +2879,13 @@ output$findMotifsATACExport <- downloadHandler(
       session$sendCustomMessage("handler_startLoader", c("traj3_loader", 100))
       Sys.sleep(1)
       session$sendCustomMessage("handler_finishLoader", "traj3_loader")
-      session$sendCustomMessage("handler_enableButton", "trajectoryConfirmATAC")
+      session$sendCustomMessage("handler_enableAllButtons", "trajectoryConfirmATAC")
     })
   }) 
   
   observeEvent(input$trajectoryConfirmLineageATAC, {
     session$sendCustomMessage("handler_startLoader", c("traj4_loader", 10))
-    session$sendCustomMessage("handler_disableButton", "trajectoryConfirmATAC")
+    session$sendCustomMessage("handler_disableAllButtons", "trajectoryConfirmATAC")
     tryCatch({
       if (identical(proj_default, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else {
@@ -2902,14 +2902,14 @@ output$findMotifsATACExport <- downloadHandler(
       session$sendCustomMessage("handler_startLoader", c("traj4_loader", 100))
       Sys.sleep(1)
       session$sendCustomMessage("handler_finishLoader", "traj4_loader")
-      session$sendCustomMessage("handler_enableButton", "trajectoryConfirmATAC")
+      session$sendCustomMessage("handler_enableAllButtons", "trajectoryConfirmATAC")
     })
   })
   
   #--------------------Ligand Receptor tab---------------------------
   observeEvent(input$ligandReceptorConfirm, {
     session$sendCustomMessage("handler_startLoader", c("lr_loader", 10))
-    session$sendCustomMessage("handler_disableButton", "ligandReceptorConfirm")
+    session$sendCustomMessage("handler_disableAllButtons", "ligandReceptorConfirm")
     tryCatch({
       # if (!"assays" %in% slotNames(seurat_object)) session$sendCustomMessage("handler_alert", "Slot assays has not been calculated yet. Execute Normalization procedure first.")
       if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
@@ -3022,7 +3022,7 @@ output$findMotifsATACExport <- downloadHandler(
       session$sendCustomMessage("handler_startLoader", c("lr_loader", 100))
       Sys.sleep(1)
       session$sendCustomMessage("handler_finishLoader", "lr_loader")
-      session$sendCustomMessage("handler_enableButton", "ligandReceptorConfirm")
+      session$sendCustomMessage("handler_enableAllButtons", "ligandReceptorConfirm")
     })
   })
   
@@ -3319,7 +3319,7 @@ output$findMotifsATACExport <- downloadHandler(
   
   observeEvent(input$grnConfirmATAC, {
     session$sendCustomMessage("handler_startLoader", c("grn2_loader", 10))
-    session$sendCustomMessage("handler_disableButton", "grnConfirmATAC")
+    session$sendCustomMessage("handler_disableAllButtons", "grnConfirmATAC")
     tryCatch({
       if (identical(proj_default, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else {
@@ -3409,7 +3409,7 @@ output$findMotifsATACExport <- downloadHandler(
       session$sendCustomMessage("handler_startLoader", c("grn2_loader", 100))
       Sys.sleep(1)
       session$sendCustomMessage("handler_finishLoader", "grn2_loader")
-      session$sendCustomMessage("handler_enableButton", "grnConfirmATAC")
+      session$sendCustomMessage("handler_enableAllButtons", "grnConfirmATAC")
     })
   })
   
@@ -3432,7 +3432,7 @@ output$findMotifsATACExport <- downloadHandler(
   #---------------------------Tracks tab----------------------------------------
   observeEvent(input$visualizeTracksConfirm, {
     session$sendCustomMessage("handler_startLoader", c("tracks_loader", 10))
-    session$sendCustomMessage("handler_disableButton", "visualizeTracksConfirm")
+    session$sendCustomMessage("handler_disableAllButtons", "visualizeTracksConfirm")
     tryCatch({
       if (identical(proj_default, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else {
@@ -3458,7 +3458,7 @@ output$findMotifsATACExport <- downloadHandler(
       session$sendCustomMessage("handler_startLoader", c("tracks_loader", 100))
       Sys.sleep(1)
       session$sendCustomMessage("handler_finishLoader", "tracks_loader")
-      session$sendCustomMessage("handler_enableButton", "visualizeTracksConfirm")
+      session$sendCustomMessage("handler_enableAllButtons", "visualizeTracksConfirm")
     })
   })
   
@@ -3477,7 +3477,7 @@ output$findMotifsATACExport <- downloadHandler(
   updateReduction <- function()
   {
     session$sendCustomMessage("handler_startLoader", c("dim_red2_loader", 10))
-    session$sendCustomMessage("handler_disableButton", "umapConfirm")
+    session$sendCustomMessage("handler_disableAllButtons", "umapConfirm")
     tryCatch({
       if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else if (identical(seurat_object@meta.data$seurat_clusters, NULL)) session$sendCustomMessage("handler_alert", "Please, execute CLUSTERING first and then re-run UMAP or tSNE or Diffusion Map above.")
@@ -3651,7 +3651,7 @@ output$findMotifsATACExport <- downloadHandler(
       session$sendCustomMessage("handler_startLoader", c("dim_red2_loader", 100))
       Sys.sleep(1)
       session$sendCustomMessage("handler_finishLoader", "dim_red2_loader")
-      session$sendCustomMessage("handler_enableButton", "umapConfirm")
+      session$sendCustomMessage("handler_enableAllButtons", "umapConfirm")
     })
   }
   
