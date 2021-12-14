@@ -1878,8 +1878,12 @@ observeEvent(input$findMarkersFPConfirm, {
           label_y <- "PHATE_2"
         }
         session$sendCustomMessage("handler_startLoader", c("DEA4_loader", 50))
+        plot_temp <- FeaturePlot(seurat_object, features = geneS, pt.size = 1.5, label = show_label, label.size = 5, cols = c("lightgrey", "red"), 
+                            order = order_exp, reduction = input$findMarkersReductionType, max.cutoff = maxq, min.cutoff = minq)
+        
         plot <- FeaturePlot(seurat_object, features = geneS, pt.size = 1.5, label = show_label, label.size = 5, cols = c("lightgrey", "red"), 
-                            order = order_exp, reduction = input$findMarkersReductionType, max.cutoff = maxq, min.cutoff = minq) +
+                            order = order_exp, reduction = input$findMarkersReductionType, max.cutoff = maxq, min.cutoff = minq) + 
+          xlim(min(plot_temp$data[label_x]), max(plot_temp$data[label_x])) + ylim(min(plot_temp$data[label_y]), max(plot_temp$data[label_y])) +
           theme_bw() +
           theme(axis.text.x = element_text(face = "bold", color = "black", size = 25, angle = 0),
                 axis.text.y = element_text(face = "bold", color = "black", size = 25, angle = 0),
@@ -3731,6 +3735,10 @@ output$findMotifsATACExport <- downloadHandler(
           label_y <- "PHATE_2"
         }
         
+        plot_temp <- FeaturePlot(seurat_object, features = c(geneS1, geneS2), blend.threshold = blendThr, 
+                            pt.size = 1.5, label = show_label, label.size = 5, cols = c("lightgrey", "red", "dodgerblue4"), 
+                            order = order_exp, reduction = input$findMarkersFeaturePairReductionType, blend = TRUE, max.cutoff = maxq, min.cutoff = minq)
+        
         plot <- FeaturePlot(seurat_object, features = c(geneS1, geneS2), blend.threshold = blendThr, 
                             pt.size = 1.5, label = show_label, label.size = 5, cols = c("lightgrey", "red", "dodgerblue4"), 
                             order = order_exp, reduction = input$findMarkersFeaturePairReductionType, blend = TRUE, max.cutoff = maxq, min.cutoff = minq) +
@@ -3744,9 +3752,9 @@ output$findMotifsATACExport <- downloadHandler(
                 legend.position="none",
                 title = element_text(face = "bold", color = "black", size = 25, angle = 0)) #+
         labs(x=label_x, y=label_y, color="Normalized\nexpression")
-        gp1 <- plotly::ggplotly(plot[[1]]) #, tooltip = c("x", "y", geneS))
-        gp2 <- plotly::ggplotly(plot[[2]])
-        gp3 <- plotly::ggplotly(plot[[3]])
+        gp1 <- plotly::ggplotly(plot[[1]] + xlim(min(plot_temp[[1]]$data[label_x]), max(plot_temp[[1]]$data[label_x])) + ylim(min(plot_temp[[1]]$data[label_y]), max(plot_temp[[1]]$data[label_y])) )
+        gp2 <- plotly::ggplotly(plot[[2]] + xlim(min(plot_temp[[1]]$data[label_x]), max(plot_temp[[1]]$data[label_x])) + ylim(min(plot_temp[[1]]$data[label_y]), max(plot_temp[[1]]$data[label_y])) )
+        gp3 <- plotly::ggplotly(plot[[3]] + xlim(min(plot_temp[[1]]$data[label_x]), max(plot_temp[[1]]$data[label_x])) + ylim(min(plot_temp[[1]]$data[label_y]), max(plot_temp[[1]]$data[label_y])) )
         gp4 <- plotly::ggplotly(plot[[4]]+theme(title = element_text(face = "bold", color = "black", size = 15)))
         
         output$findMarkersFPfeature1 <- renderPlotly({ gp1 })
