@@ -24,9 +24,7 @@ ui <- dashboardPage(
                         tags$br(),
                         "& SCALING", class = "menu_item_div"), tabName = "normalize", icon = icon("balance-scale")),
       tags$hr(),
-      menuItem(tags$div("PRINCIPAL COMPONENT",
-                        tags$br(),
-                        "ANALYSIS", class = "menu_item_div"), tabName = "pca", icon = icon("chart-line")),
+      menuItem(text = "PCA/LSI", tabName = "pca", icon = icon("chart-line")),
       menuItem(text = "CLUSTERING", tabName = "clustering", icon = icon("project-diagram")),
       menuItem(tags$div("ADDITIONAL DIMENSIONALITY",
                         tags$br(),
@@ -34,9 +32,9 @@ ui <- dashboardPage(
       menuItem(text = "MARKERS' IDENTIFICATION", tabName = "findMarkers", icon = icon("map-marker-alt")),
       menuItem(text = "CELL CYCLE PHASE ANALYSIS", tabName = "cellCycle", icon = icon("circle-notch")),
       tags$hr(),
-      menuItem(tags$div("FUNCTIONAL ENRICHMENT",
+      menuItem(tags$div("FUNCTIONAL/MOTIF",
                         tags$br(),
-                        "ANALYSIS", class = "menu_item_div"), tabName = "gProfiler", icon=icon("chart-bar")),
+                        "ENRICHMENT ANALYSIS", class = "menu_item_div"), tabName = "gProfiler", icon=icon("chart-bar")),
       menuItem(text = "CLUSTERS' ANNOTATION", tabName = "annotateClusters", icon = icon("id-card")),
       menuItem(text = "TRAJECTORY ANALYSIS", tabName = "trajectory", icon = icon("route")),
       menuItem(tags$div("LIGAND - RECEPTOR",
@@ -187,77 +185,80 @@ ui <- dashboardPage(
                                        title = "Quality control plots",
 
                                        div(class="ldBar", id="qc_loader", "data-preset"="circle"),
-                                       div(
-                                         column(tags$h3("Pre-filtering plots"), width=12),
-                                         column(tags$hr(), width = 12),
-                                         column(
-                                           div(id="nFeatureViolin_loader",
-                                               shinycssloaders::withSpinner(
-                                                 plotlyOutput(outputId = "nFeatureViolin", height = "100%")
-                                                 )
-                                               ), width = 4),
-                                         column(
-                                           div(id="totalCountsViolin_loader",
-                                               shinycssloaders::withSpinner(
-                                                 plotlyOutput(outputId = "totalCountsViolin", height = "100%")
-                                                 )
-                                               ), width = 4),
-                                         column(
-                                           div(id="mitoViolin_loader",
-                                               shinycssloaders::withSpinner(
-                                                 plotlyOutput(outputId = "mitoViolin", height = "100%")
-                                                 )
-                                               ), width = 4),
-                                         column(
-                                           div(id="genesCounts_loader",
-                                               shinycssloaders::withSpinner(
-                                                 plotlyOutput(outputId = "genesCounts", height= "100%")
-                                                 )
-                                               ), width = 6),
-                                         column(
-                                           div(id="mtCounts_loader",
-                                               shinycssloaders::withSpinner(
-                                                 plotlyOutput(outputId = "mtCounts", height= "100%")
-                                                 )
-                                               ), width = 6),
-                                         column(verbatimTextOutput(outputId = "cellStats"), width = 4),
-                                         column(tags$h3("Post-filtering plots"), width=12),
-                                         column(tags$hr(), width = 12),
-                                         column(
-                                           div(id="filteredNFeatureViolin_loader",
-                                               shinycssloaders::withSpinner(
-                                                 plotlyOutput(outputId = "filteredNFeatureViolin", height = "100%")
-                                                 )
-                                               ), width = 4),
-                                         column(
-                                           div(id="filteredTotalCountsViolin_loader",
-                                               shinycssloaders::withSpinner(
-                                                 plotlyOutput(outputId = "filteredTotalCountsViolin", height = "100%")
-                                                 )
-                                               ), width = 4),
-                                         column(
-                                           div(id="filteredMitoViolin_loader",
-                                               shinycssloaders::withSpinner(
-                                                 plotlyOutput(outputId = "filteredMitoViolin", height = "100%")
-                                                 )
-                                               ), width = 4),
-                                         column(
-                                           div(id="filteredGenesCounts_loader",
-                                               shinycssloaders::withSpinner(
-                                                 plotlyOutput(outputId = "filteredGenesCounts", height= "100%")
-                                                 )
-                                               ), width = 6),
-                                         column(
-                                           div(id="filteredMtCounts_loader",
-                                               shinycssloaders::withSpinner(
-                                                 plotlyOutput(outputId = "filteredMtCounts", height= "100%")
-                                                 )
-                                               ), width = 6),
-                                         column(verbatimTextOutput(outputId = "filteredCellStats"), width = 4),
+                                       tabsetPanel(type="tabs", 
+                                                   tabPanel("Pre-filtering plots",
+                                                            #column(tags$h3("Pre-filtering plots"), width=12),
+                                                            #column(tags$hr(), width = 12),
+                                                            column(
+                                                              div(id="nFeatureViolin_loader",
+                                                                  shinycssloaders::withSpinner(
+                                                                    plotlyOutput(outputId = "nFeatureViolin", height = "100%")
+                                                                  )
+                                                              ), width = 4),
+                                                            column(
+                                                              div(id="totalCountsViolin_loader",
+                                                                  shinycssloaders::withSpinner(
+                                                                    plotlyOutput(outputId = "totalCountsViolin", height = "100%")
+                                                                  )
+                                                              ), width = 4),
+                                                            column(
+                                                              div(id="mitoViolin_loader",
+                                                                  shinycssloaders::withSpinner(
+                                                                    plotlyOutput(outputId = "mitoViolin", height = "100%")
+                                                                  )
+                                                              ), width = 4),
+                                                            column(
+                                                              div(id="genesCounts_loader",
+                                                                  shinycssloaders::withSpinner(
+                                                                    plotlyOutput(outputId = "genesCounts", height= "100%")
+                                                                  )
+                                                              ), width = 6),
+                                                            column(
+                                                              div(id="mtCounts_loader",
+                                                                  shinycssloaders::withSpinner(
+                                                                    plotlyOutput(outputId = "mtCounts", height= "100%")
+                                                                  )
+                                                              ), width = 6),
+                                                            column(verbatimTextOutput(outputId = "cellStats"), width = 4)
+                                                   ),
+                                                   tabPanel("Post-filtering plots",
+                                                            #column(tags$h3("Post-filtering plots"), width=12),
+                                                            #column(tags$hr(), width = 12),
+                                                            column(
+                                                              div(id="filteredNFeatureViolin_loader",
+                                                                  shinycssloaders::withSpinner(
+                                                                    plotlyOutput(outputId = "filteredNFeatureViolin", height = "100%")
+                                                                  )
+                                                              ), width = 4),
+                                                            column(
+                                                              div(id="filteredTotalCountsViolin_loader",
+                                                                  shinycssloaders::withSpinner(
+                                                                    plotlyOutput(outputId = "filteredTotalCountsViolin", height = "100%")
+                                                                  )
+                                                              ), width = 4),
+                                                            column(
+                                                              div(id="filteredMitoViolin_loader",
+                                                                  shinycssloaders::withSpinner(
+                                                                    plotlyOutput(outputId = "filteredMitoViolin", height = "100%")
+                                                                  )
+                                                              ), width = 4),
+                                                            column(
+                                                              div(id="filteredGenesCounts_loader",
+                                                                  shinycssloaders::withSpinner(
+                                                                    plotlyOutput(outputId = "filteredGenesCounts", height= "100%")
+                                                                  )
+                                                              ), width = 6),
+                                                            column(
+                                                              div(id="filteredMtCounts_loader",
+                                                                  shinycssloaders::withSpinner(
+                                                                    plotlyOutput(outputId = "filteredMtCounts", height= "100%")
+                                                                  )
+                                                              ), width = 6),
+                                                            column(verbatimTextOutput(outputId = "filteredCellStats"), width = 4)
+                                                   )
                                        )
-
-                                     )
                                    )
+                                  )
                           ),
                           tabPanel("scATAC-seq",
                                    #two boxes inside QC tab
@@ -377,49 +378,50 @@ ui <- dashboardPage(
                                    fluidRow(
                                      box(
                                        width = 12, status = "info", solidHeader = TRUE,
-                                       title = "PCA results", height = "1290px",
-                                       column(radioButtons("pcaRadio", label = h3("Suggest optimal number of PCs Using 10-fold SVA-CV: "),
-                                                           choices = list("Yes (slow operation)" = "yes", 
-                                                                          "No" = "no"), 
-                                                           selected = "no"), width = 12),
-                                       #column(sliderInput(inputId = "pcaStepBy", label = "Resolution/step-by: (applicable only in SVA-CV)", min = 1, max = 5, value = 3, step = 1), width = 12),
-                                       column(actionButton(inputId = "PCrunPCA", label = "Run PCA"), width = 12),
-                                       div(class="ldBar", id="PCA1_loader", "data-preset"="circle"),
-                                       div(
-                                         column(
-                                           div(id="elbowPlotPCA_loader",
-                                               shinycssloaders::withSpinner(
-                                                 plotlyOutput(outputId = "elbowPlotPCA", height = "790px")
-                                                 )
-                                               ), width = 6),
-                                         column(
-                                           div(id="PCAscatter_loader",
-                                               shinycssloaders::withSpinner(
-                                                 plotlyOutput(outputId = "PCAscatter", height = "790px")
-                                                 )
-                                               ), width = 6)
-                                       )
-                                     ),
-                                     box(
-                                       width = 12, status = "info", solidHeader = TRUE,
-                                       title = "Explore particular principal components", height = "990px",
-                                       #column(textInput(inputId = "PCin", label = "Select a principal component :", value = "1"), width = 6),
-                                       selectInput("PCin", "Select a principal component :", choices=1:100, selected = 1, multiple = FALSE,selectize = TRUE, width = NULL, size = NULL),
-                                       column(actionButton(inputId = "PCconfirm", label = "OK"), width = 12),
-                                       div(class="ldBar", id="PCA2_loader", "data-preset"="circle"),
-                                       div(
-                                         column(
-                                           div(id="PCAloadings_loader",
-                                               shinycssloaders::withSpinner(
-                                                 plotlyOutput(outputId = "PCAloadings", height = "790px")
-                                                 )
-                                               ), width = 6),
-                                         column(
-                                           div(id="PCAheatmap_loader",
-                                               shinycssloaders::withSpinner(
-                                                 plotlyOutput(outputId = "PCAheatmap", height = "790px")
-                                                 )
-                                               ), width = 6)
+                                       title = "PCA results", height = "900px",
+                                       tabsetPanel(type = "tabs", 
+                                                   tabPanel("PCA run",
+                                                            column(radioButtons("pcaRadio", label = h3("Suggest optimal number of PCs Using 10-fold SVA-CV: "),
+                                                                                choices = list("Yes (slow operation)" = "yes", 
+                                                                                               "No" = "no"), 
+                                                                                selected = "no"), width = 12),
+                                                            #column(sliderInput(inputId = "pcaStepBy", label = "Resolution/step-by: (applicable only in SVA-CV)", min = 1, max = 5, value = 3, step = 1), width = 12),
+                                                            column(actionButton(inputId = "PCrunPCA", label = "Run PCA"), width = 12),
+                                                            div(class="ldBar", id="PCA1_loader", "data-preset"="circle"),
+                                                            div(
+                                                              column(
+                                                                div(id="elbowPlotPCA_loader",
+                                                                    shinycssloaders::withSpinner(
+                                                                      plotlyOutput(outputId = "elbowPlotPCA", height = "750px")
+                                                                    )
+                                                                ), width = 6),
+                                                              column(
+                                                                div(id="PCAscatter_loader",
+                                                                    shinycssloaders::withSpinner(
+                                                                      plotlyOutput(outputId = "PCAscatter", height = "750px")
+                                                                    )
+                                                                ), width = 6)
+                                                            )
+                                                   ),
+                                                   tabPanel("PCA exploration",
+                                                            selectInput("PCin", "Select a principal component :", choices=1:100, selected = 1, multiple = FALSE,selectize = TRUE, width = NULL, size = NULL),
+                                                            column(actionButton(inputId = "PCconfirm", label = "OK"), width = 12),
+                                                            div(class="ldBar", id="PCA2_loader", "data-preset"="circle"),
+                                                            div(
+                                                              column(
+                                                                div(id="PCAloadings_loader",
+                                                                    shinycssloaders::withSpinner(
+                                                                      plotlyOutput(outputId = "PCAloadings", height = "500px")
+                                                                    )
+                                                                ), width = 6),
+                                                              column(
+                                                                div(id="PCAheatmap_loader",
+                                                                    shinycssloaders::withSpinner(
+                                                                      plotlyOutput(outputId = "PCAheatmap", height = "500px")
+                                                                    )
+                                                                ), width = 6)
+                                                            )
+                                                   )
                                        )
                                      )
                                    )
@@ -535,7 +537,7 @@ ui <- dashboardPage(
       #ATAC 
       # resolution, dimsToUse
       # correlation heatmap (RNA, ATAC) using most variable features/or markers [optional]
-      
+
       #UMAP tab
       tabItem(tabName = "umap", 
               tabsetPanel(type = "tabs", id = "umapTabPanel",
@@ -1272,13 +1274,7 @@ ui <- dashboardPage(
                                                                   shinycssloaders::withSpinner(
                                                                     plotlyOutput(outputId = "grnHeatmapATAC", height = "800px")
                                                                     )
-                                                                  ),
-                                                              div(id="grnHeatmapATAC2_loader",
-                                                                  shinycssloaders::withSpinner(
-                                                                    plotOutput(outputId = "grnHeatmapATAC2", height = "800px") # TODO: remove? does not exist in server
                                                                   )
-                                                              )
-
                                                               ),
                                                      tabPanel("Peak to gene links",
                                                               dataTableOutput(outputId="grnP2GlinksTable", height = "800px"),
@@ -1339,7 +1335,7 @@ ui <- dashboardPage(
                          tabPanel("Normalization"
                                   
                          ),
-                         tabPanel("PCA"
+                         tabPanel("PCA/LSI"
                                   
                          ),
                          tabPanel("Clustering"
