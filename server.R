@@ -4,7 +4,7 @@
 
 server <- function(input, output, session) { 
   #use_python("/opt/conda39/envs/pyscenic/bin/python")
-  options(shiny.maxRequestSize=3*1024^3) #increase upload limit
+  options(shiny.maxRequestSize=3*1024^3) #TODO 
   source("global.R", local=TRUE)
   
   session$sendCustomMessage("handler_disableTabs", "sidebarMenu") # disable all tab panels (except Data Input) until files are uploaded
@@ -16,11 +16,12 @@ server <- function(input, output, session) {
 
     tryCatch({
       seurat_object <<- readRDS("processed_seurat_object-2021-12-11.RDS")
-      session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " QUALITY CONTROL", " DATA NORMALIZATION\n& SCALING", " PRINCIPAL COMPONENT\nANALYSIS",
+      init_seurat_object <<- readRDS("processed_seurat_object-2021-12-11.RDS")
+      session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " QUALITY CONTROL", " DATA NORMALIZATION\n& SCALING", " PCA/LSI",
                                                         " CLUSTERING", " CELL CYCLE PHASE ANALYSIS", " ADDITIONAL DIMENSIONALITY\nREDUCTION METHODS", " TRAJECTORY ANALYSIS",
-                                                        " MARKERS' IDENTIFICATION", " LIGAND - RECEPTOR\nANALYSIS", " FUNCTIONAL ENRICHMENT\nANALYSIS", " CLUSTERS' ANNOTATION"))
+                                                        " MARKERS' IDENTIFICATION", " LIGAND - RECEPTOR\nANALYSIS", " FUNCTIONAL/MOTIF\nENRICHMENT ANALYSIS", " CLUSTERS' ANNOTATION"))
       
-      output$metadataTable <- renderDataTable(seurat_object@meta.data, options = list(pageLength = 20))
+      output$metadataTable <- renderDataTable(seurat_object@meta.data, options = list(pageLength = 20), rownames = FALSE)
       updateClusterTab()
       output$findMarkersTable <- renderDataTable(seurat_object@misc$markers, options = list(pageLength = 20), filter = 'top', rownames = FALSE) 
       updateUmapTypeChoices(c("pca", "umap", "tsne", "phate", "dfm"))
@@ -33,7 +34,7 @@ server <- function(input, output, session) {
       #updateInpuTrajectoryClusters()
       # setwd("exampleRNA_10xFiles/") # TODO remove this, never use setwd() on server apps. create a path with paste() instead
       organism <<- "human"
-      
+      disableTabsATAC()
       print("Load complete")
     }, error = function(e) {
       print(paste("Error :  ", e))
@@ -414,15 +415,7 @@ server <- function(input, output, session) {
         dir.create(paste0(user_dir, "/default"))
         
         #select genome version and organism
-        addArchRGenome("mm10")
-        if(length(grep("mm", input$upload10xATACRadioSpecies)) == 1)
-        {
-          organism <<- "mouse"
-        }
-        else
-        {
-          organism <<- "human"
-        }
+        addArchRGenome("hg19")
         
         #set number of threads, TODO set to 1 in server version
         addArchRThreads(threads = 1) #as.numeric(input$upload10xATACThreads)) 
@@ -813,7 +806,7 @@ server <- function(input, output, session) {
       }
     )
     
-    session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " QUALITY CONTROL", " PRINCIPAL COMPONENT\nANALYSIS", " UTILITY OPTIONS"))
+    session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " QUALITY CONTROL", " PCA/LSI", " UTILITY OPTIONS"))
       }
       # }, warning = function(w) {
       #   print(paste("Warning:  ", w))
@@ -838,7 +831,7 @@ server <- function(input, output, session) {
       else{
         shinyjs::show("hvgScatter_loader")
         
-        normalize_normMethod <- normalize_normMethod
+        normalize_normMethod <- "LogNormalize"
         normalize_normScaleFactor <- input$normScaleFactor
         seurat_object <<- NormalizeData(seurat_object, normalization.method = normalize_normMethod, scale.factor = as.numeric(normalize_normScaleFactor))
         session$sendCustomMessage("handler_log", "Finished performing log-normalization.")
@@ -881,8 +874,8 @@ server <- function(input, output, session) {
                 )+
                 labs(x="Average Expression", y="Standardized Variance", color="")
             } else { # TODO DeBUG
-              p <- ggplot(varplot, aes(x=mean, y=dispersion.scaled, color=colors, text = paste0("mean expression: ", mean,
-                                                                                                "\nscaled dispersion: ", dispersion.scaled,
+              p <- ggplot(varplot, aes(x=mean, y=dispersion, color=colors, text = paste0("mean expression: ", mean,
+                                                                                                "\ndispersion: ", dispersion,
                                                                                                 "\ngene: ", gene)
               )) +
                 geom_point() +
@@ -890,14 +883,14 @@ server <- function(input, output, session) {
                 scale_color_manual(
                   values = c("red", "black")
                 )+ 
-                labs(x="Average Expression", y="Scaled Dispersion", color="")
+                labs(x="Average Expression", y="Dispersion", color="")
             }
             gp <- plotly::ggplotly(p, tooltip = "text") #c("label", "x", "y"))
             return(gp)
           } else session$sendCustomMessage("handler_alert", "There are no variable features in the Seaurat object.")
         }) # End Rendering
         
-        session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " PRINCIPAL COMPONENT\nANALYSIS"))
+        session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " PCA/LSI"))
       }
     # }, warning = function(w) {
     #   print(paste("Warning:  ", w))
@@ -1694,7 +1687,7 @@ server <- function(input, output, session) {
           }
         )
         session$sendCustomMessage("handler_startLoader", c("DEA1_loader", 75))
-        session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " FUNCTIONAL ENRICHMENT\nANALYSIS", " CLUSTERS' ANNOTATION"))
+        session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " FUNCTIONAL/MOTIF\nENRICHMENT ANALYSIS", " CLUSTERS' ANNOTATION"))
       }
       # }, warning = function(w) {
       #   print(paste("Warning:  ", w))
@@ -2112,7 +2105,7 @@ observeEvent(input$findMarkersConfirmATAC, { #ADD loading bar
       )
       output$findMarkersGenesHeatmapATAC <- renderPlotly(expr = heatmaply(heatmap_matrix[, markers_clusterList10$name])) 
       saveArchRProject(proj_default)
-      session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " FUNCTIONAL ENRICHMENT\nANALYSIS", " TRACKS"))
+      session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " FUNCTIONAL/MOTIF\nENRICHMENT ANALYSIS", " TRACKS"))
     }
   }, error = function(e) {
     print(paste("Error :  ", e))
@@ -2133,7 +2126,7 @@ observeEvent(input$findMarkersPeaksConfirmATAC, {
     else {
       shinyjs::show("findMarkersPeaksHeatmapATAC_loader")
       
-      source("../Peaks_ArchR_windows.R")
+      source("Peaks_ArchR_windows.R")
       
       addArchRThreads(threads = 1)
       
@@ -2148,7 +2141,8 @@ observeEvent(input$findMarkersPeaksConfirmATAC, {
         proj_default <<- addReproduciblePeakSet_win(
           ArchRProj = proj_default,
           groupBy = "Clusters",
-          pathToMacs2 = pathToMacs2_a, force = T
+          pathToMacs2 = pathToMacs2_a, force = T,
+          logFile =paste0(user_dir, "/Rep_Peakset_file.log")
         )
       }
       else
@@ -2209,7 +2203,7 @@ observeEvent(input$findMarkersPeaksConfirmATAC, {
       
       output$findMarkersPeaksHeatmapATAC <- renderPlotly(expr = heatmaply(to_plot)) 
       addArchRThreads(threads = as.numeric(input$upload10xATACThreads))
-      session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " FUNCTIONAL ENRICHMENT\nANALYSIS", " TRACKS"))
+      session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " FUNCTIONAL/MOTIF\nENRICHMENT ANALYSIS", " TRACKS"))
     }
   }, error = function(e) {
     print(paste("Error :  ", e))
@@ -2580,7 +2574,8 @@ observeEvent(input$findMotifsConfirmATAC, {
         logFile =paste0(user_dir, "/Marker_Peaks_file.log")
       )
       session$sendCustomMessage("handler_startLoader", c("motif_loader", 50))
-      proj_default <<- addMotifAnnotations(ArchRProj = proj_default, motifSet = input$findMotifsSetATAC, name = "Motif", force = T)
+      proj_default <<- addMotifAnnotations(ArchRProj = proj_default, motifSet = input$findMotifsSetATAC, name = "Motif", force = T,
+                                           logFile =paste0(user_dir, "/Motif_Annotation_file.log"))
       print("afterAddMotifAnno")
       enrichMotifs <- peakAnnoEnrichment(
         seMarker = markersPeaks,
@@ -2592,9 +2587,11 @@ observeEvent(input$findMotifsConfirmATAC, {
       
       print("afterPeakAno")
       session$sendCustomMessage("handler_startLoader", c("motif_loader", 70))
-      heatmapEM <- plotEnrichHeatmap(enrichMotifs, n = 10, transpose = TRUE, returnMatrix = T)
+      heatmapEM <- plotEnrichHeatmap(enrichMotifs, n = 10, transpose = TRUE, returnMatrix = T,
+                                     logFile =paste0(user_dir, "/Motif_Heatmap_file.log"))
       print(head(heatmapEM))
-      full_motif_table <- t(plotEnrichHeatmap(enrichMotifs, transpose = TRUE, returnMatrix = T))
+      full_motif_table <- t(plotEnrichHeatmap(enrichMotifs, transpose = TRUE, returnMatrix = T, 
+                                              logFile =paste0(user_dir, "/Motif_Heatmap_file.log")))
       print(head(full_motif_table))
       session$sendCustomMessage("handler_startLoader", c("motif_loader", 90))
       output$findMotifsTableATAC <- renderDataTable(expr = full_motif_table, filter = 'top', options = list(pageLength = 10))
@@ -4145,3 +4142,13 @@ output$findMotifsATACExport <- downloadHandler(
 
 #showModal(modalDialog(span('Analysis in Progress, please wait...', style='color:lightseagreen'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;top:50%;left:50%'))
 #removeModal()
+
+# session$onSessionEnded(function() {
+# file_names <<- list()
+# file_ids <<- list()
+# global_positions <<-list()
+# barplot_table <<- data.frame()
+# #files_to_change <<-c()
+# cat("Session Ended\n", file=stderr())
+# print(file_ids)
+# })
