@@ -378,7 +378,7 @@ ui <- dashboardPage(
                                    fluidRow(
                                      box(
                                        width = 12, status = "info", solidHeader = TRUE,
-                                       title = "PCA results", height = "900px",
+                                       title = "PCA results", height = "1200px",
                                        tabsetPanel(type = "tabs", 
                                                    tabPanel("PCA run",
                                                             column(radioButtons("pcaRadio", label = h3("Suggest optimal number of PCs Using 10-fold SVA-CV: "),
@@ -411,13 +411,13 @@ ui <- dashboardPage(
                                                               column(
                                                                 div(id="PCAloadings_loader",
                                                                     shinycssloaders::withSpinner(
-                                                                      plotlyOutput(outputId = "PCAloadings", height = "500px")
+                                                                      plotlyOutput(outputId = "PCAloadings", height = "700px")
                                                                     )
                                                                 ), width = 6),
                                                               column(
                                                                 div(id="PCAheatmap_loader",
                                                                     shinycssloaders::withSpinner(
-                                                                      plotlyOutput(outputId = "PCAheatmap", height = "500px")
+                                                                      plotlyOutput(outputId = "PCAheatmap", height = "700px")
                                                                     )
                                                                 ), width = 6)
                                                             )
@@ -546,7 +546,13 @@ ui <- dashboardPage(
                                      box(width = 3, status = "info", solidHeader = TRUE,
                                          title = "Cell visualization options",
                                          sliderInput(inputId = "umapPCs", label = "Number of principal components to use :", min = 1, max = 100, value = 15, step = 1),
-                                         sliderInput(inputId = "umapOutComponents", label = "Number of dimensions to fit output:", min = 2, max = 100, value = 15, step = 1),
+                                         sliderInput(inputId = "umapOutComponents", label = "Number of dimensions to fit output:", min = 2, max = 100, value = 15, step = 1)%>%
+                                           shinyInput_label_embed(
+                                             shiny_iconlink() %>%
+                                               bs_embed_popover(
+                                                 title = "If PHATE is selected, The runtime increases when a value > 3 is used.", placement = "bottom"
+                                               )
+                                           ),
                                          actionButton(inputId = "umapRunUmap", label = "Run UMAP"),
                                          actionButton(inputId = "umapRunTsne", label = "Run tSNE"),
                                          actionButton(inputId = "umapRunDFM", label = "Run Diffusion Map"),
@@ -856,15 +862,18 @@ ui <- dashboardPage(
                                          sliderInput(inputId = "findMarkersPeaksLogFCATAC", label = "Log2FC threshold:", min = 0, max = 3, value = 0.25, step = 0.05),
                                          
                                          sliderInput(inputId = "findMarkersPeaksFDRATAC", label = "FDR threshold:", min = 0, max = 1, value = 0.01, step = 0.01),
-                                         textInput(inputId = "pathToMacs2", label = "Absolute path to MACS2")%>%
-                                           shinyInput_label_embed(
-                                             shiny_iconlink() %>%
-                                               bs_embed_popover(
-                                                 title = "Absolute path to MACS2 installation folder:
-                                                 Windows OS: the path will be detected automatically.
-                                                 Linux OS: provide the path for the MACS2, e.g. /home/user/anaconda3/bin/macs2", placement = "left"
-                                               )
-                                           ),
+                                         fileInput(inputId = "findMarkersPeaksCustomPeaks", label = "Please upload a .bed file", accept = ".bed"),
+                                         #--activation in local version--
+                                         # textInput(inputId = "pathToMacs2", label = "Absolute path to MACS2")%>%
+                                         #   shinyInput_label_embed(
+                                         #     shiny_iconlink() %>%
+                                         #       bs_embed_popover(
+                                         #         title = "Absolute path to MACS2 installation folder:
+                                         #         Windows OS: the path will be detected automatically.
+                                         #         Linux OS: provide the path for the MACS2, e.g. /home/user/anaconda3/bin/macs2", placement = "left"
+                                         #       )
+                                         #   ),
+                                         
                                          actionButton(inputId = "findMarkersPeaksConfirmATAC", label = "OK"),
                                      ),
                                      
