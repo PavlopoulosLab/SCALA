@@ -328,10 +328,10 @@ ui <- dashboardPage(
                   sliderInput(inputId = "nHVGs", label = "Number of genes to select as top variable genes (applicable only to the first and third option) :", min = 200, max = 4000, value = 2000, step = 100),
                   tags$h3("3. Scaling the data"),
                   tags$hr(),
-                  # tags$p("Scaling transformation is implemented before dimensionality reduction of the dataset and performs the following steps : "),
-                  # tags$ul(),
-                  # tags$li("Shifts the expression of each gene, so that the mean expression across cells is 0"),
-                  # tags$li("Scales the expression of each gene, so that the variance across cells is 1(this step gives equal weight in downstream analyses, so that highly-expressed genes do not dominate)"),
+                  radioButtons("normalizeScaleGenes", label = h3("Genes to be scaled : "),
+                               choices = list("All genes" = "all_genes", 
+                                              "Only most variable genes" = "mv_genes"), 
+                               selected = "mv_genes"),
                   tags$br(),
                   selectInput("normalizeRegressColumns", "Select variables to regress out", list(), selected = NULL, multiple = TRUE, selectize = TRUE, width = NULL, size = NULL)%>%
                     shinyInput_label_embed(
@@ -1069,7 +1069,7 @@ ui <- dashboardPage(
                                               "Spearman (all genes)" = "all_genes_spearman",
                                               "Pearson (all genes)" = "all_genes_pearson"
                                ),
-                               selected = "logfc_pearson"
+                               selected = "all_genes_pearson"
                   ),
                   tags$hr(),
                   actionButton(inputId = "annotateClustersConfirm", label = "OK"),
@@ -1105,7 +1105,7 @@ ui <- dashboardPage(
                                        title = "Trajectory parameters",
                                        selectInput("trajectoryReduction", "Dimensionality reduction method:", choices=c("PCA"="pca","UMAP"="umap", "tSNE"="tsne", "Diffusion Map"="dfm"), selected = "PCA",
                                                    multiple = FALSE,selectize = TRUE, width = NULL, size = NULL),
-                                       sliderInput("trajectorySliderDimensions", "Number of dimensions to use :", min = 0, max = 100, value = 10, step = 1),
+                                       sliderInput("trajectorySliderDimensions", "Number of dimensions to use :", min = 0, max = 100, value = 3, step = 1),
                                        selectInput("trajectoryStart", "Initial state:", choices=c("0"="0"), selected = "0", multiple = F, selectize = F),
                                        selectInput("trajectoryEnd", "Final state:", choices=c("0"="0"), selected = "0", multiple = F, selectize = F),
                                        actionButton(inputId = "trajectoryConfirm", label = "OK")
@@ -1150,7 +1150,7 @@ ui <- dashboardPage(
                            box(
                              width = 3, status = "info", solidHeader = TRUE,
                              title = "Trajectory parameters",
-                             sliderInput("trajectorySliderDimensionsATAC", "Number of UMAP dimensions to use :", min = 0, max = 100, value = 10, step = 1),
+                             sliderInput("trajectorySliderDimensionsATAC", "Number of UMAP dimensions to use :", min = 0, max = 100, value = 3, step = 1),
                              selectInput("trajectoryStartATAC", "Initial state:", choices=c("C1"="C1"), selected = "C1", multiple = F, selectize = F),
                              selectInput("trajectoryEndATAC", "Final state:", choices=c("C1"="C1"), selected = "C1", multiple = F, selectize = F),
                              actionButton(inputId = "trajectoryConfirmATAC", label = "OK")

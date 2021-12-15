@@ -846,9 +846,16 @@ server <- function(input, output, session) {
         session$sendCustomMessage("handler_startLoader", c("normalize_loader", 50))
         
         normalize_scaleRegressOut <- input$normalizeRegressColumns
-        # all.genes <- rownames(seurat_object) # TODO use below
-        if(is.null(normalize_scaleRegressOut)) seurat_object <<- ScaleData(seurat_object) 
-        else seurat_object <<- ScaleData(seurat_object, vars.to.regress=normalize_scaleRegressOut)
+        
+        all.genes <- VariableFeatures(seurat_object)
+        if(input$normalizeScaleGenes == "all_genes")
+        {
+          all.genes <- rownames(seurat_object)
+        }
+        
+        if(is.null(normalize_scaleRegressOut)) seurat_object <<- ScaleData(seurat_object, features = all.genes) 
+        else seurat_object <<- ScaleData(seurat_object, vars.to.regress=normalize_scaleRegressOut, features = all.genes)
+        
         session$sendCustomMessage("handler_log", "Finished centering and scaling data matrix.")
         session$sendCustomMessage("handler_startLoader", c("normalize_loader", 75))
         updateSignatures()
@@ -1607,7 +1614,7 @@ server <- function(input, output, session) {
         session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " TRAJECTORY ANALYSIS"))
         updateUmapTypeChoices("phate")
         
-        removeModal()
+        
       }
       # }, warning = function(w) {
       #   print(paste("Warning:  ", w))
@@ -1616,6 +1623,7 @@ server <- function(input, output, session) {
       session$sendCustomMessage("handler_alert", "There was an error with the Phate procedure.")
     }, finally = {
       session$sendCustomMessage("handler_startLoader", c("dim_red1_loader", 100))
+      removeModal()
       Sys.sleep(1)
       session$sendCustomMessage("handler_finishLoader", "dim_red1_loader")
       session$sendCustomMessage("handler_enableAllButtons", "umapRunUmap")
