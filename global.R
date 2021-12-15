@@ -106,6 +106,13 @@ export_motifs_ATAC <- ""
 export_positiveRegulators_ATAC <- ""
 export_peakToGenelinks_ATAC <- ""
 
+userMode <- FALSE
+
+if(userMode == F)
+{
+  #to improve speed
+}
+
 js.enrich <- "
   shinyjs.Enrich = function(url) {
     window.open(url[0]);

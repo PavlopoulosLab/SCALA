@@ -170,12 +170,12 @@ ui <- dashboardPage(
                                        tags$hr(),
                                        tags$h3("2. Filter out low quality cells"),
                                        tags$hr(),
-                                       #textInput(inputId = "minUniqueGenes", label = "Filter out cells that have unique feature counts less than :", value = "500"),
+                                       
                                        sliderInput(inputId = "minUniqueGenes", label = "Filter out cells that have unique feature counts less than :", min = 200, max = 2000, value = 500, step = 1),
                                        sliderInput(inputId = "maxUniqueGenes", label = "Filter out cells that have unique feature counts over than :", min = 2001, max = 7000, value = 4500, step = 1),
-                                       #textInput(inputId = "maxUniqueGenes", label = "Filter out cells that have unique feature counts over than :", value = "4000"),
+                                       
                                        sliderInput(inputId = "maxMtReads", label = "Filter out cells with mitochondrial counts % over :", min = 1, max = 100, value = 10, step = 1),
-                                       #textInput(inputId = "maxMtReads", label = "Filter out cells with mitochondrial counts % over :", value = "10"),
+                                       
                                        selectInput("qcColorBy", "Color by:",
                                                    c("orig.ident" = "orig.ident")),
                                        actionButton(inputId = "qcConfirm", label = "OK"),
@@ -268,14 +268,7 @@ ui <- dashboardPage(
                                        title = "Quality control",
                                        tags$h3("Display soft filtered quality control plots"),
                                        actionButton(inputId = "qcDisplayATAC", label = "OK"),
-#                                        tags$hr(),
-#                                        tags$h3("2. Filter out low quality cells"),
-#                                        tags$hr(),                                       
-#                                        sliderInput(inputId = "minFrags", label = "The minimum number of mapped ATAC-seq fragments required per cell to pass filtering for use in downstream analyses:", 
-#                                                    min = 500, max = 2000, value = 1000, step = 100),
-#                                        sliderInput(inputId = "minTSS", label = "The minimum numeric transcription start site (TSS) enrichment score required for a cell to pass filtering 
-# 									   for use in downstream analyses:", min = 1, max = 10, value = 4, step = 1),
-#                                        actionButton(inputId = "qcConfirmATAC", label = "OK"),
+                                       
                                        #TODO list of chromosomes to be analysed
                                        #TODO mark doublets (ATAC, RNA) incorporate after tSNE, UMAP generation and visualize on UMAP, output .csv - exclude? [optional]
                                      ),
@@ -305,12 +298,6 @@ ui <- dashboardPage(
                                                  )
                                                ), width = 4),
                                          column(verbatimTextOutput(outputId = "CellStatsATAC"), width = 5)
-                                         # column(tags$h3("Custom filtered plots"), width=12),
-                                         # column(tags$hr(), width = 12),
-                                         # column(plotlyOutput(outputId = "filteredTSS_plot", height = "100%"), width = 4),
-                                         # column(plotOutput(outputId = "filterednFrag_plot", height = "100%"), width = 4),
-                                         # column(plotlyOutput(outputId = "filteredTSS_nFrag_plot", height = "100%"), width = 4),
-                                         # column(verbatimTextOutput(outputId = "filteredCellStatsATAC"), width = 4),
                                        )
                                      )
                                    )
@@ -341,10 +328,10 @@ ui <- dashboardPage(
                   sliderInput(inputId = "nHVGs", label = "Number of genes to select as top variable genes (applicable only to the first and third option) :", min = 200, max = 4000, value = 2000, step = 100),
                   tags$h3("3. Scaling the data"),
                   tags$hr(),
-                  # tags$p("Scaling transformation is implemented before dimensionality reduction of the dataset and performs the following steps : "),
-                  # tags$ul(),
-                  # tags$li("Shifts the expression of each gene, so that the mean expression across cells is 0"),
-                  # tags$li("Scales the expression of each gene, so that the variance across cells is 1(this step gives equal weight in downstream analyses, so that highly-expressed genes do not dominate)"),
+                  radioButtons("normalizeScaleGenes", label = h3("Genes to be scaled : "),
+                               choices = list("All genes" = "all_genes", 
+                                              "Only most variable genes" = "mv_genes"), 
+                               selected = "mv_genes"),
                   tags$br(),
                   selectInput("normalizeRegressColumns", "Select variables to regress out", list(), selected = NULL, multiple = TRUE, selectize = TRUE, width = NULL, size = NULL)%>%
                     shinyInput_label_embed(
@@ -378,7 +365,7 @@ ui <- dashboardPage(
                                    fluidRow(
                                      box(
                                        width = 12, status = "info", solidHeader = TRUE,
-                                       title = "PCA results", height = "900px",
+                                       title = "PCA results", height = "1200px",
                                        tabsetPanel(type = "tabs", 
                                                    tabPanel("PCA run",
                                                             column(radioButtons("pcaRadio", label = h3("Suggest optimal number of PCs Using 10-fold SVA-CV: "),
@@ -411,13 +398,13 @@ ui <- dashboardPage(
                                                               column(
                                                                 div(id="PCAloadings_loader",
                                                                     shinycssloaders::withSpinner(
-                                                                      plotlyOutput(outputId = "PCAloadings", height = "500px")
+                                                                      plotlyOutput(outputId = "PCAloadings", height = "700px")
                                                                     )
                                                                 ), width = 6),
                                                               column(
                                                                 div(id="PCAheatmap_loader",
                                                                     shinycssloaders::withSpinner(
-                                                                      plotlyOutput(outputId = "PCAheatmap", height = "500px")
+                                                                      plotlyOutput(outputId = "PCAheatmap", height = "700px")
                                                                     )
                                                                 ), width = 6)
                                                             )
@@ -435,8 +422,8 @@ ui <- dashboardPage(
                                        tags$hr(),
                                        sliderInput(inputId = "lsiVarFeatures", label = "Number of variable feures: ", min = 5000, max = 100000, value = 25000, step = 1000),#varFeatures
                                        sliderInput(inputId = "lsiDmensions", label = "Number of dimensions to use: ", min = 1, max = 100, value = 30, step = 1),#dimensions
-                                       sliderInput(inputId = "lsiResolution", label = "Resolution :", min = 0.1, max = 10, value = 2, step = 0.1),#resolution
-                                       sliderInput(inputId = "lsiIterations", label = "Number of iterations: ", min = 1, max = 10, value = 2, step = 1),#iterations
+                                       sliderInput(inputId = "lsiResolution", label = "Resolution :", min = 0.1, max = 10, value = 1, step = 0.1),#resolution
+                                       sliderInput(inputId = "lsiIterations", label = "Number of iterations: ", min = 1, max = 10, value = 1, step = 1),#iterations
                                        actionButton(inputId = "lsiConfirm", label = "Run LSI"),
                                        tags$hr(),
                                        div(class="ldBar", id="lsi_loader", "data-preset"="circle"),
@@ -460,16 +447,12 @@ ui <- dashboardPage(
                                        title = "k-NN & Clustering parameters",
                                        tags$h3("1. Construction of the shared nearest neighbour"),
                                        tags$hr(),
-                                       #textInput(inputId = "snnK", label = "k-nearest neighbours for each cell :", value = "20"),
                                        sliderInput(inputId = "snnK", label = "k-nearest neighbours for each cell :", min = 1, max = 200, value = 20, step = 1),
-                                       #textInput(inputId = "snnPCs", label = "Number of principal components to use :", value = "15"),
-                                       sliderInput(inputId = "snnPCs", label = "Number of principal components to use :", min = 1, max = 100, value = 15, step = 1),
+                                       sliderInput(inputId = "snnPCs", label = "Number of principal components to use :", min = 1, max = 100, value = 10, step = 1),
                                        tags$h3("2. Clustering of the cells"),
                                        tags$hr(),
-                                       #textInput(inputId = "clusterRes", label = "Clustering resolution :", value = "0.6"),
-                                       sliderInput(inputId = "clusterRes", label = "Clustering resolution :", min = 0.1, max = 60, value = 0.8, step = 0.1),
-                                       #textInput(inputId = "clusterPCs", label = "Number of principal components to use :", value = "15"),
-                                       sliderInput(inputId = "clusterPCs", label = "Number of principal components to use :", min = 1, max = 100, value = 15, step = 1),
+                                       sliderInput(inputId = "clusterRes", label = "Clustering resolution :", min = 0.1, max = 60, value = 0.5, step = 0.1),
+                                       sliderInput(inputId = "clusterPCs", label = "Number of principal components to use :", min = 1, max = 100, value = 10, step = 1),
                                        actionButton(inputId = "snnConfirm", label = "OK"),
                                      ),
                                      box(
@@ -508,7 +491,7 @@ ui <- dashboardPage(
                                        width = 4, status = "info", solidHeader = TRUE,
                                        title = "Clustering parameters",
                                        sliderInput(inputId = "clusterDimensionsATAC", label = "Number of dimensions to use: ", min = 1, max = 100, value = 30, step = 1),
-                                       sliderInput(inputId = "clusterResATAC", label = "Clustering resolution :", min = 0.1, max = 60, value = 2, step = 0.1),
+                                       sliderInput(inputId = "clusterResATAC", label = "Clustering resolution :", min = 0.1, max = 60, value = 0.6, step = 0.1),
                                        actionButton(inputId = "clusterConfirmATAC", label = "Run clustering"),
                                      ),
                                      box(
@@ -518,16 +501,12 @@ ui <- dashboardPage(
                                                             div(class="ldBar", id="clust4_loader", "data-preset"="circle"),
                                                             dataTableOutput(outputId="clusterTableATAC", height = "500px"),
                                                             downloadButton(outputId = "clusterTableExportATAC", label = "Save table"),
-                                                            #selectInput("clusterGroupBy", "Grouping variable:",
-                                                            #            c("Sample" = "Sample")),
-                                                            #actionButton(inputId = "clusterBarplotConfirmATAC", label = "Display barchart"),
                                                             div(id="clusterBarplotATAC_loader",
                                                                 shinycssloaders::withSpinner(
                                                                   plotlyOutput(outputId = "clusterBarplotATAC", height = "700px")
                                                                 )
                                                             )
-                                                   )#,
-                                                   #tabPanel("Confusion matrix", plotlyOutput(outputId="confusionMatrixATAC", height = "1300px"))
+                                                   )
                                        ),
                                      ),
                                    )
@@ -545,8 +524,14 @@ ui <- dashboardPage(
                                    fluidRow(
                                      box(width = 3, status = "info", solidHeader = TRUE,
                                          title = "Cell visualization options",
-                                         sliderInput(inputId = "umapPCs", label = "Number of principal components to use :", min = 1, max = 100, value = 15, step = 1),
-                                         sliderInput(inputId = "umapOutComponents", label = "Number of dimensions to fit output:", min = 2, max = 100, value = 15, step = 1),
+                                         sliderInput(inputId = "umapPCs", label = "Number of principal components to use :", min = 1, max = 100, value = 10, step = 1),
+                                         sliderInput(inputId = "umapOutComponents", label = "Number of dimensions to fit output:", min = 2, max = 100, value = 3, step = 1)%>%
+                                           shinyInput_label_embed(
+                                             shiny_iconlink() %>%
+                                               bs_embed_popover(
+                                                 title = "If PHATE is selected, The runtime increases when a value > 3 is used.", placement = "bottom"
+                                               )
+                                           ),
                                          actionButton(inputId = "umapRunUmap", label = "Run UMAP"),
                                          actionButton(inputId = "umapRunTsne", label = "Run tSNE"),
                                          actionButton(inputId = "umapRunDFM", label = "Run Diffusion Map"),
@@ -584,7 +569,7 @@ ui <- dashboardPage(
                                      box(width = 3, status = "info", solidHeader = TRUE,
                                          title = "Cell visualization options",
                                          sliderInput(inputId = "umapDimensionsATAC", label = "Number of principal components to use :", min = 1, max = 100, value = 15, step = 1),
-                                         sliderInput(inputId = "umapOutComponentsATAC", label = "Number of dimensions to fit output:", min = 2, max = 100, value = 15, step = 1),
+                                         sliderInput(inputId = "umapOutComponentsATAC", label = "Number of dimensions to fit output:", min = 2, max = 100, value = 3, step = 1),
                                          actionButton(inputId = "umapRunUmapTsneATAC", label = "Run UMAP and tSNE"),
                                          tags$h3("Display settings"),
                                          tags$hr(),
@@ -642,7 +627,7 @@ ui <- dashboardPage(
                                                       ), 
                                                       selected = "avg_logFC"),
                                          #textInput(inputId = "findMarkersMinPct", label = "Only test genes that are detected in a minimum fraction of cells in either of the two populations :", value = "0.1"),
-                                         sliderInput(inputId = "findMarkersMinPct", label = "Only test genes that are detected in a minimum fraction of cells in either of the two populations :", min = 0, max = 1, value = 0.1, step = 0.05),
+                                         sliderInput(inputId = "findMarkersMinPct", label = "Only test genes that are detected in a minimum fraction of cells in either of the two populations :", min = 0, max = 1, value = 0.25, step = 0.05),
                                          #textInput(inputId = "findMarkersLogFC", label = "Limit testing to genes which show, on average, at least X-fold difference (log-scale) between the two groups of cells :", value = "0.25"),
                                          sliderInput(inputId = "findMarkersLogFC", label = "Limit testing to genes which show, on average, at least X-fold difference (log-scale) between the two groups of cells :", min = 0, max = 3, value = 0.25, step = 0.05),
                                          #textInput(inputId = "findMarkersPval", label = "Only return markers that have a p-value < slected threshold, or a power > selected threshold (if the test is ROC) :", value = "0.01"),
@@ -856,15 +841,18 @@ ui <- dashboardPage(
                                          sliderInput(inputId = "findMarkersPeaksLogFCATAC", label = "Log2FC threshold:", min = 0, max = 3, value = 0.25, step = 0.05),
                                          
                                          sliderInput(inputId = "findMarkersPeaksFDRATAC", label = "FDR threshold:", min = 0, max = 1, value = 0.01, step = 0.01),
-                                         textInput(inputId = "pathToMacs2", label = "Absolute path to MACS2")%>%
-                                           shinyInput_label_embed(
-                                             shiny_iconlink() %>%
-                                               bs_embed_popover(
-                                                 title = "Absolute path to MACS2 installation folder:
-                                                 Windows OS: the path will be detected automatically.
-                                                 Linux OS: provide the path for the MACS2, e.g. /home/user/anaconda3/bin/macs2", placement = "left"
-                                               )
-                                           ),
+                                         fileInput(inputId = "findMarkersPeaksCustomPeaks", label = "Please upload a .bed file", accept = ".bed"),
+                                         #--activation in local version--
+                                         # textInput(inputId = "pathToMacs2", label = "Absolute path to MACS2")%>%
+                                         #   shinyInput_label_embed(
+                                         #     shiny_iconlink() %>%
+                                         #       bs_embed_popover(
+                                         #         title = "Absolute path to MACS2 installation folder:
+                                         #         Windows OS: the path will be detected automatically.
+                                         #         Linux OS: provide the path for the MACS2, e.g. /home/user/anaconda3/bin/macs2", placement = "left"
+                                         #       )
+                                         #   ),
+                                         
                                          actionButton(inputId = "findMarkersPeaksConfirmATAC", label = "OK"),
                                      ),
                                      
@@ -1081,7 +1069,7 @@ ui <- dashboardPage(
                                               "Spearman (all genes)" = "all_genes_spearman",
                                               "Pearson (all genes)" = "all_genes_pearson"
                                ),
-                               selected = "logfc_pearson"
+                               selected = "all_genes_pearson"
                   ),
                   tags$hr(),
                   actionButton(inputId = "annotateClustersConfirm", label = "OK"),
@@ -1117,7 +1105,7 @@ ui <- dashboardPage(
                                        title = "Trajectory parameters",
                                        selectInput("trajectoryReduction", "Dimensionality reduction method:", choices=c("PCA"="pca","UMAP"="umap", "tSNE"="tsne", "Diffusion Map"="dfm"), selected = "PCA",
                                                    multiple = FALSE,selectize = TRUE, width = NULL, size = NULL),
-                                       sliderInput("trajectorySliderDimensions", "Number of dimensions to use :", min = 0, max = 100, value = 10, step = 1),
+                                       sliderInput("trajectorySliderDimensions", "Number of dimensions to use :", min = 0, max = 100, value = 3, step = 1),
                                        selectInput("trajectoryStart", "Initial state:", choices=c("0"="0"), selected = "0", multiple = F, selectize = F),
                                        selectInput("trajectoryEnd", "Final state:", choices=c("0"="0"), selected = "0", multiple = F, selectize = F),
                                        actionButton(inputId = "trajectoryConfirm", label = "OK")
@@ -1162,7 +1150,7 @@ ui <- dashboardPage(
                            box(
                              width = 3, status = "info", solidHeader = TRUE,
                              title = "Trajectory parameters",
-                             sliderInput("trajectorySliderDimensionsATAC", "Number of UMAP dimensions to use :", min = 0, max = 100, value = 10, step = 1),
+                             sliderInput("trajectorySliderDimensionsATAC", "Number of UMAP dimensions to use :", min = 0, max = 100, value = 3, step = 1),
                              selectInput("trajectoryStartATAC", "Initial state:", choices=c("C1"="C1"), selected = "C1", multiple = F, selectize = F),
                              selectInput("trajectoryEndATAC", "Final state:", choices=c("C1"="C1"), selected = "C1", multiple = F, selectize = F),
                              actionButton(inputId = "trajectoryConfirmATAC", label = "OK")

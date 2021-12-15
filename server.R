@@ -4,7 +4,6 @@
 
 server <- function(input, output, session) { 
   #use_python("/opt/conda39/envs/pyscenic/bin/python")
-  options(shiny.maxRequestSize=3*1024^3) #TODO 
   source("global.R", local=TRUE)
   
   session$sendCustomMessage("handler_disableTabs", "sidebarMenu") # disable all tab panels (except Data Input) until files are uploaded
@@ -45,7 +44,8 @@ server <- function(input, output, session) {
   })
   
   #------------------Upload tab--------------------------------
-  observeEvent(input$uploadCountMatrixConfirm, { 
+  observeEvent(input$uploadCountMatrixConfirm, {
+    options(shiny.maxRequestSize=0.5*1024^3) #500 MB
     if(!is.null(proj_default) | !is.null(seurat_object))
     {
       showModal(modal_confirm)
@@ -184,6 +184,7 @@ server <- function(input, output, session) {
   })
   
   observeEvent(input$upload10xRNAConfirm, {
+    options(shiny.maxRequestSize=0.5*1024^3) #500 MB
     if(!is.null(proj_default) | !is.null(seurat_object))
     {
       showModal(modal_confirm)
@@ -323,6 +324,7 @@ server <- function(input, output, session) {
   })
   
   observeEvent(input$upload10xATACConfirm, {
+    options(shiny.maxRequestSize=2*1024^3) #2 GB
     if(!is.null(proj_default) | !is.null(seurat_object))
     {
       showModal(modal_confirm)
@@ -844,9 +846,16 @@ server <- function(input, output, session) {
         session$sendCustomMessage("handler_startLoader", c("normalize_loader", 50))
         
         normalize_scaleRegressOut <- input$normalizeRegressColumns
-        # all.genes <- rownames(seurat_object) # TODO use below
-        if(is.null(normalize_scaleRegressOut)) seurat_object <<- ScaleData(seurat_object) 
-        else seurat_object <<- ScaleData(seurat_object, vars.to.regress=normalize_scaleRegressOut)
+        
+        all.genes <- VariableFeatures(seurat_object)
+        if(input$normalizeScaleGenes == "all_genes")
+        {
+          all.genes <- rownames(seurat_object)
+        }
+        
+        if(is.null(normalize_scaleRegressOut)) seurat_object <<- ScaleData(seurat_object, features = all.genes) 
+        else seurat_object <<- ScaleData(seurat_object, vars.to.regress=normalize_scaleRegressOut, features = all.genes)
+        
         session$sendCustomMessage("handler_log", "Finished centering and scaling data matrix.")
         session$sendCustomMessage("handler_startLoader", c("normalize_loader", 75))
         updateSignatures()
@@ -1598,10 +1607,14 @@ server <- function(input, output, session) {
       if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else if (!"pca" %in% names(seurat_object)) session$sendCustomMessage("handler_alert", "Please, first execute PRINCIPAL COMPONENT ANALYSIS.")
       else {
+        showModal(modalDialog(span('Analysis in Progress, please wait...', style='color:lightseagreen'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;top:50%;left:50%'))
+        
         session$sendCustomMessage("handler_startLoader", c("dim_red1_loader", 25))
         seurat_object <<- RunPHATE(seurat_object, dims = 1:as.numeric(input$umapPCs), n.components = as.numeric(input$umapOutComponents), reduction = "pca")
         session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " TRAJECTORY ANALYSIS"))
         updateUmapTypeChoices("phate")
+        
+        
       }
       # }, warning = function(w) {
       #   print(paste("Warning:  ", w))
@@ -1610,6 +1623,7 @@ server <- function(input, output, session) {
       session$sendCustomMessage("handler_alert", "There was an error with the Phate procedure.")
     }, finally = {
       session$sendCustomMessage("handler_startLoader", c("dim_red1_loader", 100))
+      removeModal()
       Sys.sleep(1)
       session$sendCustomMessage("handler_finishLoader", "dim_red1_loader")
       session$sendCustomMessage("handler_enableAllButtons", "umapRunUmap")
@@ -1713,8 +1727,14 @@ server <- function(input, output, session) {
         shinyjs::show("findMarkersHeatmap_loader")
         
         top10 <- seurat_object@misc$markers %>% group_by(cluster) %>% top_n(n = 10, wt = eval(parse(text=markers_logFCBase))) #wt = avg_logFC)
-        set.seed(9)
-        downsampled <- subset(seurat_object, cells = sample(Cells(seurat_object), 1500))
+        
+        downsampled <- seurat_object
+        if(ncol(seurat_object) > 1500)
+        {
+          set.seed(9)
+          downsampled <- subset(seurat_object, cells = sample(Cells(seurat_object), 1500))  
+        }
+        
         session$sendCustomMessage("handler_startLoader", c("DEA2_loader", 30))
         scaled_tabe <- as.data.frame(downsampled@assays$RNA@scale.data)
         scaled_tabe$gene <- rownames(scaled_tabe)
@@ -1868,8 +1888,12 @@ observeEvent(input$findMarkersFPConfirm, {
           label_y <- "PHATE_2"
         }
         session$sendCustomMessage("handler_startLoader", c("DEA4_loader", 50))
+        plot_temp <- FeaturePlot(seurat_object, features = geneS, pt.size = 1.5, label = show_label, label.size = 5, cols = c("lightgrey", "red"), 
+                            order = order_exp, reduction = input$findMarkersReductionType, max.cutoff = maxq, min.cutoff = minq)
+        
         plot <- FeaturePlot(seurat_object, features = geneS, pt.size = 1.5, label = show_label, label.size = 5, cols = c("lightgrey", "red"), 
-                            order = order_exp, reduction = input$findMarkersReductionType, max.cutoff = maxq, min.cutoff = minq) +
+                            order = order_exp, reduction = input$findMarkersReductionType, max.cutoff = maxq, min.cutoff = minq) + 
+          xlim(min(plot_temp$data[label_x]), max(plot_temp$data[label_x])) + ylim(min(plot_temp$data[label_y]), max(plot_temp$data[label_y])) +
           theme_bw() +
           theme(axis.text.x = element_text(face = "bold", color = "black", size = 25, angle = 0),
                 axis.text.y = element_text(face = "bold", color = "black", size = 25, angle = 0),
@@ -2128,42 +2152,71 @@ observeEvent(input$findMarkersPeaksConfirmATAC, {
       
       source("Peaks_ArchR_windows.R")
       
-      addArchRThreads(threads = 1)
+      #addArchRThreads(threads = 1)
       
       session$sendCustomMessage("handler_startLoader", c("DEA7_loader", 20))
       
-      if(.Platform$OS.type == "windows")
-      {
-        pathToMacs2_a<-system("bash -c 'find /home -name macs2'", intern = TRUE)
-        
-        proj_default <<- addGroupCoverages(ArchRProj = proj_default, groupBy = "Clusters",force = TRUE, 
-                                           logFile =paste0(user_dir, "/Group_Coverages_file.log"))
-        proj_default <<- addReproduciblePeakSet_win(
-          ArchRProj = proj_default,
-          groupBy = "Clusters",
-          pathToMacs2 = pathToMacs2_a, force = T,
-          logFile =paste0(user_dir, "/Rep_Peakset_file.log")
-        )
+      # if(.Platform$OS.type == "windows")
+      # {
+      #   pathToMacs2_a<-system("bash -c 'find /home -name macs2'", intern = TRUE)
+      #   
+      #   proj_default <<- addGroupCoverages(ArchRProj = proj_default, groupBy = "Clusters",force = TRUE, 
+      #                                      logFile =paste0(user_dir, "/Group_Coverages_file.log"))
+      #   proj_default <<- addReproduciblePeakSet_win(
+      #     ArchRProj = proj_default,
+      #     groupBy = "Clusters",
+      #     pathToMacs2 = pathToMacs2_a, force = T,
+      #     logFile =paste0(user_dir, "/Rep_Peakset_file.log")
+      #   )
+      # }
+      # else
+      # {
+      #   proj_default <<- addGroupCoverages(ArchRProj = proj_default, groupBy = "Clusters", force = T, 
+      #                                      logFile =paste0(user_dir, "/Group_Coverages_file.log"))
+      #   
+      #   proj_default <<- addReproduciblePeakSet(
+      #     ArchRProj = proj_default,
+      #     groupBy = "Clusters",
+      #     pathToMacs2 = input$pathToMacs2, #"/home/user/anaconda3/bin/macs2",
+      #     force = T, 
+      #     logFile =paste0(user_dir, "/Rep_Peakset_file.log")
+      #   )
+      #   print("Peakset finished L")
+      # }
+      
+      #----custom peaks from BED
+      
+      tile_matrix<-getMatrixFromProject(proj_default,"TileMatrix",binarize = TRUE, 
+                                        logFile =paste0(user_dir, "/get_Matrix_From_Project_file.log"))
+      valid_chromosomes<-unique(rowData(tile_matrix)$seqnames)
+      tile_matrix<-c()
+      file.copy(from = input$findMarkersPeaksCustomPeaks$datapath, to = paste0(user_dir, "/bedFile.bed"), overwrite = TRUE)#load bed
+      proj_default_peaks<-read.delim(paste0(user_dir, "/bedFile.bed") ,header=F)
+      proj_default_peaks<-proj_default_peaks[,c(1:3)]
+      if(substr(proj_default_peaks[1,1], 1, 3) != "chr" || !is.numeric(proj_default_peaks[1,2]) || !is.numeric(proj_default_peaks[1,3])){
+        stop("Invalid bed file!! Check UCSC specifications in order to provide a valid bed file. Chromosome names should start with chr and start and end positions should be numeric integers. No header should be provided.")
       }
-      else
-      {
-        proj_default <<- addGroupCoverages(ArchRProj = proj_default, groupBy = "Clusters", force = T, 
-                                           logFile =paste0(user_dir, "/Group_Coverages_file.log"))
-        
-        proj_default <<- addReproduciblePeakSet(
-          ArchRProj = proj_default,
-          groupBy = "Clusters",
-          pathToMacs2 = input$pathToMacs2, #"/home/user/anaconda3/bin/macs2",
-          force = T, 
-          logFile =paste0(user_dir, "/Rep_Peakset_file.log")
-        )
-        print("Peakset finished L")
+      temp<-proj_default_peaks[,3]-proj_default_peaks[,2]
+      if(all(temp<0)){
+        stop("Invalid bed file!! Start coordinates should be smaller than end coordinates.")
       }
+      colnames(proj_default_peaks)[1]<-"chr"
+      colnames(proj_default_peaks)[2]<-"start"
+      colnames(proj_default_peaks)[3]<-"end"
+      proj_default_peaks$V4<-paste0(proj_default_peaks$chr,":",proj_default_peaks$start,"-",proj_default_peaks$end)
+      colnames(proj_default_peaks)[4]<-"id"
+      proj_default_peaks_filtered<-proj_default_peaks[which(proj_default_peaks$chr %in% valid_chromosomes),]
+      ## If dim(proj_default_peaks_filtered)[1] == 0 {print("Check your bed file!! Probably from another genome build or organism !!")}
+      proj_default_peaks_gr<-makeGRangesFromDataFrame(proj_default_peaks_filtered,keep.extra.columns=TRUE)
+      proj_default <<- addPeakSet(proj_default, peakSet = proj_default_peaks_gr, force=TRUE)
+      proj_default <<- addPeakMatrix(proj_default, 
+                                     logFile =paste0(user_dir, "/Peak_Matrix_file.log"))
+      #----
       
       session$sendCustomMessage("handler_startLoader", c("DEA7_loader", 40))
       
-      proj_default <<- addPeakMatrix(proj_default, force = TRUE, 
-                                     logFile =paste0(user_dir, "/Peak_Matrix_file.log"))
+      #proj_default <<- addPeakMatrix(proj_default, force = TRUE, 
+      #                               logFile =paste0(user_dir, "/Peak_Matrix_file.log"))
       print(getPeakSet(proj_default))
       saveArchRProject(proj_default)
       
@@ -2886,7 +2939,7 @@ output$findMotifsATACExport <- downloadHandler(
     tryCatch({
       if (identical(proj_default, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else {
-        shinyjs::test("trajectoryPseudotimePlotATAC_loader")
+        shinyjs::show("trajectoryPseudotimePlotATAC_loader")
         
         session$sendCustomMessage("handler_startLoader", c("traj4_loader", 50))
         p <- plotTrajectory(proj_default, trajectory = input$trajectoryLineageSelectATAC, colorBy = "cellColData", name = input$trajectoryLineageSelectATAC, embedding = "UMAP")
@@ -3328,7 +3381,7 @@ output$findMotifsATACExport <- downloadHandler(
         ##########################################################################
         ######################### Positive regulators ############################
         ##########################################################################
-        proj_default <<- addBgdPeaks(proj_default)
+        proj_default <<- addBgdPeaks(proj_default, method = "ArchR")#---local version
         proj_default <<- addMotifAnnotations(ArchRProj = proj_default, motifSet = input$findMotifsSetATAC, name = "Motif", force = TRUE, 
                                              logFile =paste0(user_dir, "/Add_motifs_file.log"))
         proj_default <<- addDeviationsMatrix(ArchRProj = proj_default, peakAnnotation = "Motif", force = TRUE, 
@@ -3692,6 +3745,10 @@ output$findMotifsATACExport <- downloadHandler(
           label_y <- "PHATE_2"
         }
         
+        plot_temp <- FeaturePlot(seurat_object, features = c(geneS1, geneS2), blend.threshold = blendThr, 
+                            pt.size = 1.5, label = show_label, label.size = 5, cols = c("lightgrey", "red", "dodgerblue4"), 
+                            order = order_exp, reduction = input$findMarkersFeaturePairReductionType, blend = TRUE, max.cutoff = maxq, min.cutoff = minq)
+        
         plot <- FeaturePlot(seurat_object, features = c(geneS1, geneS2), blend.threshold = blendThr, 
                             pt.size = 1.5, label = show_label, label.size = 5, cols = c("lightgrey", "red", "dodgerblue4"), 
                             order = order_exp, reduction = input$findMarkersFeaturePairReductionType, blend = TRUE, max.cutoff = maxq, min.cutoff = minq) +
@@ -3705,9 +3762,9 @@ output$findMotifsATACExport <- downloadHandler(
                 legend.position="none",
                 title = element_text(face = "bold", color = "black", size = 25, angle = 0)) #+
         labs(x=label_x, y=label_y, color="Normalized\nexpression")
-        gp1 <- plotly::ggplotly(plot[[1]]) #, tooltip = c("x", "y", geneS))
-        gp2 <- plotly::ggplotly(plot[[2]])
-        gp3 <- plotly::ggplotly(plot[[3]])
+        gp1 <- plotly::ggplotly(plot[[1]] + xlim(min(plot_temp[[1]]$data[label_x]), max(plot_temp[[1]]$data[label_x])) + ylim(min(plot_temp[[1]]$data[label_y]), max(plot_temp[[1]]$data[label_y])) )
+        gp2 <- plotly::ggplotly(plot[[2]] + xlim(min(plot_temp[[1]]$data[label_x]), max(plot_temp[[1]]$data[label_x])) + ylim(min(plot_temp[[1]]$data[label_y]), max(plot_temp[[1]]$data[label_y])) )
+        gp3 <- plotly::ggplotly(plot[[3]] + xlim(min(plot_temp[[1]]$data[label_x]), max(plot_temp[[1]]$data[label_x])) + ylim(min(plot_temp[[1]]$data[label_y]), max(plot_temp[[1]]$data[label_y])) )
         gp4 <- plotly::ggplotly(plot[[4]]+theme(title = element_text(face = "bold", color = "black", size = 15)))
         
         output$findMarkersFPfeature1 <- renderPlotly({ gp1 })
@@ -3719,7 +3776,7 @@ output$findMotifsATACExport <- downloadHandler(
   
   updateQC_choices <- function()
   {
-    updateSliderInput(session, "minUniqueGenes", min = min(init_seurat_object$nFeature_RNA), max = max(init_seurat_object$nFeature_RNA)-2)
+    updateSliderInput(session, "minUniqueGenes", min = min(init_seurat_object$nFeature_RNA+1), max = max(init_seurat_object$nFeature_RNA)-2)
     updateSliderInput(session, "maxUniqueGenes", min = min(init_seurat_object$nFeature_RNA)+2, max = max(init_seurat_object$nFeature_RNA))
   }
   
@@ -4120,8 +4177,8 @@ output$findMotifsATACExport <- downloadHandler(
     proj_default <<- NULL
     cleanAllPlotsATAC()
     
-    #showModal(modalDialog(span('Project removed succesfully. You can now start a new project.', style='color:lightseagreen'), footer = NULL, 
-    #                      style = 'font-size:20px; text-align:center;position:absolute;top:50%;left:50%'))
+    hideAllLoaders()
+    
     showNotification("Project removed succesfully. You can now upload a new project.", type = "message", closeButton = T)
     removeModal()
   })
@@ -4151,4 +4208,4 @@ output$findMotifsATACExport <- downloadHandler(
 # #files_to_change <<-c()
 # cat("Session Ended\n", file=stderr())
 # print(file_ids)
-# })
+# })wt4
