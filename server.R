@@ -4,7 +4,6 @@
 
 server <- function(input, output, session) { 
   #use_python("/opt/conda39/envs/pyscenic/bin/python")
-  options(shiny.maxRequestSize=3*1024^3) #TODO 
   source("global.R", local=TRUE)
   
   session$sendCustomMessage("handler_disableTabs", "sidebarMenu") # disable all tab panels (except Data Input) until files are uploaded
@@ -45,7 +44,8 @@ server <- function(input, output, session) {
   })
   
   #------------------Upload tab--------------------------------
-  observeEvent(input$uploadCountMatrixConfirm, { 
+  observeEvent(input$uploadCountMatrixConfirm, {
+    options(shiny.maxRequestSize=0.5*1024^3) #500 MB
     if(!is.null(proj_default) | !is.null(seurat_object))
     {
       showModal(modal_confirm)
@@ -184,6 +184,7 @@ server <- function(input, output, session) {
   })
   
   observeEvent(input$upload10xRNAConfirm, {
+    options(shiny.maxRequestSize=0.5*1024^3) #500 MB
     if(!is.null(proj_default) | !is.null(seurat_object))
     {
       showModal(modal_confirm)
@@ -323,6 +324,7 @@ server <- function(input, output, session) {
   })
   
   observeEvent(input$upload10xATACConfirm, {
+    options(shiny.maxRequestSize=2*1024^3) #2 GB
     if(!is.null(proj_default) | !is.null(seurat_object))
     {
       showModal(modal_confirm)
@@ -3766,7 +3768,7 @@ output$findMotifsATACExport <- downloadHandler(
   
   updateQC_choices <- function()
   {
-    updateSliderInput(session, "minUniqueGenes", min = min(init_seurat_object$nFeature_RNA), max = max(init_seurat_object$nFeature_RNA)-2)
+    updateSliderInput(session, "minUniqueGenes", min = min(init_seurat_object$nFeature_RNA+1), max = max(init_seurat_object$nFeature_RNA)-2)
     updateSliderInput(session, "maxUniqueGenes", min = min(init_seurat_object$nFeature_RNA)+2, max = max(init_seurat_object$nFeature_RNA))
   }
   
