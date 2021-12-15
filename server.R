@@ -6,6 +6,7 @@ server <- function(input, output, session) {
   #use_python("/opt/conda39/envs/pyscenic/bin/python")
   source("global.R", local=TRUE)
   
+  options(shiny.maxRequestSize=2*1024^3) #500 MB
   session$sendCustomMessage("handler_disableTabs", "sidebarMenu") # disable all tab panels (except Data Input) until files are uploaded
   hideAllLoaders() # helper function (in global.R) that initially hides all loaders (TODO: needs to be executed while switching form RNA to ATAC)
   metaD <- reactiveValues(my_project_name="-", all_lin="0")
@@ -45,7 +46,7 @@ server <- function(input, output, session) {
   
   #------------------Upload tab--------------------------------
   observeEvent(input$uploadCountMatrixConfirm, {
-    options(shiny.maxRequestSize=0.5*1024^3) #500 MB
+    #options(shiny.maxRequestSize=0.5*1024^3) #500 MB
     if(!is.null(proj_default) | !is.null(seurat_object))
     {
       showModal(modal_confirm)
@@ -184,7 +185,7 @@ server <- function(input, output, session) {
   })
   
   observeEvent(input$upload10xRNAConfirm, {
-    options(shiny.maxRequestSize=0.5*1024^3) #500 MB
+    #options(shiny.maxRequestSize=0.5*1024^3) #500 MB
     if(!is.null(proj_default) | !is.null(seurat_object))
     {
       showModal(modal_confirm)
@@ -324,7 +325,7 @@ server <- function(input, output, session) {
   })
   
   observeEvent(input$upload10xATACConfirm, {
-    options(shiny.maxRequestSize=2*1024^3) #2 GB
+    #options(shiny.maxRequestSize=2*1024^3) #2 GB
     if(!is.null(proj_default) | !is.null(seurat_object))
     {
       showModal(modal_confirm)
@@ -2908,18 +2909,18 @@ output$findMotifsATACExport <- downloadHandler(
         )
         session$sendCustomMessage("handler_startLoader", c("traj3_loader", 80))
         #add lineages to the object
-        for(i in 1:length(sds@lineages)) #sds@metadata$lineages
+        for(i in 1:length(slingLineages(sds))) #sds@metadata$lineages
         {
-          current_lineage <- sds@lineages[[i]] #sds@metadata$lineages[[i]]
+          current_lineage <- slingLineages(sds)[[i]] #sds@metadata$lineages[[i]]
           current_name <- paste0("Lineage", i)
           proj_default <<- addTrajectory(proj_default, trajectory = current_lineage, groupBy = "Clusters", name = current_name, force = T, 
                                          logFile =paste0(user_dir, "/Trajectory_file.log"))
         }
         
         #for verbatim text
-        output$trajectoryTextATAC <- renderPrint({ print(sds@lineages) }) #sds@metadata$lineages
+        output$trajectoryTextATAC <- renderPrint({ print(slingLineages(sds)) }) #sds@metadata$lineages
         
-        updateSelectInput(session, "trajectoryLineageSelectATAC", choices = names(sds@lineages)) #sds@metadata$lineages
+        updateSelectInput(session, "trajectoryLineageSelectATAC", choices = names(slingLineages(sds))) #sds@metadata$lineages
         updateMetadataATAC()
       }
     }, error = function(e) {

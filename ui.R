@@ -1163,7 +1163,7 @@ ui <- dashboardPage(
                                          choices = c("Lineage1"),
                                          selected = "Lineage1",
                                          multiple = FALSE),
-                             actionButton(inputId = "trajectoryConfirmLineageATAC", label = "OK"),
+                             actionButton(inputId = "trajectoryConfirmLineageATAC", label = "Display pseudotime ranking"),
                              div(class="ldBar", id="traj4_loader", "data-preset"="circle"),
                              div(id="trajectoryPseudotimePlotATAC_loader",
                                  shinycssloaders::withSpinner(
