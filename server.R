@@ -7,11 +7,11 @@ server <- function(input, output, session) {
   source("global.R", local=TRUE)
   
   options(shiny.maxRequestSize=2*1024^3) #500 MB
-  session$sendCustomMessage("handler_disableTabs", "sidebarMenu") # disable all tab panels (except Data Input) until files are uploaded
+  #session$sendCustomMessage("handler_disableTabs", "sidebarMenu") # disable all tab panels (except Data Input) until files are uploaded
   hideAllLoaders() # helper function (in global.R) that initially hides all loaders (TODO: needs to be executed while switching form RNA to ATAC)
   metaD <- reactiveValues(my_project_name="-", all_lin="0")
   
-  #Fast debug mode
+  #Fast debug mode RNA
   observeEvent(input$debugRNA, {
 
     tryCatch({
@@ -21,7 +21,7 @@ server <- function(input, output, session) {
                                                         " CLUSTERING", " CELL CYCLE PHASE ANALYSIS", " ADDITIONAL DIMENSIONALITY\nREDUCTION METHODS", " TRAJECTORY ANALYSIS",
                                                         " MARKERS' IDENTIFICATION", " LIGAND - RECEPTOR\nANALYSIS", " FUNCTIONAL/MOTIF\nENRICHMENT ANALYSIS", " CLUSTERS' ANNOTATION"))
       
-      output$metadataTable <- renderDataTable(seurat_object@meta.data, options = list(pageLength = 20), rownames = FALSE)
+      output$metadataTable <- renderDataTable(seurat_object@meta.data, options = list(pageLength = 10), rownames = TRUE)
       updateClusterTab()
       output$findMarkersTable <- renderDataTable(seurat_object@misc$markers, options = list(pageLength = 20), filter = 'top', rownames = FALSE) 
       updateUmapTypeChoices(c("pca", "umap", "tsne", "phate", "dfm"))
@@ -36,6 +36,30 @@ server <- function(input, output, session) {
       organism <<- "human"
       disableTabsATAC()
       print("Load complete")
+    }, error = function(e) {
+      print(paste("Error :  ", e))
+      session$sendCustomMessage("handler_alert", "Error.")
+    }, finally = { # with or without error
+      
+    })
+  })
+  
+  #Fast debug mode ATAC
+  observeEvent(input$debugATAC, {
+    
+    tryCatch({
+      proj_default <<- loadArchRProject("usr_temp/28f557d8187f586dc6fc5da8ae258cc1__WT4___2021-12-16_18_49_31/default/")
+      session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " QUALITY CONTROL", " PCA/LSI",
+                                                        " CLUSTERING", " ADDITIONAL DIMENSIONALITY\nREDUCTION METHODS", " TRAJECTORY ANALYSIS",
+                                                        " MARKERS' IDENTIFICATION", " FUNCTIONAL/MOTIF\nENRICHMENT ANALYSIS", " TRACKS"))
+      
+      output$metadataTableATAC <- renderDataTable(as.data.frame(getCellColData(proj_default)), options = list(pageLength = 10), rownames = TRUE)
+      updateInpuTrajectoryClustersATAC()
+      updateSelInpColorATAC()
+      
+      organism <<- "mouse"
+      disableTabsRNA()
+      print("Load complete ATAC")
     }, error = function(e) {
       print(paste("Error :  ", e))
       session$sendCustomMessage("handler_alert", "Error.")
@@ -1382,7 +1406,6 @@ server <- function(input, output, session) {
         
         session$sendCustomMessage("handler_startLoader", c("dim_red3_loader", 75))
         saveArchRProject(proj_default)
-        session$sendCustomMessage("handler_enableAllButtons", "umapConfirmATAC")
         }
       }, error = function(e) {
         print(paste("Error :  ", e))
@@ -2093,7 +2116,7 @@ observeEvent(input$findMarkersConfirmATAC, { #ADD loading bar
     if (identical(proj_default, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
     else {
       shinyjs::show("findMarkersGenesHeatmapATAC_loader")
-      
+      shinyjs::show("findMarkersGenesATACTable_loader")
       session$sendCustomMessage("handler_startLoader", c("DEA7_loader", 10))
       markers_cluster <- getMarkerFeatures(
         ArchRProj = proj_default,
@@ -2153,7 +2176,7 @@ observeEvent(input$findMarkersPeaksConfirmATAC, {
     if (identical(proj_default, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
     else {
       shinyjs::show("findMarkersPeaksHeatmapATAC_loader")
-      
+      shinyjs::show("findMarkersPeaksATACTable_loader")
       source("Peaks_ArchR_windows.R")
       
       #addArchRThreads(threads = as.numeric(input$upload10xATACThreads))
@@ -2621,6 +2644,7 @@ observeEvent(input$findMotifsConfirmATAC, {
     if (identical(proj_default, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
     else {
       shinyjs::show("findMotifsHeatmapATAC_loader")
+      shinyjs::show("findMotifsATACTable_loader")
       
       markersPeaks <- getMarkerFeatures(
         ArchRProj = proj_default,
@@ -3378,6 +3402,8 @@ output$findMotifsATACExport <- downloadHandler(
       if (identical(proj_default, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else {
         shinyjs::show("grnHeatmapATAC_loader")
+        shinyjs::show("grnATACTable_loader")
+        shinyjs::show("grnATACTable2_loader")
         
         fdr_lim <- input$grnFdrATAC
         corr_lim <- input$grnCorrlationATTAC
@@ -4164,7 +4190,8 @@ output$findMotifsATACExport <- downloadHandler(
   #update metadata RNA and export_RNA_table
   updateMetadata <- function()
   {
-    output$metadataTable <- renderDataTable(seurat_object@meta.data, options = list(pageLength = 20))
+    seurat_object@meta.data$Cell_id <<- rownames(seurat_object@meta.data) 
+    output$metadataTable <- renderDataTable(seurat_object@meta.data, options = list(pageLength = 10), rownames = F)
     export_metadata_RNA <<- seurat_object@meta.data
   }
   

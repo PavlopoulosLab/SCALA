@@ -157,11 +157,14 @@ hideAllLoaders <- function(){
   shinyjs::hide("findMarkersFeaturePlotATAC_loader")
   shinyjs::hide("snnSNN_loader")
   shinyjs::hide("findMarkersGenesHeatmapATAC_loader")
+  shinyjs::hide("findMarkersGenesATACTable_loader")
+  shinyjs::hide("findMarkersPeaksATACTable_loader")
   shinyjs::hide("findMarkersPeaksHeatmapATAC_loader")
   shinyjs::hide("cellCyclePCA_loader")
   shinyjs::hide("cellCycleBarplot_loader")
   shinyjs::hide("gProfilerManhatan_loader")
   shinyjs::hide("findMotifsHeatmapATAC_loader")
+  shinyjs::hide("findMotifsATACTable_loader")
   shinyjs::hide("annotateClustersCIPRDotplot_loader")
   shinyjs::hide("ligandReceptorFullHeatmap_loader")
   shinyjs::hide("ligandReceptorCuratedHeatmap_loader")
@@ -170,7 +173,8 @@ hideAllLoaders <- function(){
   shinyjs::hide("trajectoryPseudotimePlotATAC_loader")
   shinyjs::hide("grnHeatmapRNA_loader")
   shinyjs::hide("grnHeatmapATAC_loader")
-  shinyjs::hide("grnHeatmapATAC2_loader")
+  shinyjs::hide("grnATACTable_loader")
+  shinyjs::hide("grnATACTable2_loader")
   shinyjs::hide("visualizeTracksOutput_loader")
 }
 
@@ -178,7 +182,4 @@ hideAllLoaders <- function(){
 #set_base_url("http://biit.cs.ut.ee/gprofiler_archive3/e102_eg49_p15")
 
 #TO DO
-# Rename + delete buttons gia ta objects
-# Selectbox gia kathe tab gia to arxeio poy ginetai processed
-# input color file by user
 # bug barplot in clustering doesn't appear when loading a new object
