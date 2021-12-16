@@ -129,7 +129,7 @@ ui <- dashboardPage(
                                                                    "Homo sapiens (Human) - hg38" = "hg38"
                                                     ), 
                                                     selected = "mm10"),
-                                       sliderInput(inputId = "upload10xATACThreads", label = "Threads to be used:", min = 1, max = 200, value = 4, step = 1), #TODO floor(parallel::detectCores()/2)
+                                       sliderInput(inputId = "upload10xATACThreads", label = "Threads to be used:", min = 1, max = 200, value = 2, step = 1), #TODO floor(parallel::detectCores()/2)
                                        actionButton(inputId = "upload10xATACConfirm", label = "Submit"),
                                        tags$h3("Load an example dataset"),
                                        tags$hr(),
@@ -185,7 +185,7 @@ ui <- dashboardPage(
                                        title = "Quality control plots",
 
                                        div(class="ldBar", id="qc_loader", "data-preset"="circle"),
-                                       tabsetPanel(type="tabs", 
+                                       tabsetPanel(type="tabs", id = "qc_tabs_rna",
                                                    tabPanel("Pre-filtering plots",
                                                             #column(tags$h3("Pre-filtering plots"), width=12),
                                                             #column(tags$hr(), width = 12),
@@ -551,7 +551,7 @@ ui <- dashboardPage(
                                          sliderInput("umapDotSize", "Size:", min = 1, max = 20, value = 5, step = 0.5),
                                          sliderInput("umapDotOpacity", "Opacity:", min = 0, max = 1, value = 1, step = 0.1),
                                          sliderInput("umapDotBorder", "Border width:", min = 0, max = 10, value = 0.5, step = 0.1),
-                                         actionButton(inputId = "umapConfirm", label = "Display plot")
+                                         actionButton(inputId = "umapConfirm", label = "Update plot")
                                      ),
                                      
                                      box(width = 9, status = "info", solidHeader = TRUE, title = "Plot", height = "1200px",
@@ -927,7 +927,7 @@ ui <- dashboardPage(
                                        div(class="ldBar", id="CC1_loader", "data-preset"="circle"),
                                        div(id="cellCyclePCA_loader",
                                            shinycssloaders::withSpinner(
-                                             plotlyOutput(outputId = "cellCyclePCA", height = "1100px")
+                                             plotlyOutput(outputId = "cellCyclePCA", height = "700px")
                                            )
                                        )
                               ),
@@ -1163,7 +1163,7 @@ ui <- dashboardPage(
                                          choices = c("Lineage1"),
                                          selected = "Lineage1",
                                          multiple = FALSE),
-                             actionButton(inputId = "trajectoryConfirmLineageATAC", label = "OK"),
+                             actionButton(inputId = "trajectoryConfirmLineageATAC", label = "Display pseudotime ranking"),
                              div(class="ldBar", id="traj4_loader", "data-preset"="circle"),
                              div(id="trajectoryPseudotimePlotATAC_loader",
                                  shinycssloaders::withSpinner(
