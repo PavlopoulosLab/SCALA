@@ -357,8 +357,8 @@ server <- function(input, output, session) {
           organism <<- "human"
         }
         
-        #set number of threads, TODO set to 1 in server version
-        addArchRThreads(threads = 1) 
+        #set number of threads, TODO set to 2 in server version
+        addArchRThreads(threads = as.numeric(input$upload10xATACThreads)) 
         
         ########################################
         ######### Create Arch Project ##########
@@ -377,7 +377,7 @@ server <- function(input, output, session) {
         
         updateMetadataATAC()
         
-        addArchRThreads(threads = as.numeric(input$upload10xATACThreads))
+        addArchRThreads(threads = as.numeric(as.numeric(input$upload10xATACThreads)))
         updateSelectizeInput(session, "visualizeTracksGene", choices = unique(proj_default@geneAnnotation$genes$symbol), server = T)
         
         disableTabsRNA()
@@ -421,7 +421,7 @@ server <- function(input, output, session) {
         addArchRGenome("hg19")
         
         #set number of threads, TODO set to 1 in server version
-        addArchRThreads(threads = 1) #as.numeric(input$upload10xATACThreads)) 
+        addArchRThreads(threads = as.numeric(input$upload10xATACThreads)) #as.numeric(input$upload10xATACThreads)) 
         
         ########################################
         ######### Create Arch Project ##########
@@ -640,6 +640,7 @@ server <- function(input, output, session) {
     tryCatch({
       if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else{
+        updateTabsetPanel(session, inputId = "qc_tabs_rna", selected = "Post-filtering plots")
         shinyjs::show("filteredNFeatureViolin_loader")
         shinyjs::show("filteredTotalCountsViolin_loader")
         shinyjs::show("filteredMitoViolin_loader")
@@ -1505,6 +1506,7 @@ server <- function(input, output, session) {
         seurat_object <<- RunUMAP(seurat_object, dims = 1:as.numeric(input$umapPCs), seed.use = 42, n.components = as.numeric(input$umapOutComponents), reduction = "pca") #TODO add diffusion map, addition of extra dimensions UMAP, select dimensions to plot, alpha and dot size
         session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " TRAJECTORY ANALYSIS", " GENE REGULATORY NETWORK\nANALYSIS"))
         updateUmapTypeChoices("umap")
+        updateReduction2("umap")
       }
     # }, warning = function(w) {
     #   print(paste("Warning:  ", w))
@@ -1536,6 +1538,7 @@ server <- function(input, output, session) {
         seurat_object <<- RunTSNE(seurat_object, dims = 1:as.numeric(input$umapPCs), seed.use = 42, dim.embed = 3, reduction = "pca", verbose = T)
         session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " TRAJECTORY ANALYSIS"))
         updateUmapTypeChoices("tsne")
+        updateReduction2("tsne")
       }
     # }, warning = function(w) {
     #   print(paste("Warning:  ", w))
@@ -1581,6 +1584,7 @@ server <- function(input, output, session) {
         # print("finished DFM")
         session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " TRAJECTORY ANALYSIS"))
         updateUmapTypeChoices("dfm")
+        updateReduction2("dfm")
       }
     # }, warning = function(w) {
     #   print(paste("Warning:  ", w))
@@ -1614,8 +1618,7 @@ server <- function(input, output, session) {
         seurat_object <<- RunPHATE(seurat_object, dims = 1:as.numeric(input$umapPCs), n.components = as.numeric(input$umapOutComponents), reduction = "pca")
         session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " TRAJECTORY ANALYSIS"))
         updateUmapTypeChoices("phate")
-        
-        
+        updateReduction2("phate")
       }
       # }, warning = function(w) {
       #   print(paste("Warning:  ", w))
@@ -2153,7 +2156,7 @@ observeEvent(input$findMarkersPeaksConfirmATAC, {
       
       source("Peaks_ArchR_windows.R")
       
-      #addArchRThreads(threads = 1)
+      #addArchRThreads(threads = as.numeric(input$upload10xATACThreads))
       
       session$sendCustomMessage("handler_startLoader", c("DEA7_loader", 20))
       
@@ -3706,6 +3709,183 @@ output$findMotifsATACExport <- downloadHandler(
     })
   }
   
+  updateReduction2 <- function(typeR)
+  {
+    session$sendCustomMessage("handler_disableAllButtons", "umapConfirm")
+    tryCatch({
+      if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
+      else if (identical(seurat_object@meta.data$seurat_clusters, NULL)) session$sendCustomMessage("handler_alert", "Please, execute CLUSTERING first and then re-run UMAP or tSNE or Diffusion Map above.")
+      else {
+        shinyjs::show("umapPlot_loader")
+        
+        #get input
+        dims <- as.numeric(input$umapDimensions)
+        type <- typeR
+        
+        #prepare metadata
+        meta <- seurat_object@meta.data
+        meta$Cell_id <- rownames(meta)
+        meta <- meta[, ]#meta[, c('Cell_id', 'seurat_clusters', 'orig.ident')]
+        reduc_data <- data.frame()
+        
+        #prepare colors
+        cols = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(meta[, input$umapColorBy])))
+        
+        #for all reductions
+        seurat_object_reduc <- as.data.frame(seurat_object@reductions[[type]]@cell.embeddings)
+        seurat_object_reduc <- seurat_object_reduc[, c(1:ncol(seurat_object_reduc))]
+        seurat_object_reduc$Cell_id <- rownames(seurat_object_reduc)
+        reduc_data <- left_join(seurat_object_reduc, meta)
+        print(head(reduc_data)) ####
+        
+        if(type == "umap" & dims == 2)
+        {
+          p <- ggplot(data=reduc_data, aes_string(x="UMAP_1", y="UMAP_2", fill=input$umapColorBy)) +
+            geom_point(size= as.numeric(input$umapDotSize), shape=21, alpha= as.numeric(input$umapDotOpacity), stroke=as.numeric(input$umapDotBorder))+
+            scale_fill_manual(values = cols)+
+            scale_size()+
+            theme_bw() +
+            theme(axis.text.x = element_text(face = "bold", color = "black", size = 25, angle = 0),
+                  axis.text.y = element_text(face = "bold", color = "black", size = 25, angle = 0),
+                  axis.title.y = element_text(face = "bold", color = "black", size = 25),
+                  axis.title.x = element_text(face = "bold", color = "black", size = 25),
+                  legend.text = element_text(face = "bold", color = "black", size = 9),
+                  legend.title = element_text(face = "bold", color = "black", size = 9),
+                  legend.position="right",
+                  title = element_text(face = "bold", color = "black", size = 25, angle = 0)) +
+            labs(x="UMAP 1", y="UMAP 2", color="Cell type", title = "", fill="Color")
+          output$umapPlot <- renderPlotly({plotly::ggplotly(p)})
+        }
+        else if(type == "umap" & dims == 3)
+        {
+          p <- plot_ly(reduc_data, x=~UMAP_1, y=~UMAP_2, z=~UMAP_3, type="scatter3d", alpha = as.numeric(input$umapDotOpacity), mode="markers", color=as.formula(paste0('~', input$umapColorBy)),
+                       marker = list(size = as.numeric(input$umapDotSize), 
+                                     line = list(color = 'black', width = as.numeric(input$umapDotBorder))
+                       ),
+                       colors = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(meta[, input$umapColorBy]))) )
+          
+          output$umapPlot <- renderPlotly({print(p)})
+        }
+        else if(type == "tsne" & dims == 2)
+        {
+          p <- ggplot(data=reduc_data, aes_string(x="tSNE_1", y="tSNE_2", fill=input$umapColorBy)) +
+            geom_point(size= as.numeric(input$umapDotSize), shape=21, alpha= as.numeric(input$umapDotOpacity), stroke=as.numeric(input$umapDotBorder)) +
+            scale_fill_manual(values = cols)+
+            scale_size()+
+            theme_bw() +
+            theme(axis.text.x = element_text(face = "bold", color = "black", size = 25, angle = 0),
+                  axis.text.y = element_text(face = "bold", color = "black", size = 25, angle = 0),
+                  axis.title.y = element_text(face = "bold", color = "black", size = 25),
+                  axis.title.x = element_text(face = "bold", color = "black", size = 25),
+                  legend.text = element_text(face = "bold", color = "black", size = 9),
+                  legend.title = element_text(face = "bold", color = "black", size = 9),
+                  legend.position="right",
+                  title = element_text(face = "bold", color = "black", size = 25, angle = 0)) +
+            labs(x="tSNE 1", y="tSNE 2", color="Cell type", title = "", fill="Color")
+          output$umapPlot <- renderPlotly({plotly::ggplotly(p)})  
+        }
+        else if(type == "tsne" & dims == 3)
+        {
+          p <- plot_ly(reduc_data, x=~tSNE_1, y=~tSNE_2, z=~tSNE_3, type="scatter3d", mode="markers", alpha = as.numeric(input$umapDotOpacity), color=as.formula(paste0('~', input$umapColorBy)), 
+                       marker = list(size = as.numeric(input$umapDotSize), 
+                                     line = list(color = 'black', width = as.numeric(input$umapDotBorder))
+                       ),
+                       colors = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(meta[, input$umapColorBy]))) ) 
+          output$umapPlot <- renderPlotly({print(p)})
+        }
+        else if(type == "dfm" & dims == 2)
+        {
+          p <- ggplot(data=reduc_data, aes_string(x="DC_1", y="DC_2", fill=input$umapColorBy)) +
+            geom_point(size= as.numeric(input$umapDotSize), shape=21, alpha= as.numeric(input$umapDotOpacity), stroke=as.numeric(input$umapDotBorder)) +
+            scale_fill_manual(values = cols)+
+            scale_size()+
+            theme_bw() +
+            theme(axis.text.x = element_text(face = "bold", color = "black", size = 25, angle = 0),
+                  axis.text.y = element_text(face = "bold", color = "black", size = 25, angle = 0),
+                  axis.title.y = element_text(face = "bold", color = "black", size = 25),
+                  axis.title.x = element_text(face = "bold", color = "black", size = 25),
+                  legend.text = element_text(face = "bold", color = "black", size = 9),
+                  legend.title = element_text(face = "bold", color = "black", size = 9),
+                  legend.position="right",
+                  title = element_text(face = "bold", color = "black", size = 25, angle = 0)) +
+            labs(x="DC 1", y="DC 2", color="Cell type", title = "", fill="Color")
+          output$umapPlot <- renderPlotly({plotly::ggplotly(p)})  
+        }
+        else if(type == "dfm" & dims == 3)
+        {
+          p <- plot_ly(reduc_data, x=~DC_1, y=~DC_2, z=~DC_3, type="scatter3d", mode="markers", alpha = as.numeric(input$umapDotOpacity), color=as.formula(paste0('~', input$umapColorBy)), 
+                       marker = list(size = as.numeric(input$umapDotSize), 
+                                     line = list(color = 'black', width = as.numeric(input$umapDotBorder))
+                       ),
+                       colors = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(meta[, input$umapColorBy]))) ) 
+          output$umapPlot <- renderPlotly({print(p)})
+        }
+        else if(type == "pca" & dims == 2)
+        {
+          p <- ggplot(data=reduc_data, aes_string(x="PC_1", y="PC_2", fill=input$umapColorBy)) +
+            geom_point(size= as.numeric(input$umapDotSize), shape=21, alpha= as.numeric(input$umapDotOpacity), stroke=as.numeric(input$umapDotBorder)) +
+            scale_fill_manual(values = cols)+
+            scale_size()+
+            theme_bw() +
+            theme(axis.text.x = element_text(face = "bold", color = "black", size = 25, angle = 0),
+                  axis.text.y = element_text(face = "bold", color = "black", size = 25, angle = 0),
+                  axis.title.y = element_text(face = "bold", color = "black", size = 25),
+                  axis.title.x = element_text(face = "bold", color = "black", size = 25),
+                  legend.text = element_text(face = "bold", color = "black", size = 9),
+                  legend.title = element_text(face = "bold", color = "black", size = 9),
+                  legend.position="right",
+                  title = element_text(face = "bold", color = "black", size = 25, angle = 0)) +
+            labs(x="PC 1", y="PC 2", color="Cell type", title = "", fill="Color")
+          output$umapPlot <- renderPlotly({plotly::ggplotly(p)})  
+        }
+        else if(type == "pca" & dims == 3)
+        {
+          p <- plot_ly(reduc_data, x=~PC_1, y=~PC_2, z=~PC_3, type="scatter3d", mode="markers", alpha = as.numeric(input$umapDotOpacity), color=as.formula(paste0('~', input$umapColorBy)), 
+                       marker = list(size = as.numeric(input$umapDotSize), 
+                                     line = list(color = 'black', width = as.numeric(input$umapDotBorder))
+                       ),
+                       colors = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(meta[, input$umapColorBy]))) ) 
+          output$umapPlot <- renderPlotly({print(p)})
+        }
+        else if(type == "phate" & dims == 2)
+        {
+          p <- ggplot(data=reduc_data, aes_string(x="PHATE_1", y="PHATE_2", fill=input$umapColorBy)) +
+            geom_point(size= as.numeric(input$umapDotSize), shape=21, alpha= as.numeric(input$umapDotOpacity), stroke=as.numeric(input$umapDotBorder)) +
+            scale_fill_manual(values = cols)+
+            scale_size()+
+            theme_bw() +
+            theme(axis.text.x = element_text(face = "bold", color = "black", size = 25, angle = 0),
+                  axis.text.y = element_text(face = "bold", color = "black", size = 25, angle = 0),
+                  axis.title.y = element_text(face = "bold", color = "black", size = 25),
+                  axis.title.x = element_text(face = "bold", color = "black", size = 25),
+                  legend.text = element_text(face = "bold", color = "black", size = 9),
+                  legend.title = element_text(face = "bold", color = "black", size = 9),
+                  legend.position="right",
+                  title = element_text(face = "bold", color = "black", size = 25, angle = 0)) +
+            labs(x="PHATE 1", y="PHATE 2", color="Cell type", title = "", fill="Color")
+          output$umapPlot <- renderPlotly({plotly::ggplotly(p)})  
+        }
+        else if(type == "phate" & dims == 3)
+        {
+          p <- plot_ly(reduc_data, x=~PHATE_1, y=~PHATE_2, z=~PHATE_3, type="scatter3d", mode="markers", alpha = as.numeric(input$umapDotOpacity), color=as.formula(paste0('~', input$umapColorBy)), 
+                       marker = list(size = as.numeric(input$umapDotSize), 
+                                     line = list(color = 'black', width = as.numeric(input$umapDotBorder))
+                       ),
+                       colors = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(meta[, input$umapColorBy]))) ) 
+          output$umapPlot <- renderPlotly({print(p)})
+        }
+      }
+      # }, warning = function(w) {
+      #   print(paste("Warning:  ", w))
+    }, error = function(e) {
+      print(paste("Error :  ", e))
+      session$sendCustomMessage("handler_alert", "There was an error with drawing the resutls.")
+    }, finally = {
+      Sys.sleep(1)
+      session$sendCustomMessage("handler_enableAllButtons", "umapConfirm")
+    })
+  }
+  
   updateFeaturePair <- function()
   {
       if (!identical(seurat_object, NULL) & input$findMarkersFeaturePairReductionType != "-" & input$findMarkersFeaturePair1 %in% rownames(seurat_object) & input$findMarkersFeaturePair2 %in% rownames(seurat_object))
@@ -4131,6 +4311,7 @@ output$findMotifsATACExport <- downloadHandler(
     
     updateTabsetPanel(inputId="uploadTabPanel", selected="scRNA-seq", session = session)
     updateTabsetPanel(inputId="qcTabPanel", selected="scRNA-seq", session = session)
+    updateTabsetPanel(session, inputId = "qc_tabs_rna", selected = "Pre-filtering plots")
     updateTabsetPanel(inputId="pcaTabPanel", selected="scRNA-seq: PCA", session = session)
     updateTabsetPanel(inputId="clusteringTabPanel", selected="scRNA-seq", session = session)
     updateTabsetPanel(inputId="umapTabPanel", selected="scRNA-seq", session = session)
