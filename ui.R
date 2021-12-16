@@ -11,7 +11,7 @@ ui <- dashboardPage(
     titleWidth = "280px",
     title = tags$img(src='logo.png')
   ),
-  #
+  
   #------------------------------------------------------------Sidebar
   dashboardSidebar(
     width = "280px",
@@ -67,7 +67,8 @@ ui <- dashboardPage(
                   from quality control and normalization, to dimensionality reduction, differential expression analysis, clustering and visualization.
                   </br> Try out our sample data and visit the Help pages for guidance. </p>"
                   ),
-                  actionButton(inputId = "debugRNA", label = "Fast debug RNA")
+                  actionButton(inputId = "debugRNA", label = "Fast debug RNA"),
+                  actionButton(inputId = "debugATAC", label = "Fast debug ATAC")
               )
       ),
       
@@ -458,19 +459,25 @@ ui <- dashboardPage(
                                      box(
                                        width = 8, status = "info", solidHeader = TRUE, title = "k-NN graph & clusters", height = "1500px",
                                        tabsetPanel(type = "tabs",
-                                                   tabPanel("Clustering results", 
-                                                            div(class="ldBar", id="clust1_loader", "data-preset"="circle"),
-                                                            dataTableOutput(outputId="clusterTable", height = "500px"),
-                                                            downloadButton(outputId = "clusterTableRNAExport", label = "Save table"),
-                                                            selectInput("clusterGroupBy", "Grouping variable:",
-                                                                        c("orig.ident" = "orig.ident")),
-                                                            actionButton(inputId = "clusterBarplotConfirm", label = "Display barchart"),
-                                                            div(class="ldBar", id="clust2_loader", "data-preset"="circle"),
-                                                            div(id="clusterBarplot_loader",
-                                                                shinycssloaders::withSpinner(
-                                                                  plotlyOutput(outputId = "clusterBarplot", height = "700px")
-                                                                )
-                                                            )
+                                                   tabPanel("Clustering results",
+                                                            tabsetPanel(type = "tabs",
+                                                                        tabPanel("Cluster table",
+                                                                                 div(class="ldBar", id="clust1_loader", "data-preset"="circle"),
+                                                                                 dataTableOutput(outputId="clusterTable", height = "500px"),
+                                                                                 downloadButton(outputId = "clusterTableRNAExport", label = "Save table")
+                                                                        ),
+                                                                        tabPanel("Cluster barplot",
+                                                                                 selectInput("clusterGroupBy", "Grouping variable:",
+                                                                                             c("orig.ident" = "orig.ident")),
+                                                                                 actionButton(inputId = "clusterBarplotConfirm", label = "Display barchart"),
+                                                                                 div(class="ldBar", id="clust2_loader", "data-preset"="circle"),
+                                                                                 div(id="clusterBarplot_loader",
+                                                                                     shinycssloaders::withSpinner(
+                                                                                       plotlyOutput(outputId = "clusterBarplot", height = "700px")
+                                                                                     )
+                                                                                 )
+                                                                        )
+                                                            )															
                                                    ),
                                                    tabPanel("Shared Nearest Neighbour Graph", 
                                                             div(class="ldBar", id="clust3_loader", "data-preset"="circle"),
@@ -478,7 +485,7 @@ ui <- dashboardPage(
                                                             div(id="snnSNN_loader",
                                                                 shinycssloaders::withSpinner(
                                                                   visNetworkOutput(outputId="snnSNN", height = "1300px")
-                                                                  )
+                                                                )
                                                             )
                                                    )
                                        ),
@@ -495,17 +502,23 @@ ui <- dashboardPage(
                                        actionButton(inputId = "clusterConfirmATAC", label = "Run clustering"),
                                      ),
                                      box(
-                                       width = 8, status = "info", solidHeader = TRUE, title = "Clustering output", height = "1500px",
+                                       width = 8, status = "info", solidHeader = TRUE, title = "Clustering output", height = "900px",
                                        tabsetPanel(type = "tabs",
                                                    tabPanel("Clustering results", 
-                                                            div(class="ldBar", id="clust4_loader", "data-preset"="circle"),
-                                                            dataTableOutput(outputId="clusterTableATAC", height = "500px"),
-                                                            downloadButton(outputId = "clusterTableExportATAC", label = "Save table"),
-                                                            div(id="clusterBarplotATAC_loader",
-                                                                shinycssloaders::withSpinner(
-                                                                  plotlyOutput(outputId = "clusterBarplotATAC", height = "700px")
-                                                                )
-                                                            )
+                                                            tabsetPanel(type = "tabs",
+                                                                        tabPanel("Cluster table",
+                                                                                 div(class="ldBar", id="clust4_loader", "data-preset"="circle"),
+                                                                                 dataTableOutput(outputId="clusterTableATAC", height = "500px"),
+                                                                                 downloadButton(outputId = "clusterTableExportATAC", label = "Save table")
+                                                                        ),
+                                                                        tabPanel("Cluster barplot",
+                                                                                 div(id="clusterBarplotATAC_loader",
+                                                                                     shinycssloaders::withSpinner(
+                                                                                       plotlyOutput(outputId = "clusterBarplotATAC", height = "700")
+                                                                                     )
+                                                                                  )
+                                                                        )
+                                                                      )
                                                    )
                                        ),
                                      ),
@@ -791,7 +804,7 @@ ui <- dashboardPage(
                                                          div(class="ldBar", id="DEA6_loader", "data-preset"="circle"),
                                                          div(id="findMarkersViolinPlot_loader",
                                                              shinycssloaders::withSpinner(
-                                                               plotlyOutput(outputId = "findMarkersViolinPlot", height = "1300px")
+                                                               plotlyOutput(outputId = "findMarkersViolinPlot", height = "800px")
                                                              )
                                                          )
                                                      )
@@ -806,11 +819,12 @@ ui <- dashboardPage(
                                                          div(class="ldBar", id="DEA7_loader", "data-preset"="circle"),
                                                          div(id="findMarkersVolcanoPlot_loader",
                                                              shinycssloaders::withSpinner(
-                                                               plotlyOutput(outputId = "findMarkersVolcanoPlot", height = "1300px")
+                                                               plotlyOutput(outputId = "findMarkersVolcanoPlot", height = "800px")
                                                                )
                                                          )
                                                      )
-                                                   ))
+                                                  )
+                                                )
                                        )
                                      )
                                    )
@@ -858,29 +872,49 @@ ui <- dashboardPage(
                                      
                                      box(
                                        tabsetPanel(type = "tabs",
-                                                   tabPanel("Marker genes table (ATAC)", fluidRow(
-                                                     div(class="ldBar", id="DEA7_loader", "data-preset"="circle"),
-                                                     dataTableOutput(outputId="findMarkersGenesTableATAC", height = "800px"),
-                                                     downloadButton(outputId = "findMarkersGenesATACExport", label = "Save table"),
-                                                     tags$hr(),
-                                                     div(id="findMarkersGenesHeatmapATAC_loader",
-                                                         shinycssloaders::withSpinner(
-                                                            plotlyOutput(outputId = "findMarkersGenesHeatmapATAC", height = "800px")
-                                                         )
+                                                   tabPanel("Marker genes (ATAC)", fluidRow(
+                                                     tabsetPanel(type = "tabs",
+                                                                 tabPanel("Marker genes table",
+                                                                          div(class="ldBar", id="DEA7_loader", "data-preset"="circle"),
+                                                                          
+                                                                          div(id="findMarkersGenesATACTable_loader",
+                                                                              shinycssloaders::withSpinner(
+                                                                          dataTableOutput(outputId="findMarkersGenesTableATAC", height = "700px")
+                                                                            )
+                                                                          ),
+                                                                          downloadButton(outputId = "findMarkersGenesATACExport", label = "Save table"),
+                                                                 ),
+                                                                 tabPanel("Marker genes heatmap (top-10)",
+                                                                          div(id="findMarkersGenesHeatmapATAC_loader",
+                                                                              shinycssloaders::withSpinner(
+                                                                                plotlyOutput(outputId = "findMarkersGenesHeatmapATAC", height = "700px")
+                                                                              )
+                                                                          )
+                                                                 )
                                                      )
-                                                    ) 
+                                                    )
                                                    ),
-                                                   tabPanel("Marker peaks table (ATAC)", fluidRow(
-                                                     div(class="ldBar", id="DEA8_loader", "data-preset"="circle"),
-                                                     dataTableOutput(outputId="findMarkersPeaksTableATAC", height = "800px"),
-                                                     downloadButton(outputId = "findMarkersPeaksATACExport", label = "Save table"),
-                                                     tags$hr(),
-                                                     div(id="findMarkersPeaksHeatmapATAC_loader",
-                                                         shinycssloaders::withSpinner(
-                                                            plotlyOutput(outputId = "findMarkersPeaksHeatmapATAC", height = "800px")
-                                                         )
+                                                   tabPanel("Marker peaks (ATAC)", fluidRow(
+                                                     tabsetPanel(type = "tabs",
+                                                       tabPanel("Marker peaks table",
+                                                                div(class="ldBar", id="DEA8_loader", "data-preset"="circle"),
+                                                                
+                                                                div(id="findMarkersPeaksATACTable_loader",
+                                                                    shinycssloaders::withSpinner(
+                                                                      dataTableOutput(outputId="findMarkersPeaksTableATAC", height = "700px"),
+                                                                    )
+                                                                ),
+                                                                downloadButton(outputId = "findMarkersPeaksATACExport", label = "Save table")
+                                                       ),
+                                                       tabPanel("Marker peaks heatmap (top-10)",
+                                                                div(id="findMarkersPeaksHeatmapATAC_loader",
+                                                                    shinycssloaders::withSpinner(
+                                                                      plotlyOutput(outputId = "findMarkersPeaksHeatmapATAC", height = "700px")
+                                                                    )
+                                                                )
+                                                       )
                                                      )
-                                                    ) 
+                                                    )
                                                    ),
                                                    tabPanel("Gene-score plot", fluidRow(
                                                      box(width = 3, status = "info", solidHeader = TRUE, title = "Options",
@@ -899,7 +933,7 @@ ui <- dashboardPage(
                                                          div(class="ldBar", id="DEA9_loader", "data-preset"="circle"),
                                                          div(id="findMarkersFeaturePlotATAC_loader",
                                                              shinycssloaders::withSpinner(
-                                                               plotOutput(outputId = "findMarkersFeaturePlotATAC", height = "1300px")
+                                                               plotOutput(outputId = "findMarkersFeaturePlotATAC", height = "1100px")
                                                              )
                                                          )
                                                      )
@@ -1025,17 +1059,25 @@ ui <- dashboardPage(
                                          actionButton(inputId = "findMotifsConfirmATAC", label = "OK"),
                                      ),
                                      
-                                     box(width = 9, status = "info", solidHeader = TRUE,
-                                         div(class="ldBar", id="motif_loader", "data-preset"="circle"),
-                                         title = "Motif enrichment analysis results",
-                                         dataTableOutput(outputId="findMotifsTableATAC", height = "800px"),
-                                         downloadButton(outputId = "findMotifsATACExport", label = "Save table"),
-                                         tags$hr(),
-                                         div(id="findMotifsHeatmapATAC_loader",
-                                             shinycssloaders::withSpinner(
-                                               plotlyOutput(outputId = "findMotifsHeatmapATAC", height = "800px")
-                                             )
-                                         )
+                                     box(width = 9, status = "info", solidHeader = TRUE, title = "Motif enrichment analysis results",
+                                         tabsetPanel(type = "tabs",
+                                                     tabPanel("Table of enriched motifs", 
+                                                                div(class="ldBar", id="motif_loader", "data-preset"="circle"),
+                                                                div(id="findMotifsATACTable_loader",
+                                                                  shinycssloaders::withSpinner(
+                                                                    dataTableOutput(outputId="findMotifsTableATAC", height = "800px")
+                                                                  )
+                                                                ),
+                                                                downloadButton(outputId = "findMotifsATACExport", label = "Save table")
+                                                              ),
+                                                     tabPanel("Heatmap of enriched motifs (top-10)", 
+                                                              div(id="findMotifsHeatmapATAC_loader",
+                                                                  shinycssloaders::withSpinner(
+                                                                    plotlyOutput(outputId = "findMotifsHeatmapATAC", height = "800px")
+                                                                  )
+                                                                )
+                                                              )
+                                                     )
                                      )
                                    )
                           )
@@ -1252,21 +1294,29 @@ ui <- dashboardPage(
                                      ),
                                      box(width = 9, status = "info", solidHeader = TRUE, title = "Gene regulatory networks results",
                                          tabsetPanel(type = "tabs",
-                                                     tabPanel("Positive regulators",
+                                                     tabPanel("Positive regulators table",
                                                               div(class="ldBar", id="grn2_loader", "data-preset"="circle"),
-                                                              dataTableOutput(outputId="grnMatrixATAC", height = "500px"),
+                                                              div(id="grnATACTable_loader",
+                                                                  shinycssloaders::withSpinner(
+                                                                    dataTableOutput(outputId="grnMatrixATAC", height = "500px")
+                                                                  )
+                                                              ),
                                                               downloadButton(outputId = "grnPositiveRegulatorsATACExport", label = "Save table"),
-                                                              tags$hr(),
-
+                                                     ),
+                                                     tabPanel("Positive regulators heatmap (top-10)",
                                                               div(id="grnHeatmapATAC_loader",
                                                                   shinycssloaders::withSpinner(
                                                                     plotlyOutput(outputId = "grnHeatmapATAC", height = "800px")
-                                                                    )
                                                                   )
-                                                              ),
+                                                              )
+                                                     ),
                                                      tabPanel("Peak to gene links",
                                                               dataTableOutput(outputId="grnP2GlinksTable", height = "800px"),
-                                                              downloadButton(outputId = "grnPeakToGeneLinksATACExport", label = "Save table"),
+                                                              div(id="grnATACTable2_loader",
+                                                                  shinycssloaders::withSpinner(
+                                                                    downloadButton(outputId = "grnPeakToGeneLinksATACExport", label = "Save table")
+                                                                    )
+                                                                  ),
                                                               )
                                          )
                                      )
