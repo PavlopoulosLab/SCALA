@@ -5,6 +5,7 @@
 server <- function(input, output, session) { 
   #use_python("/opt/conda39/envs/pyscenic/bin/python")
   source("global.R", local=TRUE)
+  source("addPeak2GeneLinks_shiny.R")
   
   options(shiny.maxRequestSize=2*1024^3) #500 MB
   #session$sendCustomMessage("handler_disableTabs", "sidebarMenu") # disable all tab panels (except Data Input) until files are uploaded
@@ -35,6 +36,10 @@ server <- function(input, output, session) {
       # setwd("exampleRNA_10xFiles/") # TODO remove this, never use setwd() on server apps. create a path with paste() instead
       organism <<- "human"
       disableTabsATAC()
+      
+      if(organism == "human")
+        updateTextAreaInput(session, inputId="findMarkersSignatureMembers", placeholder = "PRG4\nTSPAN15\nCOL22A1\nHTRA4")
+        
       print("Load complete")
     }, error = function(e) {
       print(paste("Error :  ", e))
@@ -124,6 +129,10 @@ server <- function(input, output, session) {
         # updateInpuTrajectoryClusters()
         # print(organism)
         # saveRDS(seurat_object, "seurat_object.RDS")
+        #update signature text area
+        if(organism == "human")
+          updateTextAreaInput(session, inputId="findMarkersSignatureMembers", placeholder = "PRG4\nTSPAN15\nCOL22A1\nHTRA4")
+        
         session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " QUALITY CONTROL", " DATA NORMALIZATION\n& SCALING", " UTILITY OPTIONS"))
         
         # }, warning = function(w) {
@@ -193,6 +202,10 @@ server <- function(input, output, session) {
         # updateInpuTrajectoryClusters()
         # print(organism)
         # saveRDS(seurat_object, "seurat_object.RDS")
+        #update signature text area
+        if(organism == "human")
+          updateTextAreaInput(session, inputId="findMarkersSignatureMembers", placeholder = "PRG4\nTSPAN15\nCOL22A1\nHTRA4")
+        
         session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " QUALITY CONTROL", " DATA NORMALIZATION\n& SCALING", " UTILITY OPTIONS"))
         # }, warning = function(w) {
         #   print(paste("Warning:  ", w))
@@ -265,6 +278,10 @@ server <- function(input, output, session) {
         # updateInpuTrajectoryClusters()
         # print(organism)
         # saveRDS(seurat_object, "seurat_object.RDS")
+        #update signature text area
+        if(organism == "human")
+          updateTextAreaInput(session, inputId="findMarkersSignatureMembers", placeholder = "PRG4\nTSPAN15\nCOL22A1\nHTRA4")
+        
         session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " QUALITY CONTROL", " DATA NORMALIZATION\n& SCALING", " UTILITY OPTIONS"))
         # }, warning = function(w) {
         #   print(paste("Warning:  ", w))
@@ -333,6 +350,10 @@ server <- function(input, output, session) {
         # updateInpuTrajectoryClusters()
         # print(organism)
         # saveRDS(seurat_object, "seurat_object.RDS")
+        #update signature text area
+        if(organism == "human")
+          updateTextAreaInput(session, inputId="findMarkersSignatureMembers", placeholder = "PRG4\nTSPAN15\nCOL22A1\nHTRA4")
+        
         session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " QUALITY CONTROL", " DATA NORMALIZATION\n& SCALING", " UTILITY OPTIONS"))
         # }, warning = function(w) {
         #   print(paste("Warning:  ", w))
@@ -1840,15 +1861,35 @@ server <- function(input, output, session) {
         session$sendCustomMessage("handler_startLoader", c("DEA4_loader", 50))
         markers <- list()
         varTextarea <- input$findMarkersSignatureMembers
+        markers2 <- as.vector(unlist(strsplit(varTextarea, "\\n"))) #keep as vector
+        print(markers2)
+        print(class(markers2))
+        print(length(markers2))
         markers[[1]] <- unlist(strsplit(varTextarea, "\\n"))
         sig_name <- input$findMarkersSignatureName
         print(sig_name)
         names(markers)[1] <- sig_name
-        print(markers)
         session$sendCustomMessage("handler_startLoader", c("DEA4_loader", 70))
-        seurat_object <<- AddModuleScore_UCell(seurat_object, features = markers)
-        updateSignatures()
-        updateMetadata()
+        
+        genesFound <- markers2[(which(markers2 %in% rownames(seurat_object)))]
+        print(genesFound)
+        
+        if(length(genesFound) == 0)
+        {
+          print("inside all zero")
+          session$sendCustomMessage("handler_alert", "None of the selected genes were found in the dataset.The signature could not be calculated.")
+        }
+        else
+        {
+          seurat_object <<- AddModuleScore_UCell(seurat_object, features = markers)
+          updateSignatures()
+          updateMetadata()
+          if(length(genesFound) != length(markers2))
+          {
+            print("inside some not found")
+            session$sendCustomMessage("handler_alert", "Some of the selected genes were not found in the dataset and are excluded from the signature's calculation.")
+          }
+        }
         session$sendCustomMessage("handler_startLoader", c("DEA4_loader", 90))
         
       }
@@ -2170,18 +2211,19 @@ observeEvent(input$findMarkersConfirmATAC, { #ADD loading bar
 })
 
 observeEvent(input$findMarkersPeaksConfirmATAC, {
-  session$sendCustomMessage("handler_startLoader", c("DEA7_loader", 10))
+  session$sendCustomMessage("handler_startLoader", c("DEA8_loader", 10))
   session$sendCustomMessage("handler_disableAllButtons", "findMarkersPeaksConfirmATAC")
   tryCatch({
     if (identical(proj_default, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
     else {
+      updateTabsetPanel(session, inputId = "ATAC_markers_tabs", selected = "Marker peaks (ATAC)")
       shinyjs::show("findMarkersPeaksHeatmapATAC_loader")
       shinyjs::show("findMarkersPeaksATACTable_loader")
       source("Peaks_ArchR_windows.R")
       
       #addArchRThreads(threads = as.numeric(input$upload10xATACThreads))
       
-      session$sendCustomMessage("handler_startLoader", c("DEA7_loader", 20))
+      session$sendCustomMessage("handler_startLoader", c("DEA8_loader", 20))
       
       # if(.Platform$OS.type == "windows")
       # {
@@ -2240,14 +2282,14 @@ observeEvent(input$findMarkersPeaksConfirmATAC, {
                                      logFile =paste0(user_dir, "/Peak_Matrix_file.log"))
       #----
       
-      session$sendCustomMessage("handler_startLoader", c("DEA7_loader", 40))
+      session$sendCustomMessage("handler_startLoader", c("DEA8_loader", 40))
       
       #proj_default <<- addPeakMatrix(proj_default, force = TRUE, 
       #                               logFile =paste0(user_dir, "/Peak_Matrix_file.log"))
       print(getPeakSet(proj_default))
       saveArchRProject(proj_default)
       
-      session$sendCustomMessage("handler_startLoader", c("DEA7_loader", 60))
+      session$sendCustomMessage("handler_startLoader", c("DEA8_loader", 60))
       
       markersPeaks <- getMarkerFeatures(
         ArchRProj = proj_default,
@@ -2258,14 +2300,14 @@ observeEvent(input$findMarkersPeaksConfirmATAC, {
         logFile =paste0(user_dir, "/Marker_Peaks_file.log")
       )
       
-      session$sendCustomMessage("handler_startLoader", c("DEA7_loader", 80))
+      session$sendCustomMessage("handler_startLoader", c("DEA8_loader", 80))
       
       markersPeaks_clusterList <- getMarkers(markersPeaks, cutOff = paste0("FDR <= ",input$findMarkersPeaksFDRATAC," & Log2FC >= ",input$findMarkersPeaksLogFCATAC))
       markersPeaks_clusters_all <- as.data.frame(unlist(markersPeaks_clusterList))
       markersPeaks_clusters_all$Clusters <- rownames(markersPeaks_clusters_all)
       markersPeaks_clusters_all$Clusters <- gsub(pattern = "[.][0-9]+", replacement = "", x = markersPeaks_clusters_all$Clusters)
       rownames(markersPeaks_clusters_all) <- NULL
-      session$sendCustomMessage("handler_startLoader", c("DEA7_loader", 95))
+      session$sendCustomMessage("handler_startLoader", c("DEA8_loader", 95))
       output$findMarkersPeaksTableATAC <- renderDataTable(expr = markersPeaks_clusters_all, filter = 'top', rownames = FALSE, options = list(pageLength = 10))
       export_markerPeaks_ATAC <<- markersPeaks_clusters_all
       
@@ -2289,9 +2331,9 @@ observeEvent(input$findMarkersPeaksConfirmATAC, {
     print(paste("Error :  ", e))
     session$sendCustomMessage("handler_alert", "There was an error with the the detection of marker genes.")
   }, finally = {
-    session$sendCustomMessage("handler_startLoader", c("DEA7_loader", 100))
+    session$sendCustomMessage("handler_startLoader", c("DEA8_loader", 100))
     Sys.sleep(1)
-    session$sendCustomMessage("handler_finishLoader", "DEA7_loader")
+    session$sendCustomMessage("handler_finishLoader", "DEA8_loader")
     session$sendCustomMessage("handler_enableAllButtons", "findMarkersPeaksConfirmATAC")
   })	
 })
@@ -3463,7 +3505,7 @@ output$findMotifsATACExport <- downloadHandler(
         session$sendCustomMessage("handler_startLoader", c("grn2_loader", 70))
         proj_default <<- addCoAccessibility(ArchRProj = proj_default, reducedDims = "IterativeLSI", 
                                            logFile =paste0(user_dir, "/Coaccessibility_file.log"))
-        proj_default <<- addPeak2GeneLinks(ArchRProj = proj_default,reducedDims = "IterativeLSI", useMatrix = "GeneScoreMatrix", 
+        proj_default <<- addPeak2GeneLinks_shiny(ArchRProj = proj_default,reducedDims = "IterativeLSI", useMatrix = "GeneScoreMatrix", 
                                            logFile =paste0(user_dir, "/P2G_file.log"))
         p <- plotPeak2GeneHeatmap(ArchRProj = proj_default, nPlot = 5000, groupBy = "Clusters", returnMatrices = T, corCutOff = corr_lim, FDRCutOff = fdr_lim, 
                                   logFile =paste0(user_dir, "/P2Gheatmap_file.log"))
@@ -4307,6 +4349,7 @@ output$findMotifsATACExport <- downloadHandler(
     updateTabsetPanel(inputId="clusteringTabPanel", selected="scATAC-seq", session = session)
     updateTabsetPanel(inputId="umapTabPanel", selected="scATAC-seq", session = session)
     updateTabsetPanel(inputId="findMarkersTabPanel", selected="scATAC-seq", session = session)
+    updateTabsetPanel(session, inputId = "ATAC_markers_tabs", selected = "Marker genes (ATAC)")
     updateTabsetPanel(inputId="gProfilerTabPanel", selected="scATAC-seq", session = session)
     updateTabsetPanel(inputId="trajectoryTabPanel", selected="scATAC-seq", session = session)
     updateTabsetPanel(inputId="grnTabPanel", selected="scATAC-seq", session = session)
