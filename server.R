@@ -974,7 +974,7 @@ server <- function(input, output, session) {
         shinyjs::show("elbowPlotPCA_loader")
         shinyjs::show("PCAscatter_loader")
         
-        seurat_object <<- RunPCA(seurat_object, features = VariableFeatures(object = seurat_object))
+        seurat_object <<- RunPCA(seurat_object, features = VariableFeatures(object = seurat_object), npcs = 100)
         
         optimal_nPCs <- 0 #only for visualization purposes
         if(input$pcaRadio == "yes")
@@ -1427,6 +1427,7 @@ server <- function(input, output, session) {
         
         session$sendCustomMessage("handler_startLoader", c("dim_red3_loader", 75))
         saveArchRProject(proj_default)
+        updateReductionATAC()
         }
       }, error = function(e) {
         print(paste("Error :  ", e))
@@ -1439,7 +1440,8 @@ server <- function(input, output, session) {
       })
   })
   
-  observeEvent(input$umapConfirmATAC, {
+  updateReductionATAC <- function()
+  {
     session$sendCustomMessage("handler_startLoader", c("dim_red4_loader", 10))
     session$sendCustomMessage("handler_disableAllButtons", "umapConfirmATAC")
     tryCatch({
@@ -1534,6 +1536,10 @@ server <- function(input, output, session) {
       session$sendCustomMessage("handler_finishLoader", "dim_red4_loader")
       session$sendCustomMessage("handler_enableAllButtons", "umapConfirmATAC")
     })
+  }
+  
+  observeEvent(input$umapConfirmATAC, {
+    updateReductionATAC()
   })
   
   observeEvent(input$umapRunUmap, {
@@ -2151,14 +2157,14 @@ observeEvent(input$findMarkersVolcanoConfirm, {
 
 #ATAC   
 observeEvent(input$findMarkersConfirmATAC, { #ADD loading bar
-  session$sendCustomMessage("handler_startLoader", c("DEA7_loader", 10))
+  session$sendCustomMessage("handler_startLoader", c("DEA8_loader", 10))
   session$sendCustomMessage("handler_disableAllButtons", "findMarkersConfirmATAC")
   tryCatch({
     if (identical(proj_default, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
     else {
       shinyjs::show("findMarkersGenesHeatmapATAC_loader")
       shinyjs::show("findMarkersGenesATACTable_loader")
-      session$sendCustomMessage("handler_startLoader", c("DEA7_loader", 10))
+      session$sendCustomMessage("handler_startLoader", c("DEA8_loader", 10))
       markers_cluster <- getMarkerFeatures(
         ArchRProj = proj_default,
         useMatrix = "GeneScoreMatrix",
@@ -2168,7 +2174,7 @@ observeEvent(input$findMarkersConfirmATAC, { #ADD loading bar
         logFile =paste0(user_dir, "/Marker_Genes_file.log")
       )
       
-      session$sendCustomMessage("handler_startLoader", c("DEA7_loader", 50))
+      session$sendCustomMessage("handler_startLoader", c("DEA8_loader", 50))
       
       markers_clusterList <- getMarkers(markers_cluster, cutOff = paste0("FDR <= ",input$findMarkersFDRATAC," & Log2FC >= ",input$findMarkersLogFCATAC))
       markers_clusters_all <- as.data.frame(unlist(markers_clusterList))
@@ -2180,7 +2186,7 @@ observeEvent(input$findMarkersConfirmATAC, { #ADD loading bar
                                         logFile =paste0(user_dir, "/Impute_weights_file.log"))
       updateSelectizeInput(session, "findMarkersGeneSelectATAC", choices = unique(proj_default@geneAnnotation$genes$symbol), server = T)
       
-      session$sendCustomMessage("handler_startLoader", c("DEA7_loader", 80))
+      session$sendCustomMessage("handler_startLoader", c("DEA8_loader", 80))
       
       output$findMarkersGenesTableATAC <- renderDataTable(expr = markers_clusters_all, filter = 'top', rownames = FALSE, options = list(pageLength = 10))
       export_markerGenes_ATAC <<- markers_clusters_all
@@ -2203,15 +2209,15 @@ observeEvent(input$findMarkersConfirmATAC, { #ADD loading bar
     print(paste("Error :  ", e))
     session$sendCustomMessage("handler_alert", "There was an error with the the detection of marker genes.")
   }, finally = {
-    session$sendCustomMessage("handler_startLoader", c("DEA7_loader", 100))
+    session$sendCustomMessage("handler_startLoader", c("DEA8_loader", 100))
     Sys.sleep(1)
-    session$sendCustomMessage("handler_finishLoader", "DEA7_loader")
+    session$sendCustomMessage("handler_finishLoader", "DEA8_loader")
     session$sendCustomMessage("handler_enableAllButtons", "findMarkersConfirmATAC")
   })	
 })
 
 observeEvent(input$findMarkersPeaksConfirmATAC, {
-  session$sendCustomMessage("handler_startLoader", c("DEA8_loader", 10))
+  session$sendCustomMessage("handler_startLoader", c("DEA9_loader", 10))
   session$sendCustomMessage("handler_disableAllButtons", "findMarkersPeaksConfirmATAC")
   tryCatch({
     if (identical(proj_default, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
@@ -2223,7 +2229,7 @@ observeEvent(input$findMarkersPeaksConfirmATAC, {
       
       #addArchRThreads(threads = as.numeric(input$upload10xATACThreads))
       
-      session$sendCustomMessage("handler_startLoader", c("DEA8_loader", 20))
+      session$sendCustomMessage("handler_startLoader", c("DEA9_loader", 20))
       
       # if(.Platform$OS.type == "windows")
       # {
@@ -2282,14 +2288,14 @@ observeEvent(input$findMarkersPeaksConfirmATAC, {
                                      logFile =paste0(user_dir, "/Peak_Matrix_file.log"))
       #----
       
-      session$sendCustomMessage("handler_startLoader", c("DEA8_loader", 40))
+      session$sendCustomMessage("handler_startLoader", c("DEA9_loader", 40))
       
       #proj_default <<- addPeakMatrix(proj_default, force = TRUE, 
       #                               logFile =paste0(user_dir, "/Peak_Matrix_file.log"))
       print(getPeakSet(proj_default))
       saveArchRProject(proj_default)
       
-      session$sendCustomMessage("handler_startLoader", c("DEA8_loader", 60))
+      session$sendCustomMessage("handler_startLoader", c("DEA9_loader", 60))
       
       markersPeaks <- getMarkerFeatures(
         ArchRProj = proj_default,
@@ -2300,14 +2306,14 @@ observeEvent(input$findMarkersPeaksConfirmATAC, {
         logFile =paste0(user_dir, "/Marker_Peaks_file.log")
       )
       
-      session$sendCustomMessage("handler_startLoader", c("DEA8_loader", 80))
+      session$sendCustomMessage("handler_startLoader", c("DEA9_loader", 80))
       
       markersPeaks_clusterList <- getMarkers(markersPeaks, cutOff = paste0("FDR <= ",input$findMarkersPeaksFDRATAC," & Log2FC >= ",input$findMarkersPeaksLogFCATAC))
       markersPeaks_clusters_all <- as.data.frame(unlist(markersPeaks_clusterList))
       markersPeaks_clusters_all$Clusters <- rownames(markersPeaks_clusters_all)
       markersPeaks_clusters_all$Clusters <- gsub(pattern = "[.][0-9]+", replacement = "", x = markersPeaks_clusters_all$Clusters)
       rownames(markersPeaks_clusters_all) <- NULL
-      session$sendCustomMessage("handler_startLoader", c("DEA8_loader", 95))
+      session$sendCustomMessage("handler_startLoader", c("DEA9_loader", 95))
       output$findMarkersPeaksTableATAC <- renderDataTable(expr = markersPeaks_clusters_all, filter = 'top', rownames = FALSE, options = list(pageLength = 10))
       export_markerPeaks_ATAC <<- markersPeaks_clusters_all
       
@@ -2331,15 +2337,15 @@ observeEvent(input$findMarkersPeaksConfirmATAC, {
     print(paste("Error :  ", e))
     session$sendCustomMessage("handler_alert", "There was an error with the the detection of marker genes.")
   }, finally = {
-    session$sendCustomMessage("handler_startLoader", c("DEA8_loader", 100))
+    session$sendCustomMessage("handler_startLoader", c("DEA9_loader", 100))
     Sys.sleep(1)
-    session$sendCustomMessage("handler_finishLoader", "DEA8_loader")
+    session$sendCustomMessage("handler_finishLoader", "DEA9_loader")
     session$sendCustomMessage("handler_enableAllButtons", "findMarkersPeaksConfirmATAC")
   })	
 })
 
 observeEvent(input$findMarkersFPConfirmATAC, {
-  session$sendCustomMessage("handler_startLoader", c("DEA9_loader", 10))
+  session$sendCustomMessage("handler_startLoader", c("DEA10_loader", 10))
   session$sendCustomMessage("handler_disableAllButtons", "findMarkersFPConfirmATAC")
   tryCatch({
     if (identical(proj_default, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
@@ -2361,9 +2367,9 @@ observeEvent(input$findMarkersFPConfirmATAC, {
     print(paste("Error :  ", e))
     session$sendCustomMessage("handler_alert", "There was an error with the the detection of marker genes.")
   }, finally = {
-    session$sendCustomMessage("handler_startLoader", c("DEA9_loader", 100))
+    session$sendCustomMessage("handler_startLoader", c("DEA10_loader", 100))
     Sys.sleep(1)
-    session$sendCustomMessage("handler_finishLoader", "DEA9_loader")
+    session$sendCustomMessage("handler_finishLoader", "DEA10_loader")
     session$sendCustomMessage("handler_enableAllButtons", "findMarkersFPConfirmATAC")
   })
 })
@@ -3163,279 +3169,6 @@ output$findMotifsATACExport <- downloadHandler(
     })
   
   #---------------------------GRN tab-------------------------------------------
-  observeEvent(input$grnConfirmRNA, {
-    numOfCores <- as.numeric(input$grnCoresRNA)
-    path_to_scenic <- input$grnPyscenicPathRNA
-    
-    seurat_object_matrix<-seurat_object@assays$RNA@counts
-    
-    # Filter 1: this filter counts how many UMIs per gene we have, and keeps genes with over ncol(exprMat)*.005*1 UMIs ( 30.015 in this case )
-    
-    nCountsPerGene.seurat_object<- rowSums(seurat_object_matrix, na.rm = T)
-    genesLeft_minReads.seurat_object<- names(nCountsPerGene.seurat_object[which(nCountsPerGene.seurat_object>(ncol(seurat_object_matrix)*.01*3))])  
-    length(genesLeft_minReads.seurat_object)
-    
-    # Filter 2: this filter counts for each gene, how many "cells" with at least one UMI  we have, and keeps genes with over ncol(exprMat)*.01 cells ( 60.03 in this case ). This filter should be very stringent in the particular project, because we will lose a very important gene - "Epcam" (with 7 cells) - that is very important in the cluster of hepatocytes (a cluster of 4 cells in 10x? ask Irina). So we can change the filter to ncol(exprMat)*.00084
-    
-    nCellsPerGene.seurat_object<- rowSums(seurat_object_matrix>0, na.rm = T)
-    tmp <- nCellsPerGene.seurat_object[genesLeft_minReads.seurat_object]
-    genesLeft_minCells.seurat_object<- names(tmp[which(tmp>(ncol(seurat_object_matrix)*.01))])
-    length(genesLeft_minCells.seurat_object)
-    
-    # Filter 3 - Exclude genes missing from database:
-    print("import rankings")
-    if(organism == "mouse")
-    {
-      motifRankings1_mouse_human <- importRankings("../scenic_helper_files/mm10__refseq-r80__500bp_up_and_100bp_down_tss.mc9nr.feather") # either one, they should have the same genes
-      motifRankings2_mouse_human <- importRankings("../scenic_helper_files/mm10__refseq-r80__10kb_up_and_down_tss.mc9nr.feather") # either one, they should have the same genes
-    }
-    else
-    {
-     motifRankings1_mouse_human <- importRankings("../scenic_helper_files/hg19-500bp-upstream-10species.mc9nr.feather") # either one, they should have the same genes
-     motifRankings2_mouse_human <- importRankings("../scenic_helper_files/hg19-tss-centered-10kb-10species.mc8nr.feather") # either one, they should have the same genes
-    }
-    print("get rankings")
-    genesInDatabase1 <- colnames(getRanking(motifRankings1_mouse_human))
-    genesInDatabase2 <- colnames(getRanking(motifRankings2_mouse_human))
-    
-    
-    genesLeft_minCells_inDatabases1_seurat_object <- genesLeft_minCells.seurat_object[which(genesLeft_minCells.seurat_object %in% colnames(motifRankings1_mouse_human@rankings))]
-    genesLeft_minCells_inDatabases2_seurat_object <- genesLeft_minCells.seurat_object[which(genesLeft_minCells.seurat_object %in% colnames(motifRankings2_mouse_human@rankings))]
-    
-    genesKept1_seurat_object <- genesLeft_minCells_inDatabases1_seurat_object
-    genesKept2_seurat_object <- genesLeft_minCells_inDatabases2_seurat_object
-    
-    exprMat_filtered1_seurat_object<-seurat_object_matrix[which(rownames(seurat_object_matrix) %in% genesKept1_seurat_object),]
-    exprMat_filtered2_seurat_object<-seurat_object_matrix[which(rownames(seurat_object_matrix) %in% genesKept2_seurat_object),]
-    
-    write.table(exprMat_filtered1_seurat_object,"seurat_object_only.gene.filtered1.tsv",quote=F,sep="\t",row.names=T,col.names=T)
-    
-    write.table(exprMat_filtered2_seurat_object,"seurat_object_only.gene.filtered2.tsv",quote=F,sep="\t",row.names=T,col.names=T)
-    
-    seurat.umap <- Embeddings(seurat_object[["umap"]])[, c(1,2)]
-    
-    #if(organism)
-    genome_info <- organism
-    
-    file.name <- "seurat_object_only.gene.filtered2.loom"
-    loom <- build_loom(file.name=file.name,
-                       dgem=exprMat_filtered2_seurat_object,
-                       title="SFs Project",
-                       genome= "mouse", #genome_info, # Just for user information, not used internally
-                       default.embedding=seurat.umap,
-                       default.embedding.name="UMAP")                  
-    
-    finalize(loom=loom)
-    
-    # PYSCENIC "#/home/user/anaconda3/envs/my_env/bin/pyscenic ",
-    # 'C:/Users/user1/anaconda3/envs/pyscenic_env/Scripts/pyscenic.exe -h'
-    
-    if(organism == "mouse")
-    {
-      system(paste0(
-        input$grnPyscenicPathRNA, " ",
-        "grn seurat_object_only.gene.filtered2.loom ",
-        "./scenic_helper_files/mm_mgi_tfs.txt ",
-        "--num_workers 3 ",
-        "--output seurat_object_only_expr_mat.adjacencies.loom.version_test.tsv"))
-    }
-    else #human
-    {
-      system(paste0(
-        input$grnPyscenicPathRNA, " ",
-        "grn seurat_object_only.gene.filtered2.loom ",
-        "./scenic_helper_files/hs_hgnc_curated_tfs.txt ",
-        "--num_workers 3 ",
-        "--output seurat_object_only_expr_mat.adjacencies.loom.version_test.tsv"))
-    }
-
-    print("grn")
-
-    if(organism == "mouse")
-    {
-      system(paste0(input$grnPyscenicPathRNA, " ",
-                    "ctx ",
-                    "--annotations_fname ./scenic_helper_files/motifs-v9-nr.mgi-m0.001-o0.0.tbl ",
-                    "--expression_mtx_fname seurat_object_only.gene.filtered2.loom ",
-                    "--output seurat_object_only.regulons.loom.version.nes.score.csv ",
-                    "--num_workers 3 ",
-                    "seurat_object_only_expr_mat.adjacencies.loom.version_test.tsv ",
-                    "./scenic_helper_files/mm10__refseq-r80__10kb_up_and_down_tss.mc9nr.feather ",
-                    "./scenic_helper_files/mm10__refseq-r80__500bp_up_and_100bp_down_tss.mc9nr.feather"
-      ))
-    }
-    else #human
-    {
-      system(paste0(input$grnPyscenicPathRNA, " ",
-                    "ctx ",
-                    "--annotations_fname ./scenic_helper_files/motifs-v9-nr.hgnc-m0.001-o0.0.tbl ",
-                    "--expression_mtx_fname seurat_object_only.gene.filtered2.loom ",
-                    "--output seurat_object_only.regulons.loom.version.nes.score.csv ",
-                    "--num_workers 3 ",
-                    "seurat_object_only_expr_mat.adjacencies.loom.version_test.tsv ",
-                    "./scenic_helper_files/hg19-tss-centered-10kb-10species.mc8nr.feather ",
-                    "./scenic_helper_files/hg19-500bp-upstream-10species.mc9nr.feather"
-      ))
-    }
-
-    print("ctx")
-
-
-    system(paste0(input$grnPyscenicPathRNA, " ",
-                  "aucell -o seurat_object_only_auc_mtx_stringent.version.nes.score.loom ",
-                  "--num_workers 3 ",
-                  "seurat_object_only.gene.filtered2.loom ",
-                  "seurat_object_only.regulons.loom.version.nes.score.csv"))
-
-    print("Pyscenic done!")
-    
-    #TODO input pyscenic files and plot results
-    #####################################################################################################################
-    ###################################################### Results ######################################################
-    #####################################################################################################################    
-    source('../scenic_helper_files/aux_rss.R')
-
-    pyScenicLoomFile.seurat_object <- file.path("seurat_object_only_auc_mtx_stringent.version.nes.score.loom")
-    loom.seurat_object <- open_loom(pyScenicLoomFile.seurat_object, mode="r+")
-
-    # Read information from loom file:
-    regulons_incidMat.seurat_object <-get_regulons(loom.seurat_object, column.attr.name = "Regulons", tf.as.name = TRUE, tf.sep = "_")
-    regulons.seurat_object <- regulonsToGeneLists(regulons_incidMat.seurat_object)
-    regulonsAUC.seurat_object <- get_regulons_AUC(loom.seurat_object, column.attr.name='RegulonsAUC')
-    regulonsAucThresholds.seurat_object <- get_regulon_thresholds(loom.seurat_object)
-    embeddings.seurat_object <- get_embeddings(loom.seurat_object)
-    exprMat.seurat_object <- get_dgem(loom.seurat_object)
-    add_col_attr(loom=loom.seurat_object, key = "seurat_clusters", value=as.character(seurat_object$seurat_clusters), as.annotation=T)
-    cellInfo.seurat_object <- get_cell_annotation(loom.seurat_object)
-
-    close_loom(loom.seurat_object)
-
-    cells_rankings.seurat_object <- AUCell_buildRankings(as.matrix(exprMat.seurat_object), nCores=numOfCores)
-
-    geneSets.seurat_object <- regulons.seurat_object
-    names(geneSets.seurat_object)<-paste0(names(geneSets.seurat_object)," ",lengths(geneSets.seurat_object),sep="")
-
-    geneSets.seurat_object<-geneSets.seurat_object[unlist(lapply(geneSets.seurat_object, function(x) length(x) > 10))]
-
-    title<-c("TF","gene_set")
-    write.table(t(title),"regulons.seurat_object.txt",sep="\t",quote=FALSE,col.names=FALSE,row.names=FALSE)
-    temp<-as.data.frame(geneSets.seurat_object[1])
-    colnames(temp)<-names(geneSets.seurat_object[1])
-    write.table(t(temp),"regulons.seurat_object.txt",sep=",",quote=FALSE,col.names=FALSE,row.names=TRUE,append=T)
-    for(i in 2:length(geneSets.seurat_object)){
-      temp<-as.data.frame(geneSets.seurat_object[i])
-      colnames(temp)<-names(geneSets.seurat_object[i])
-      write.table(t(temp),"regulons.seurat_object.txt",sep=",",quote=FALSE,col.names=FALSE,row.names=TRUE,append=T)
-    }
-
-    cells_AUC.seurat_object <- AUCell_calcAUC(geneSets.seurat_object, cells_rankings.seurat_object, aucMaxRank=nrow(cells_rankings.seurat_object)*0.1,nCores=numOfCores)
-    cells_AUC.seurat_object.ordered <- orderAUC(cells_AUC.seurat_object) # added to AUCell 1.5.1
-    cells_AUC.seurat_object <- cells_AUC.seurat_object[cells_AUC.seurat_object.ordered,]
-    getAUC(cells_AUC.seurat_object)
-    write.table(getAUC(cells_AUC.seurat_object),"AUC_per_cell.txt",quote=F,sep="\t",row.names=T,col.names=T)
-
-    #pdf("AUCellscores_per_topic_seurat_object.pdf")
-    #par(mfrow=c(3,3))
-    #set.seed(123)
-    cells_assignment.seurat_object <- AUCell_exploreThresholds(cells_AUC.seurat_object, plotHist=F, nCores=1, assign=TRUE)
-    #dev.off()
-
-    # ---> !!! Get any warning about the explored AUCs, this might help in the filtering of the reuolons !!!
-    warningMsg.seurat_object <- sapply(cells_assignment.seurat_object, function(x) x$aucThr$comment)
-    warningMsg.seurat_object[which(warningMsg.seurat_object!="")]
-
-    regulonsCells.seurat_object <- getAssignments(cells_assignment.seurat_object)
-    regulonsCells.seurat_object.filtered<-regulonsCells.seurat_object[unlist(lapply(regulonsCells.seurat_object, function(x) length(x) > 10))]
-    cells_assignment.seurat_object.filtered<-cells_assignment.seurat_object[names(regulonsCells.seurat_object.filtered)]
-
-    cellsAssigned.seurat_object <- lapply(cells_assignment.seurat_object, function(x) x$assignment)
-    assignmentTable.seurat_object <- reshape2::melt(cellsAssigned.seurat_object, value.name="cell")
-    colnames(assignmentTable.seurat_object)[2] <- "geneSet"
-
-    assignmentMat.seurat_object <- table(assignmentTable.seurat_object[,"geneSet"], assignmentTable.seurat_object[,"cell"])
-
-    library(stringr)
-    path_data<-"./"
-
-    motifsDf.seurat_object <- data.table::fread(file.path( "seurat_object_only_expr_mat.adjacencies.loom.version_test.tsv"), header = T, sep="\t")
-    maxRows <- 20 # (low value only for the tutorial)
-
-    aucMatrix.seurat_object <- t(assignmentMat.seurat_object)
-    aucMatrix.seurat_object <- apply(aucMatrix.seurat_object, 2, as.numeric)
-    system.time(rss.seurat_object <- calcRSS(t(aucMatrix.seurat_object), seurat_object$seurat_clusters))
-    rss.seurat_object <- rss.seurat_object[onlyNonDuplicatedExtended(rownames(rss.seurat_object)),]
-
-
-    cells_AUC.seurat_object.ordered.filtered<-cells_AUC.seurat_object
-    regulonActivity_byCellType.seurat_object <- sapply(split(rownames(cellInfo.seurat_object), cellInfo.seurat_object$seurat_clusters),
-                                                       function(cells) rowMeans(getAUC(cells_AUC.seurat_object.ordered.filtered)[,cells]))
-    regulonActivity_byCellType.seurat_object.non.zero<-regulonActivity_byCellType.seurat_object[which(rownames(regulonActivity_byCellType.seurat_object) %in% rownames(rss.seurat_object)),]
-    regulonActivity_byCellType.seurat_object.non.zero<-regulonActivity_byCellType.seurat_object.non.zero[order(rownames(regulonActivity_byCellType.seurat_object.non.zero)),]
-    colnames(regulonActivity_byCellType.seurat_object.non.zero)<-paste0("AUC_",colnames(regulonActivity_byCellType.seurat_object.non.zero),sep="")
-
-    geneSets.seurat_object.new<-geneSets.seurat_object[which(names(geneSets.seurat_object) %in% rownames(rss.seurat_object))]
-    geneSets.seurat_object.new<-geneSets.seurat_object.new[order(names(geneSets.seurat_object.new))]
-    rss.seurat_object.new<-as.data.frame(rss.seurat_object[order(rownames(rss.seurat_object)),])
-    colnames(rss.seurat_object.new)<-paste0("RSS_",colnames(rss.seurat_object.new),sep="")
-    rss.seurat_object.new$TF<-rownames(rss.seurat_object.new)
-
-    geneSets.seurat_object.new.xls<-as.data.frame(t(c("TF","gene_set")))
-    colnames(geneSets.seurat_object.new.xls)<-c("TF","gene_set")
-    for(i in 1:length(geneSets.seurat_object.new)){
-      temp<-as.data.frame(geneSets.seurat_object.new[i])
-      colnames(temp)<-names(geneSets.seurat_object.new[i])
-      temp2<-as.data.frame(t(c(colnames(temp),str_c(temp[,1],collapse=","))))
-      colnames(temp2)<-c("TF","gene_set")
-      geneSets.seurat_object.new.xls<-rbind(geneSets.seurat_object.new.xls,temp2)
-    }
-    write.table(geneSets.seurat_object.new.xls,"regulons.seurat_object.txt",col.names=T,row.names=F,sep="\t",quote=F)
-
-    cellsAssigned.seurat_object <- lapply(cells_assignment.seurat_object.filtered, function(x) x$assignment)
-    assignmentTable.seurat_object <- reshape2::melt(cellsAssigned.seurat_object, value.name="cell")
-    colnames(assignmentTable.seurat_object)[2] <- "geneSet"
-
-    assignmentMat.seurat_object <- table(assignmentTable.seurat_object[,"geneSet"], assignmentTable.seurat_object[,"cell"])
-
-    aucMatrix.seurat_object <- t(assignmentMat.seurat_object)
-    aucMatrix.seurat_object <- apply(aucMatrix.seurat_object, 2, as.numeric)
-    system.time(rss.seurat_object <- calcRSS(t(aucMatrix.seurat_object), seurat_object$seurat_clusters))
-    rss.seurat_object <- rss.seurat_object[onlyNonDuplicatedExtended(rownames(rss.seurat_object)),]
-
-    top_regulons<-unique(as.vector(apply(rss.seurat_object,2,function(x) names(sort(x,decreasing=TRUE)[1:nrow(rss.seurat_object)]))))
-    cells_AUC.seurat_object.ordered.filtered<-cells_AUC.seurat_object[which(rownames(cells_AUC.seurat_object) %in% top_regulons),]
-    regulonActivity_byCellType.seurat_object <- sapply(split(rownames(cellInfo.seurat_object), cellInfo.seurat_object$seurat_clusters),
-                                                        function(cells) rowMeans(getAUC(cells_AUC.seurat_object.ordered.filtered)[,cells]))
-    regulonActivity_byCellType_Scaled.seurat_object <- t(scale(t(regulonActivity_byCellType.seurat_object), center = T, scale=T))
-
-    write.table(regulonActivity_byCellType_Scaled.seurat_object, "scaled_regulon_activity_by_cell_type_FULL_TABLE.txt", sep = "\t", quote = F, col.names = T)
-    write.table(rss.seurat_object, "rss_regulon_by_cell_type_FULL_TABLE.txt", sep = "\t", quote = F, col.names = T)
-    updateSliderInput(session, "grnTopRegulonsRNA", max = nrow(rss.seurat_object))
-    print("All done!")
-   })
-   
-  observeEvent(input$grnConfirmVisualizationRNA, {
-    shinyjs::show("grnHeatmapRNA_loader")
-    
-     rss.seurat_object <- read.delim("rss_regulon_by_cell_type_FULL_TABLE.txt", check.names = F)
-     regulonActivity_byCellType_Scaled.seurat_object <- read.delim("scaled_regulon_activity_by_cell_type_FULL_TABLE.txt", check.names = F)
-     
-     #heatmap input
-     top_regulons<-unique(as.vector(apply(rss.seurat_object,2,function(x) names(sort(x,decreasing=TRUE)[1:as.numeric(input$grnTopRegulonsRNA)]))))
-     regulonActivity_byCellType_Scaled.seurat_object_top <- regulonActivity_byCellType_Scaled.seurat_object[top_regulons, ]
-     #matrix input
-     mat_plotted <- as.data.frame(regulonActivity_byCellType_Scaled.seurat_object)
-     if(input$grnMatrixSelectionRNA == "rss")
-     {
-       mat_plotted <- as.data.frame(rss.seurat_object)
-     }
-     
-     output$grnMatrixRNA <- renderDataTable(mat_plotted, options = list(pageLength = 10), rownames = T)
-     
-     output$grnHeatmapRNA <- renderPlotly(heatmaply(regulonActivity_byCellType_Scaled.seurat_object_top, colors=viridis(n = 256, option = "plasma")))
-     #pheatmap::pheatmap(t(regulonActivity_byCellType_Scaled.seurat_object_top), #fontsize_row=3,
-     #                   color=colorRampPalette(ArchRPalettes$horizonExtra)(100), breaks=seq(-2, 2, length.out = 100),
-     #                   treeheight_row=10, treeheight_col=10, border_color=NA)
-  })
   
   observeEvent(input$grnConfirmATAC, {
     session$sendCustomMessage("handler_startLoader", c("grn2_loader", 10))
