@@ -63,8 +63,8 @@ ui <- dashboardPage(
       tabItem(tabName = "home", 
               div(id = "home_div", class = "div_container",
                   h1(class = "container_title", "Welcome to scAnner"),
-                  HTML("<p class=container_text> This is a web tool that handles the analysis of scRNAseq data, 
-                  from quality control and normalization, to dimensionality reduction, differential expression analysis, clustering and visualization.
+                  HTML("<p class=container_text> This is a web tool that handles the analysis of scRNAseq and scATAC data 
+                  from quality control and normalization, to dimensionality reduction, differential expression/accessibility analysis, clustering and visualization.
                   </br> Try out our sample data and visit the Help pages for guidance. </p>"
                   ),
                   actionButton(inputId = "debugRNA", label = "Fast debug RNA"),
@@ -79,9 +79,11 @@ ui <- dashboardPage(
                 #useShinyalert(),
                 box(
                   width = 4, status = "info", solidHeader = TRUE,
-                  title = "Select input files",
+                  title = "Upload your data",
                   tabsetPanel(type = "tabs",
                               tabPanel("Gene-count matrix (scRNA-seq)",
+                                       tags$h3("Upload your file"),
+                                       tags$hr(),
                                        textInput(inputId = "uploadCountMatrixprojectID", label = "Project name : ", value = "Project1"),
                                        fileInput(inputId = "countMatrix", label = "1. Genes-Cells count matrix", accept = ".txt"),
                                        sliderInput(inputId = "uploadCountMatrixminCells", label = "Include features detected in at least this many cells :", min = 1, max = 20, value = 3, step = 1),
@@ -100,6 +102,8 @@ ui <- dashboardPage(
                                        downloadButton(outputId = "utilitiesConfirmExport1", label = "Export .RDS"),
                                        ),
                               tabPanel("10x input files (scRNA-seq)", 
+                                       tags$h3("Upload your files"),
+                                       tags$hr(),
                                        textInput(inputId = "upload10xRNAprojectID", label = "Project name : ", value = "Project1"),
                                        fileInput(inputId = "barcodes", label = "1. Choose barcodes.csv.gz file", accept = ".gz"),
                                        fileInput(inputId = "genes", label = "2. Choose features.csv.gz file", accept = ".gz"),
@@ -120,7 +124,7 @@ ui <- dashboardPage(
                                        downloadButton(outputId = "utilitiesConfirmExport2", label = "Export .RDS"),
                                        ),
                               tabPanel("Arrow input files (scATAC-seq)", 
-                                       tags$h3("Load your dataset"),
+                                       tags$h3("Upload your file"),
                                        tags$hr(),
                                        textInput(inputId = "uploadATACprojectID", label = "Project name : ", value = "Project1"),
                                        fileInput(inputId = "uploadATACArrow", label = "Please upload an .arrow file", accept = ".arrow"),
@@ -166,20 +170,38 @@ ui <- dashboardPage(
                                      box(
                                        width = 3, status = "info", solidHeader = TRUE,
                                        title = "Quality control",
-                                       tags$h3("1. Display unfiltered quality control plots"),
-                                       actionButton(inputId = "qcDisplay", label = "OK"),
+                                       tags$h3("1. Display quality control plots before filtering"),
+                                       actionButton(inputId = "qcDisplay", label = "Display plots"),
                                        tags$hr(),
                                        tags$h3("2. Filter out low quality cells"),
                                        tags$hr(),
                                        
-                                       sliderInput(inputId = "minUniqueGenes", label = "Filter out cells that have unique feature counts less than :", min = 200, max = 2000, value = 500, step = 1),
-                                       sliderInput(inputId = "maxUniqueGenes", label = "Filter out cells that have unique feature counts over than :", min = 2001, max = 7000, value = 4500, step = 1),
+                                       sliderInput(inputId = "minUniqueGenes", label = "Minimum features detected", min = 200, max = 2000, value = 500, step = 1)%>%
+                                         shinyInput_label_embed(
+                                           shiny_iconlink() %>%
+                                             bs_embed_popover(
+                                               title = "Filter out cells that have unique feature counts less than:", placement = "left"
+                                             )
+                                         ), 
+                                       sliderInput(inputId = "maxUniqueGenes", label = "Maximum features detected", min = 2001, max = 7000, value = 4500, step = 1)%>%
+                                         shinyInput_label_embed(
+                                           shiny_iconlink() %>%
+                                             bs_embed_popover(
+                                               title = "Filter out cells that have unique feature counts over than:", placement = "left"
+                                             )
+                                         ),
                                        
-                                       sliderInput(inputId = "maxMtReads", label = "Filter out cells with mitochondrial counts % over :", min = 1, max = 100, value = 10, step = 1),
+                                       sliderInput(inputId = "maxMtReads", label = "Mitochondrial %", min = 1, max = 100, value = 10, step = 1)%>%
+                                         shinyInput_label_embed(
+                                           shiny_iconlink() %>%
+                                             bs_embed_popover(
+                                               title = "Filter out cells that their percentage of genes mapped to mitochondrial genome exceeds:", placement = "left"
+                                             )
+                                         ), 
                                        
                                        selectInput("qcColorBy", "Color by:",
                                                    c("orig.ident" = "orig.ident")),
-                                       actionButton(inputId = "qcConfirm", label = "OK"),
+                                       actionButton(inputId = "qcConfirm", label = "Perform filtering"),
                                      ),
                                      box(
                                        width = 9, status = "info", solidHeader = TRUE,
@@ -278,8 +300,6 @@ ui <- dashboardPage(
                                        title = "Quality control plots",
                                        div(class="ldBar", id="qc_loader3", "data-preset"="circle"),
                                        div(
-                                         column(tags$h3("Soft filtered plots"), width=12),
-                                         column(tags$hr(), width = 12),
                                          column(
                                            div(id="TSS_plot_loader",
                                                shinycssloaders::withSpinner(
@@ -314,8 +334,14 @@ ui <- dashboardPage(
                   title = "Normalize and scale the data",
                   tags$h3("1. Log-normalization"),
                   tags$hr(),
-                  #textInput(inputId = "normScaleFactor", label = "Scale factor :", value = "10000"),
-                  sliderInput(inputId = "normScaleFactor", label = "Scale factor :", min = 1000, max = 1000000, value = 10000, step = 1000),
+                  #textInput(inputId = "normScaleFactor", label = "Scale factor :", value = "10000"), 
+                  sliderInput(inputId = "normScaleFactor", label = "Scale factor :", min = 1000, max = 1000000, value = 10000, step = 1000)%>%
+                    shinyInput_label_embed(
+                      shiny_iconlink() %>%
+                        bs_embed_popover(
+                          title = "It normalizes the count data per cell and transforms the result to log scale", placement = "left"
+                        )
+                    ), 
                   tags$h3("2. Identification of highly variable features"),
                   tags$hr(),
                   radioButtons("radioHVG", label = h3("Select one of the following methods : "),
@@ -324,7 +350,15 @@ ui <- dashboardPage(
                                               "Mean-Variance method" = "mvp", 
                                               
                                               "Dispersion method" = "disp"), 
-                               selected = "vst"),
+                               selected = "vst")%>%
+                    shinyInput_label_embed(
+                      shiny_iconlink() %>%
+                        bs_embed_popover(
+                          title = paste0("- vst: First, fits a line to the relationship of log(variance) and log(mean) using local polynomial regression (loess). Then standardizes the feature values using the observed mean and expected variance (given by the fitted line). Feature variance is then calculated on the standardized values after clipping to a maximum (see clip.max parameter).\n\n",
+                                         "- mean.var.plot (mvp): First, uses a function to calculate average expression (mean.function) and dispersion (dispersion.function) for each feature. Next, divides features into num.bin (deafult 20) bins based on their average expression, and calculates z-scores for dispersion within each bin. The purpose of this is to identify variable features while controlling for the strong relationship between variability and average expression.\n\n",
+                                         "- dispersion (disp): selects the genes with the highest dispersion values"), placement = "left"
+                        )
+                    ), 
                   #textInput(inputId = "nHVGs", label = "Number of genes to select as top variable genes (applicable only to the first and third option) :", value = "2000"),
                   sliderInput(inputId = "nHVGs", label = "Number of genes to select as top variable genes (applicable only to the first and third option) :", min = 200, max = 4000, value = 2000, step = 100),
                   tags$h3("3. Scaling the data"),
@@ -338,9 +372,7 @@ ui <- dashboardPage(
                     shinyInput_label_embed(
                       shiny_iconlink() %>%
                         bs_embed_popover(
-                          title = "Scaling transformation is implemented before dimensionality reduction of the dataset and performs the following steps :
-                          \nShifts the expression of each gene, so that the mean expression across cells is 0
-                          \nScales the expression of each gene, so that the variance across cells is 1(this step gives equal weight in downstream analyses, so that highly-expressed genes do not dominate)", placement = "left"
+                          title = "Scales and centers features in the dataset. If variables are provided in this text input, they are individually regressed against each feature, and the resulting residuals are then scaled and centered. Variables stored in metadata are valid options.\nThis operation is slow when variables are provided in combination with the \"All genes\" option above.", placement = "left"
                         )
                     ),
                   
@@ -397,12 +429,14 @@ ui <- dashboardPage(
                                                             div(class="ldBar", id="PCA2_loader", "data-preset"="circle"),
                                                             div(
                                                               column(
+                                                                tags$h3("PCA loading scores (top-30 genes for this PC)"),
                                                                 div(id="PCAloadings_loader",
                                                                     shinycssloaders::withSpinner(
                                                                       plotlyOutput(outputId = "PCAloadings", height = "700px")
                                                                     )
                                                                 ), width = 6),
                                                               column(
+                                                                tags$h3("Heatmap of scaled expression (top-30 genes for this PC)"),
                                                                 div(id="PCAheatmap_loader",
                                                                     shinycssloaders::withSpinner(
                                                                       plotlyOutput(outputId = "PCAheatmap", height = "700px")
@@ -445,19 +479,19 @@ ui <- dashboardPage(
                                    fluidRow(
                                      box(
                                        width = 4, status = "info", solidHeader = TRUE,
-                                       title = "k-NN & Clustering parameters",
-                                       tags$h3("1. Construction of the shared nearest neighbour"),
+                                       title = "Clustering options",
+                                       tags$h3("1. Construction of the shared nearest neighbour (SNN) graph"),
                                        tags$hr(),
-                                       sliderInput(inputId = "snnK", label = "k-nearest neighbours for each cell :", min = 1, max = 200, value = 20, step = 1),
+                                       sliderInput(inputId = "snnK", label = "Number of neighbours for each cell [k]:", min = 1, max = 200, value = 20, step = 1),
                                        sliderInput(inputId = "snnPCs", label = "Number of principal components to use :", min = 1, max = 100, value = 10, step = 1),
-                                       tags$h3("2. Clustering of the cells"),
+                                       tags$h3("2. Communities' detection (Louvain algorithm)"),
                                        tags$hr(),
                                        sliderInput(inputId = "clusterRes", label = "Clustering resolution :", min = 0.1, max = 60, value = 0.5, step = 0.1),
                                        sliderInput(inputId = "clusterPCs", label = "Number of principal components to use :", min = 1, max = 100, value = 10, step = 1),
-                                       actionButton(inputId = "snnConfirm", label = "OK"),
+                                       actionButton(inputId = "snnConfirm", label = "Perform clustering"),
                                      ),
                                      box(
-                                       width = 8, status = "info", solidHeader = TRUE, title = "k-NN graph & clusters", height = "1500px",
+                                       width = 8, status = "info", solidHeader = TRUE, title = "Clustering output", #height = "1500px",
                                        tabsetPanel(type = "tabs",
                                                    tabPanel("Clustering results",
                                                             tabsetPanel(type = "tabs",
@@ -479,7 +513,7 @@ ui <- dashboardPage(
                                                                         )
                                                             )															
                                                    ),
-                                                   tabPanel("Shared Nearest Neighbour Graph", 
+                                                   tabPanel("Shared Nearest Neighbour (SNN) Graph", 
                                                             div(class="ldBar", id="clust3_loader", "data-preset"="circle"),
                                                             actionButton(inputId = "snnDisplayConfirm", label = "Display SNN graph"),
                                                             div(id="snnSNN_loader",
@@ -496,10 +530,10 @@ ui <- dashboardPage(
                                    fluidRow(
                                      box(
                                        width = 4, status = "info", solidHeader = TRUE,
-                                       title = "Clustering parameters",
+                                       title = "Clustering options",
                                        sliderInput(inputId = "clusterDimensionsATAC", label = "Number of dimensions to use: ", min = 1, max = 100, value = 30, step = 1),
                                        sliderInput(inputId = "clusterResATAC", label = "Clustering resolution :", min = 0.1, max = 60, value = 0.6, step = 0.1),
-                                       actionButton(inputId = "clusterConfirmATAC", label = "Run clustering"),
+                                       actionButton(inputId = "clusterConfirmATAC", label = "Perform clustering"),
                                      ),
                                      box(
                                        width = 8, status = "info", solidHeader = TRUE, title = "Clustering output", height = "900px",
@@ -536,13 +570,13 @@ ui <- dashboardPage(
                           tabPanel("scRNA-seq",
                                    fluidRow(
                                      box(width = 3, status = "info", solidHeader = TRUE,
-                                         title = "Cell visualization options",
+                                         title = "Cells visualization options in reduced space",
                                          sliderInput(inputId = "umapPCs", label = "Number of principal components to use :", min = 1, max = 100, value = 10, step = 1),
                                          sliderInput(inputId = "umapOutComponents", label = "Number of dimensions to fit output:", min = 2, max = 100, value = 3, step = 1)%>%
                                            shinyInput_label_embed(
                                              shiny_iconlink() %>%
                                                bs_embed_popover(
-                                                 title = "If PHATE is selected, The runtime increases when a value > 3 is used.", placement = "bottom"
+                                                 title = "If PHATE is selected, the runtime increases when a value > 3 is used.\nPlease note that tSNE doesn't return more than 3 dimensions.", placement = "bottom"
                                                )
                                            ),
                                          actionButton(inputId = "umapRunUmap", label = "Run UMAP"),
@@ -580,9 +614,15 @@ ui <- dashboardPage(
                           tabPanel("scATAC-seq",
                                    fluidRow(
                                      box(width = 3, status = "info", solidHeader = TRUE,
-                                         title = "Cell visualization options",
-                                         sliderInput(inputId = "umapDimensionsATAC", label = "Number of principal components to use :", min = 1, max = 100, value = 15, step = 1),
-                                         sliderInput(inputId = "umapOutComponentsATAC", label = "Number of dimensions to fit output:", min = 2, max = 100, value = 3, step = 1),
+                                         title = "Cells visualization options in reduced space",
+                                         sliderInput(inputId = "umapDimensionsATAC", label = "Number of input dimensions to use :", min = 1, max = 100, value = 15, step = 1),
+                                         sliderInput(inputId = "umapOutComponentsATAC", label = "Number of dimensions to fit output:", min = 2, max = 100, value = 3, step = 1)%>%
+                                           shinyInput_label_embed(
+                                             shiny_iconlink() %>%
+                                               bs_embed_popover(
+                                                 title = "Please note that tSNE doesn't return more than 2 dimensions.", placement = "bottom"
+                                               )
+                                           ),
                                          actionButton(inputId = "umapRunUmapTsneATAC", label = "Run UMAP and tSNE"),
                                          tags$h3("Display settings"),
                                          tags$hr(),
@@ -639,12 +679,30 @@ ui <- dashboardPage(
                                                                      "log(2)" = "avg_log2FC"
                                                       ), 
                                                       selected = "avg_logFC"),
-                                         #textInput(inputId = "findMarkersMinPct", label = "Only test genes that are detected in a minimum fraction of cells in either of the two populations :", value = "0.1"),
-                                         sliderInput(inputId = "findMarkersMinPct", label = "Only test genes that are detected in a minimum fraction of cells in either of the two populations :", min = 0, max = 1, value = 0.25, step = 0.05),
-                                         #textInput(inputId = "findMarkersLogFC", label = "Limit testing to genes which show, on average, at least X-fold difference (log-scale) between the two groups of cells :", value = "0.25"),
-                                         sliderInput(inputId = "findMarkersLogFC", label = "Limit testing to genes which show, on average, at least X-fold difference (log-scale) between the two groups of cells :", min = 0, max = 3, value = 0.25, step = 0.05),
-                                         #textInput(inputId = "findMarkersPval", label = "Only return markers that have a p-value < slected threshold, or a power > selected threshold (if the test is ROC) :", value = "0.01"),
-                                         sliderInput(inputId = "findMarkersPval", label = "Only return markers that have a p-value < slected threshold, or a power > selected threshold (if the test is ROC) :", min = 0, max = 1, value = 0.01, step = 0.01),
+                                         
+                                         sliderInput(inputId = "findMarkersMinPct", label = "Minimum % of expression", min = 0, max = 1, value = 0.25, step = 0.05)%>%
+                                           shinyInput_label_embed(
+                                             shiny_iconlink() %>%
+                                               bs_embed_popover(
+                                                 title = "Only test genes that are detected in a minimum fraction of cells in either of the two populations:", placement = "bottom"
+                                               )
+                                           ),
+                                         
+                                         sliderInput(inputId = "findMarkersLogFC", label = "Avg Log FC threshold", min = 0, max = 3, value = 0.25, step = 0.05)%>%
+                                           shinyInput_label_embed(
+                                             shiny_iconlink() %>%
+                                               bs_embed_popover(
+                                                 title = "Limit testing to genes which show, on average, at least X-fold difference (log-scale) between the two groups of cells:", placement = "bottom"
+                                               )
+                                           ),
+                                         
+                                         sliderInput(inputId = "findMarkersPval", label = "P-value threshold", min = 0, max = 1, value = 0.01, step = 0.01)%>%
+                                           shinyInput_label_embed(
+                                             shiny_iconlink() %>%
+                                               bs_embed_popover(
+                                                 title = "Only return markers that have a p-value < slected threshold, or a power > selected threshold (if the test is ROC) :", placement = "bottom"
+                                               )
+                                           ),
                                          actionButton(inputId = "findMarkersConfirm", label = "OK")
                                      ),
                                      
@@ -657,7 +715,7 @@ ui <- dashboardPage(
                                                             downloadButton(outputId = "findMarkersRNAExport", label = "Save table")),
                                                    tabPanel("Heatmap", 
                                                             div(class="ldBar", id="DEA2_loader", "data-preset"="circle"),
-                                                            actionButton(inputId = "findMarkersTop10HeatmapConfirm", label = "Display top10 marker genes heatmap"),
+                                                            actionButton(inputId = "findMarkersTop10HeatmapConfirm", label = "Display top-10 marker genes heatmap"),
                                                             div(id="findMarkersHeatmap_loader",
                                                                 shinycssloaders::withSpinner(
                                                                   plotlyOutput(outputId = "findMarkersHeatmap", height = "1300px")
@@ -667,7 +725,7 @@ ui <- dashboardPage(
                                                    
                                                    tabPanel("Dotplot", 
                                                             div(class="ldBar", id="DEA3_loader", "data-preset"="circle"),
-                                                            actionButton(inputId = "findMarkersTop10DotplotConfirm", label = "Display top10 marker genes dotplot"),
+                                                            actionButton(inputId = "findMarkersTop10DotplotConfirm", label = "Display top-10 marker genes dotplot"),
                                                             div(id="findMarkersDotplot_loader",
                                                                 shinycssloaders::withSpinner(
                                                                   plotlyOutput(outputId = "findMarkersDotplot", height = "1300px")
@@ -677,7 +735,7 @@ ui <- dashboardPage(
                                                    
                                                    tabPanel("Feature plot", fluidRow(
                                                      box(width = 3, status = "info", solidHeader = TRUE, title = "Options",
-                                                         radioButtons("findMarkersFeatureSignature", label = "Select between gene or signature: ",
+                                                         radioButtons("findMarkersFeatureSignature", label = "Select between gene or signature to plot: ",
                                                                       choices = list("Gene" = "gene", 
                                                                                      "Gene signature" = "signature"
                                                                       ), 
@@ -721,7 +779,7 @@ ui <- dashboardPage(
                                                          )
                                                      )
                                                    )),
-                                                   tabPanel("Gene-pair expression", fluidRow(
+                                                   tabPanel("Multi-feature vizualization", fluidRow(
                                                      box(width=3, status="info", solidHeader=T, title="Options",
                                                          selectizeInput(inputId = 'findMarkersFeaturePair1',
                                                                         label = 'Select 1st feature:',
@@ -875,7 +933,7 @@ ui <- dashboardPage(
                                                    tabPanel("Marker genes (ATAC)", fluidRow(
                                                      tabsetPanel(type = "tabs", id = "marker_genes_tab_id",
                                                                  tabPanel("Marker genes table",
-                                                                          div(class="ldBar", id="DEA7_loader", "data-preset"="circle"),
+                                                                          div(class="ldBar", id="DEA8_loader", "data-preset"="circle"),
                                                                           
                                                                           div(id="findMarkersGenesATACTable_loader",
                                                                               shinycssloaders::withSpinner(
@@ -897,7 +955,7 @@ ui <- dashboardPage(
                                                    tabPanel("Marker peaks (ATAC)", fluidRow(
                                                      tabsetPanel(type = "tabs", id = "marker_peaks_tab_id",
                                                        tabPanel("Marker peaks table",
-                                                                div(class="ldBar", id="DEA8_loader", "data-preset"="circle"),
+                                                                div(class="ldBar", id="DEA9_loader", "data-preset"="circle"),
                                                                 
                                                                 div(id="findMarkersPeaksATACTable_loader",
                                                                     shinycssloaders::withSpinner(
@@ -930,7 +988,7 @@ ui <- dashboardPage(
                                                          actionButton(inputId = "findMarkersFPConfirmATAC", label = "Display plot"),
                                                      ),
                                                      box(width = 9, status = "info", solidHeader = TRUE, title = "Plot",
-                                                         div(class="ldBar", id="DEA9_loader", "data-preset"="circle"),
+                                                         div(class="ldBar", id="DEA10_loader", "data-preset"="circle"),
                                                          div(id="findMarkersFeaturePlotATAC_loader",
                                                              shinycssloaders::withSpinner(
                                                                plotOutput(outputId = "findMarkersFeaturePlotATAC", height = "1100px")
@@ -984,7 +1042,7 @@ ui <- dashboardPage(
                           tabPanel("scRNA-seq",
                                    fluidRow(
                                      box(width = 2, status = "info", solidHeader = TRUE,
-                                         title = "gProfiler options",
+                                         title = "Enrichment analysis options",
                                          tags$h3("1. Options for input list"),
                                          tags$hr(),
                                          selectInput("gProfilerList", "Input list of genes:",
@@ -1024,7 +1082,7 @@ ui <- dashboardPage(
                                          actionButton(inputId = "sendToFlame", label = "Send to Flame")
                                      ),
                                      box(
-                                       width = 10, status = "info", solidHeader = TRUE, title = "gProfiler results",
+                                       width = 10, status = "info", solidHeader = TRUE, title = "Enrichment analysis results",
                                        tabsetPanel(type = "tabs",
                                                    tabPanel("Table of functional terms", 
                                                             div(class="ldBar", id="gprof1_loader", "data-preset"="circle"),
@@ -1097,7 +1155,7 @@ ui <- dashboardPage(
                                               "Primary Cell Atlas (human)" = "hpca",
                                               "DICE (human)" = "dice",
                                               "Hematopoietic diff (human)" = "hema",
-                                              "Hematopoietic diff (human)" = "hsrnaseq"
+                                              "Presorted RNA seq (human)" = "hsrnaseq"
                                ),
                                selected = "mmrnaseq"
                   ),
@@ -1260,7 +1318,7 @@ ui <- dashboardPage(
               tabsetPanel(type="tabs", id = "grnTabPanel",
                           tabPanel("scRNA-seq", #TODO for pyscenic ctx minimun number of genes per module, AUC+NES thresholds [for the update]
                                    fluidRow(
-                                     box(width = 3, status = "info", solidHeader = TRUE, title = "GRN input parameters",
+                                     box(width = 3, status = "info", solidHeader = TRUE, title = "Not supported in online version",
                                          tags$h3("Analysis options"),
                                          tags$hr(),
                                          textInput(inputId = "grnPyscenicPathRNA", label = "Absolute path for PyScenic"),
@@ -1272,15 +1330,6 @@ ui <- dashboardPage(
                                                                                                                                "Matrix of RSS scores"="rss")),
                                          sliderInput(inputId = "grnTopRegulonsRNA", label = "Display top regulons:", min = 5, max = 100, value = 10, step = 1),
                                          actionButton(inputId = "grnConfirmVisualizationRNA", label = "Plot")
-                                     ),
-                                     box(width = 9, status = "info", solidHeader = TRUE, title = "GRN output",
-                                        dataTableOutput(outputId="grnMatrixRNA", height = "500px"),
-                                        tags$hr(),
-                                        div(id="grnHeatmapRNA_loader",
-                                            shinycssloaders::withSpinner(
-                                              plotlyOutput(outputId = "grnHeatmapRNA", height = "800px")
-                                            )
-                                        )
                                      )
                                    )
                           ),
