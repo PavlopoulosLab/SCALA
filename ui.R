@@ -1318,18 +1318,45 @@ ui <- dashboardPage(
               tabsetPanel(type="tabs", id = "grnTabPanel",
                           tabPanel("scRNA-seq", #TODO for pyscenic ctx minimun number of genes per module, AUC+NES thresholds [for the update]
                                    fluidRow(
-                                     box(width = 3, status = "info", solidHeader = TRUE, title = "Not supported in online version",
-                                         tags$h3("Analysis options"),
+                                     box(width = 3, status = "info", solidHeader = TRUE, title = "GRN input parameters",
+                                         tags$h3("Prepare files for pyscenic"),
                                          tags$hr(),
-                                         textInput(inputId = "grnPyscenicPathRNA", label = "Absolute path for PyScenic"),
-                                         sliderInput(inputId = "grnCoresRNA", label = "Number of cores", min = 1, max = 64, value = 1, step = 1), 
-                                         actionButton(inputId = "grnConfirmRNA", label = "Run GRN analysis"),
+                                         radioButtons("grnGenomeBuild", label = h3("Select genome build : "),
+                                                      choices = list("Mus musculus (Mouse) - mm10" = "mm10", 
+                                                                     "Homo sapiens (Human) - hg19" = "hg19",
+                                                                     "Homo sapiens (Human) - hg38" = "hg38"
+                                                      ), 
+                                                      selected = "mm10"),
+                                         
+                                         actionButton(inputId = "grnProduceLoom", label = "Prepare .RDS and .loom files for download"),
+                                         tags$br(),
+                                         div(
+                                           tags$br(),
+                                           downloadButton(outputId = "grnDownloadLoom", label = "Export loom file"),
+                                           downloadButton(outputId = "grnDownloadRDS", label = "Export RDS file"),
+                                         ),
+                                         
+                                         tags$h3("Analyze pyscenic output"),
+                                         tags$hr(),
+                                         fileInput(inputId = "grnLoomInput", label = "Upload a .loom file", accept = ".loom"),
+                                         fileInput(inputId = "grnRDSInput", label = "Upload an .RDS file", accept = ".RDS"),
+                                         actionButton(inputId = "grnLoomAnalysis", label = "Analyze file"),
+                                         
                                          tags$h3("Visualization options"),
                                          tags$hr(),
                                          selectInput(inputId = "grnMatrixSelectionRNA", label = "Regulons - display:", choices = c("Matrix of AUC values"="auc",
-                                                                                                                               "Matrix of RSS scores"="rss")),
+                                                                                                                                   "Matrix of RSS scores"="rss")),
                                          sliderInput(inputId = "grnTopRegulonsRNA", label = "Display top regulons:", min = 5, max = 100, value = 10, step = 1),
                                          actionButton(inputId = "grnConfirmVisualizationRNA", label = "Plot")
+                                     ),
+                                     box(width = 9, status = "info", solidHeader = TRUE, title = "GRN output",
+                                         dataTableOutput(outputId="grnMatrixRNA", height = "500px"),
+                                         tags$hr(),
+                                         div(id="grnHeatmapRNA_loader",
+                                             shinycssloaders::withSpinner(
+                                               plotlyOutput(outputId = "grnHeatmapRNA", height = "800px")
+                                             )
+                                         )
                                      )
                                    )
                           ),
