@@ -871,9 +871,9 @@ ui <- dashboardPage(
                                      ),
                                      
                                      box(
-                                       tabsetPanel(type = "tabs",
+                                       tabsetPanel(type = "tabs", id = "ATAC_markers_tabs",
                                                    tabPanel("Marker genes (ATAC)", fluidRow(
-                                                     tabsetPanel(type = "tabs",
+                                                     tabsetPanel(type = "tabs", id = "marker_genes_tab_id",
                                                                  tabPanel("Marker genes table",
                                                                           div(class="ldBar", id="DEA7_loader", "data-preset"="circle"),
                                                                           
@@ -895,7 +895,7 @@ ui <- dashboardPage(
                                                     )
                                                    ),
                                                    tabPanel("Marker peaks (ATAC)", fluidRow(
-                                                     tabsetPanel(type = "tabs",
+                                                     tabsetPanel(type = "tabs", id = "marker_peaks_tab_id",
                                                        tabPanel("Marker peaks table",
                                                                 div(class="ldBar", id="DEA8_loader", "data-preset"="circle"),
                                                                 
