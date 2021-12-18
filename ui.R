@@ -1319,6 +1319,7 @@ ui <- dashboardPage(
                           tabPanel("scRNA-seq", #TODO for pyscenic ctx minimun number of genes per module, AUC+NES thresholds [for the update]
                                    fluidRow(
                                      box(width = 3, status = "info", solidHeader = TRUE, title = "GRN input parameters",
+                                         div(class="ldBar", id="loom_production_loader", "data-preset"="circle"),
                                          tags$h3("Prepare files for pyscenic"),
                                          tags$hr(),
                                          radioButtons("grnGenomeBuild", label = h3("Select genome build : "),
@@ -1336,11 +1337,12 @@ ui <- dashboardPage(
                                            downloadButton(outputId = "grnDownloadRDS", label = "Export RDS file"),
                                          ),
                                          
+                                         div(class="ldBar", id="loom_analysis_loader", "data-preset"="circle"),
                                          tags$h3("Analyze pyscenic output"),
                                          tags$hr(),
                                          fileInput(inputId = "grnLoomInput", label = "Upload a .loom file", accept = ".loom"),
                                          fileInput(inputId = "grnRDSInput", label = "Upload an .RDS file", accept = ".RDS"),
-                                         actionButton(inputId = "grnLoomAnalysis", label = "Analyze file"),
+                                         actionButton(inputId = "grnLoomAnalysis", label = "Analyze files"),
                                          
                                          tags$h3("Visualization options"),
                                          tags$hr(),
@@ -1350,7 +1352,8 @@ ui <- dashboardPage(
                                          actionButton(inputId = "grnConfirmVisualizationRNA", label = "Plot")
                                      ),
                                      box(width = 9, status = "info", solidHeader = TRUE, title = "GRN output",
-                                         dataTableOutput(outputId="grnMatrixRNA", height = "500px"),
+                                         div( dataTableOutput(outputId="grnMatrixRNA") ),
+                                         tags$br(),
                                          tags$hr(),
                                          div(id="grnHeatmapRNA_loader",
                                              shinycssloaders::withSpinner(
