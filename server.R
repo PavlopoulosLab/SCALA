@@ -879,7 +879,7 @@ server <- function(input, output, session) {
       if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else{
         shinyjs::show("hvgScatter_loader")
-        
+        showModal(modalDialog(span('Analysis in Progress, please wait...', style='color:lightseagreen'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;top:50%;left:50%'))
         normalize_normMethod <- "LogNormalize"
         normalize_normScaleFactor <- input$normScaleFactor
         seurat_object <<- NormalizeData(seurat_object, normalization.method = normalize_normMethod, scale.factor = as.numeric(normalize_normScaleFactor))
@@ -954,6 +954,7 @@ server <- function(input, output, session) {
       print(paste("Error :  ", e))
       session$sendCustomMessage("handler_alert", "The selected Normalization arguments cannot produce meaningful visualizations.")
     }, finally = {
+      removeModal()
       session$sendCustomMessage("handler_startLoader", c("normalize_loader", 100))
       Sys.sleep(1)
       session$sendCustomMessage("handler_finishLoader", "normalize_loader")
@@ -2909,6 +2910,8 @@ output$findMotifsATACExport <- downloadHandler(
     #   print(paste("Warning:  ", w))
     }, error = function(e) {
       print(paste("Error :  ", e))
+      shinyjs::hide("trajectoryPlot_loader")
+      shinyjs::hide("trajectoryPseudotimePlot_loader")
       session$sendCustomMessage("handler_alert", "There was an error with Trajectory Analysis.")
     }, finally = {
       session$sendCustomMessage("handler_startLoader", c("traj1_loader", 100))
@@ -3226,8 +3229,7 @@ output$findMotifsATACExport <- downloadHandler(
                        title="seurat_object",
                        genome= genome_info, # Just for user information, not used internally
                        default.embedding=seurat.umap,
-                       default.embedding.name="UMAP")                  
-    
+                       default.embedding.name="UMAP")
     finalize(loom=loom)
   })
   
@@ -3407,6 +3409,7 @@ output$findMotifsATACExport <- downloadHandler(
         shinyjs::show("grnHeatmapATAC_loader")
         shinyjs::show("grnATACTable_loader")
         shinyjs::show("grnATACTable2_loader")
+        shinyjs::show("grnATACTable3_loader")
         
         fdr_lim <- input$grnFdrATAC
         corr_lim <- input$grnCorrlationATTAC
@@ -3476,10 +3479,20 @@ output$findMotifsATACExport <- downloadHandler(
         output$grnMatrixATAC <- renderDataTable(seZ_proj_default_condition_df_positive_regulators_GSM_MM_condition, options = list(pageLength = 10), rownames = T)
         export_positiveRegulators_ATAC <<- seZ_proj_default_condition_df_positive_regulators_GSM_MM_condition
         
+        ### Peak x Motif matrix ###
+        motifMatrix_proj_default<-SummarizedExperiment::assay(getMatches(proj_default))
+        rownames(motifMatrix_proj_default) <- paste0(seqnames(getMatches(proj_default)), ":", start(getMatches(proj_default)), "-", end(getMatches(proj_default)))
+        motifMatrix_proj_default <- as.matrix(motifMatrix_proj_default) # (motifMatrix_proj_default, "dgCMatrix")
+        export_PeakMotifTable_ATAC <<- motifMatrix_proj_default
+        print(head(motifMatrix_proj_default))
+        #-----------------------------------------------------------------------
+        
         output$grnHeatmapATAC <- renderPlotly(heatmaply(seZ_proj_default_condition_df_positive_regulators_GSM_MM_condition, colors=viridis(n = 256, option = "plasma")))
         
         output$grnP2GlinksTable <- renderDataTable(p2g_table, options = list(pageLength = 10), rownames = T)
         export_peakToGenelinks_ATAC <<- p2g_table
+        
+        output$grnMotifTable <- renderDataTable(motifMatrix_proj_default[1:10, 1:10], options = list(pageLength = 10), rownames = T)
         
         ##########################################################################
         ##########################################################################
@@ -3501,7 +3514,7 @@ output$findMotifsATACExport <- downloadHandler(
       paste("positiveRegulatorsTableATAC-", Sys.Date(), ".txt", sep="")
     },
     content = function(file) {
-      write.table(export_positiveRegulators_ATAC, file, sep = "\t", quote = F, row.names = F)
+      write.table(export_positiveRegulators_ATAC, file, sep = "\t", quote = F, row.names = T)
     })
   
   output$grnPeakToGeneLinksATACExport <- downloadHandler(
@@ -3509,7 +3522,15 @@ output$findMotifsATACExport <- downloadHandler(
       paste("peakToGeneLinksTableATAC-", Sys.Date(), ".txt", sep="")
     },
     content = function(file) {
-      write.table(export_peakToGenelinks_ATAC, file, sep = "\t", quote = F, row.names = F)
+      write.table(export_peakToGenelinks_ATAC, file, sep = "\t", quote = F, row.names = T)
+    })
+  
+  output$grnPeakMotifTableATACExport <- downloadHandler(
+    filename = function() { 
+      paste("PeakMotifTableATAC-", Sys.Date(), ".txt", sep="")
+    },
+    content = function(file) {
+      write.table(export_PeakMotifTable_ATAC, file, sep = "\t", quote = F, row.names = T)
     })
   
   #---------------------------Tracks tab----------------------------------------
@@ -4178,6 +4199,7 @@ output$findMotifsATACExport <- downloadHandler(
     output$grnMatrixATAC <- NULL
     output$grnP2GlinksTable <- NULL
     output$metadataTableATAC <- NULL
+    output$grnMotifTable <- NULL
     
     #export tables
     export_metadata_ATAC <- ""
@@ -4187,7 +4209,7 @@ output$findMotifsATACExport <- downloadHandler(
     export_motifs_ATAC <- ""
     export_positiveRegulators_ATAC <- ""
     export_peakToGenelinks_ATAC <- ""
-    
+    export_PeakMotifTable_ATAC <- ""
   }
   
   #update metadata RNA and export_RNA_table

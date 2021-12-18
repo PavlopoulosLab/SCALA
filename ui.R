@@ -1387,13 +1387,23 @@ ui <- dashboardPage(
                                                               )
                                                      ),
                                                      tabPanel("Peak to gene links",
-                                                              dataTableOutput(outputId="grnP2GlinksTable", height = "800px"),
+                                                              
                                                               div(id="grnATACTable2_loader",
                                                                   shinycssloaders::withSpinner(
-                                                                    downloadButton(outputId = "grnPeakToGeneLinksATACExport", label = "Save table")
+                                                                    dataTableOutput(outputId="grnP2GlinksTable", height = "800px"),
                                                                     )
                                                                   ),
-                                                              )
+                                                              downloadButton(outputId = "grnPeakToGeneLinksATACExport", label = "Save table")
+                                                              ),
+                                                     tabPanel("Peak x motif occurence matrix",
+                                                              
+                                                              div(id="grnATACTable3_loader",
+                                                                  shinycssloaders::withSpinner(
+                                                                    dataTableOutput(outputId="grnMotifTable", height = "800px"),
+                                                                  )
+                                                              ),
+                                                              downloadButton(outputId = "grnPeakMotifTableATACExport", label = "Save table")
+                                                     )
                                          )
                                      )
                                    )
