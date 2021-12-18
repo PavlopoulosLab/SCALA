@@ -25,6 +25,7 @@ library(destiny) #remotes::install_github("theislab/destiny")
 library(UCell) #remotes::install_github("carmonalab/UCell")
 library(colorspace)
 library(missMDA)
+library(dismo)
 library(phateR) #pip install phate //\\ #install.packages("phateR") //\\ *devtools::install_github("scottgigante/seurat", ref="patch/add-PHATE-again") //\\ #reticulate::py_install("phate", pip=TRUE)
 #ATAC libraries
 library(ArchR)
@@ -105,6 +106,7 @@ export_markerPeaks_ATAC <- ""
 export_motifs_ATAC <- ""
 export_positiveRegulators_ATAC <- ""
 export_peakToGenelinks_ATAC <- ""
+export_PeakMotifTable_ATAC <- ""
 
 userMode <- FALSE
 
@@ -175,6 +177,7 @@ hideAllLoaders <- function(){
   shinyjs::hide("grnHeatmapATAC_loader")
   shinyjs::hide("grnATACTable_loader")
   shinyjs::hide("grnATACTable2_loader")
+  shinyjs::hide("grnATACTable3_loader")
   shinyjs::hide("visualizeTracksOutput_loader")
 }
 
