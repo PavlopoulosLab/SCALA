@@ -47,6 +47,7 @@ library(JASPAR2016) #BiocManager::install("JASPAR2020"), BiocManager::install("J
 
 #Global variables
 user_dir <- "" #user's folder in temp
+user_dir_pyscenic <- "" #user's folder for pyscenic results
 
 #tab Upload
 #objectInputType <- "Input10x"
