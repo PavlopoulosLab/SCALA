@@ -883,7 +883,7 @@ server <- function(input, output, session) {
       if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else{
         shinyjs::show("hvgScatter_loader")
-        showModal(modalDialog(span('Analysis in Progress, please wait...', style='color:lightseagreen'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;top:50%;left:50%'))
+        showModal(modalDialog(div('Analysis in Progress. This operation may take several minutes, please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
         normalize_normMethod <- "LogNormalize"
         normalize_normScaleFactor <- input$normScaleFactor
         seurat_object <<- NormalizeData(seurat_object, normalization.method = normalize_normMethod, scale.factor = as.numeric(normalize_normScaleFactor))
@@ -2759,7 +2759,7 @@ output$findMotifsATACExport <- downloadHandler(
     paste("motifsTableATAC-", Sys.Date(), ".txt", sep="")
   },
   content = function(file) {
-    write.table(export_motifs_ATAC, file, sep = "\t", quote = F, row.names = F)
+    write.table(export_motifs_ATAC, file, sep = "\t", quote = F, row.names = T)
   })
 
   #------------------CIPR tab-----------------------------------------------
@@ -3204,18 +3204,25 @@ output$findMotifsATACExport <- downloadHandler(
         # Filter 3 - Exclude genes missing from database:
         print("import rankings")
         print(user_dir)
+        
+        motifRankings1_mouse_human <- ""
+        motifRankings2_mouse_human <- ""
+        
         if(genome_info == "mm10")
         {
           print("mm10 if")
           motifRankings1_mouse_human <- importRankings("scenic_helper_files/mm10__refseq-r80__500bp_up_and_100bp_down_tss.mc9nr.feather") # either one, they should have the same genes
-          print("finishe 1st importing")
+          print("finished 1st importing")
           motifRankings2_mouse_human <- importRankings("scenic_helper_files/mm10__refseq-r80__10kb_up_and_down_tss.mc9nr.feather") # either one, they should have the same genes
           print("finished importing")
         }
         else if(genome_info == "hg19")
         {
+          print("hg19 if")
           motifRankings1_mouse_human <- importRankings("scenic_helper_files/hg19-500bp-upstream-10species.mc9nr.feather") # either one, they should have the same genes
-          motifRankings2_mouse_human <- importRankings("scenic_helper_files/hg19-tss-centered-10kb-10species.mc8nr.feather") # either one, they should have the same genes
+          print("finished 1st importing")
+          motifRankings2_mouse_human <- importRankings("scenic_helper_files/hg19-tss-centered-10kb-10species.mc9nr.feather") # either one, they should have the same genes
+          print("finished importing")
         }
         else
         {

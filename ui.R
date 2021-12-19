@@ -149,7 +149,7 @@ ui <- dashboardPage(
                   
                   tabsetPanel(type = "tabs", id = "uploadTabPanel",
                               tabPanel("scRNA-seq",
-                                       dataTableOutput("metadataTable", width = "100%", height = "100%"),
+                                       dataTableOutput("metadataTable"),
                                        downloadButton(outputId = "uploadMetadataExportRNA", label = "Save table")
                                        ),
                               tabPanel("scATAC-seq",
@@ -497,7 +497,7 @@ ui <- dashboardPage(
                                                             tabsetPanel(type = "tabs",
                                                                         tabPanel("Cluster table",
                                                                                  div(class="ldBar", id="clust1_loader", "data-preset"="circle"),
-                                                                                 dataTableOutput(outputId="clusterTable", height = "500px"),
+                                                                                 dataTableOutput(outputId="clusterTable"),
                                                                                  downloadButton(outputId = "clusterTableRNAExport", label = "Save table")
                                                                         ),
                                                                         tabPanel("Cluster barplot",
@@ -536,13 +536,13 @@ ui <- dashboardPage(
                                        actionButton(inputId = "clusterConfirmATAC", label = "Perform clustering"),
                                      ),
                                      box(
-                                       width = 8, status = "info", solidHeader = TRUE, title = "Clustering output", height = "900px",
+                                       width = 8, status = "info", solidHeader = TRUE, title = "Clustering output",
                                        tabsetPanel(type = "tabs",
                                                    tabPanel("Clustering results", 
                                                             tabsetPanel(type = "tabs",
                                                                         tabPanel("Cluster table",
                                                                                  div(class="ldBar", id="clust4_loader", "data-preset"="circle"),
-                                                                                 dataTableOutput(outputId="clusterTableATAC", height = "500px"),
+                                                                                 dataTableOutput(outputId="clusterTableATAC"),
                                                                                  downloadButton(outputId = "clusterTableExportATAC", label = "Save table")
                                                                         ),
                                                                         tabPanel("Cluster barplot",
@@ -707,11 +707,11 @@ ui <- dashboardPage(
                                      ),
                                      
                                      box(
-                                       width = 9, status = "info", solidHeader = TRUE, title = "DEA results", height = "1500px",
+                                       width = 9, status = "info", solidHeader = TRUE, title = "DEA results", #height = "1500px",
                                        tabsetPanel(type = "tabs",
                                                    tabPanel("Marker genes", 
                                                             div(class="ldBar", id="DEA1_loader", "data-preset"="circle"),
-                                                            dataTableOutput(outputId="findMarkersTable", height = "1300px"),
+                                                            dataTableOutput(outputId="findMarkersTable"),
                                                             downloadButton(outputId = "findMarkersRNAExport", label = "Save table")),
                                                    tabPanel("Heatmap", 
                                                             div(class="ldBar", id="DEA2_loader", "data-preset"="circle"),
@@ -937,7 +937,7 @@ ui <- dashboardPage(
                                                                           
                                                                           div(id="findMarkersGenesATACTable_loader",
                                                                               shinycssloaders::withSpinner(
-                                                                          dataTableOutput(outputId="findMarkersGenesTableATAC", height = "700px")
+                                                                          dataTableOutput(outputId="findMarkersGenesTableATAC")
                                                                             )
                                                                           ),
                                                                           downloadButton(outputId = "findMarkersGenesATACExport", label = "Save table"),
@@ -959,7 +959,7 @@ ui <- dashboardPage(
                                                                 
                                                                 div(id="findMarkersPeaksATACTable_loader",
                                                                     shinycssloaders::withSpinner(
-                                                                      dataTableOutput(outputId="findMarkersPeaksTableATAC", height = "700px"),
+                                                                      dataTableOutput(outputId="findMarkersPeaksTableATAC"),
                                                                     )
                                                                 ),
                                                                 downloadButton(outputId = "findMarkersPeaksATACExport", label = "Save table")
@@ -1123,7 +1123,7 @@ ui <- dashboardPage(
                                                                 div(class="ldBar", id="motif_loader", "data-preset"="circle"),
                                                                 div(id="findMotifsATACTable_loader",
                                                                   shinycssloaders::withSpinner(
-                                                                    dataTableOutput(outputId="findMotifsTableATAC", height = "800px")
+                                                                    dataTableOutput(outputId="findMotifsTableATAC")
                                                                   )
                                                                 ),
                                                                 downloadButton(outputId = "findMotifsATACExport", label = "Save table")
@@ -1377,7 +1377,7 @@ ui <- dashboardPage(
                                                               div(class="ldBar", id="grn2_loader", "data-preset"="circle"),
                                                               div(id="grnATACTable_loader",
                                                                   shinycssloaders::withSpinner(
-                                                                    dataTableOutput(outputId="grnMatrixATAC", height = "500px")
+                                                                    dataTableOutput(outputId="grnMatrixATAC")
                                                                   )
                                                               ),
                                                               downloadButton(outputId = "grnPositiveRegulatorsATACExport", label = "Save table"),
@@ -1393,7 +1393,7 @@ ui <- dashboardPage(
                                                               
                                                               div(id="grnATACTable2_loader",
                                                                   shinycssloaders::withSpinner(
-                                                                    dataTableOutput(outputId="grnP2GlinksTable", height = "800px"),
+                                                                    dataTableOutput(outputId="grnP2GlinksTable"),
                                                                     )
                                                                   ),
                                                               downloadButton(outputId = "grnPeakToGeneLinksATACExport", label = "Save table")
@@ -1402,7 +1402,7 @@ ui <- dashboardPage(
                                                               
                                                               div(id="grnATACTable3_loader",
                                                                   shinycssloaders::withSpinner(
-                                                                    dataTableOutput(outputId="grnMotifTable", height = "800px"),
+                                                                    dataTableOutput(outputId="grnMotifTable"),
                                                                   )
                                                               ),
                                                               downloadButton(outputId = "grnPeakMotifTableATACExport", label = "Save table")
