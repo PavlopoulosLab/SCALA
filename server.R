@@ -57,7 +57,7 @@ server <- function(input, output, session) {
   observeEvent(input$debugATAC, {
     
     tryCatch({
-      proj_default <<- loadArchRProject("usr_temp/28f557d8187f586dc6fc5da8ae258cc1__WT4___2021-12-16_18_49_31/default/")
+      proj_default <<- loadArchRProject("usr_temp/f0323da1b14bfb29f967ef3341bd771aPBMC_ATAC_2021-12-19_00_31_02/default/")
       session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " QUALITY CONTROL", " PCA/LSI",
                                                         " CLUSTERING", " ADDITIONAL DIMENSIONALITY\nREDUCTION METHODS", " TRAJECTORY ANALYSIS",
                                                         " MARKERS' IDENTIFICATION", " FUNCTIONAL/MOTIF\nENRICHMENT ANALYSIS", " TRACKS"))
@@ -66,7 +66,7 @@ server <- function(input, output, session) {
       updateInpuTrajectoryClustersATAC()
       updateSelInpColorATAC()
       
-      organism <<- "mouse"
+      organism <<- "human"
       disableTabsRNA()
       print("Load complete ATAC")
     }, error = function(e) {
@@ -976,6 +976,7 @@ server <- function(input, output, session) {
       if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else if (!"ScaleData.RNA" %in% names(seurat_object@commands)) session$sendCustomMessage("handler_alert", "Data need to be scaled first. Please, execute the previous step in DATA NORMALIZATION & SCALING.")
       else {
+        showModal(modalDialog(div('Analysis in Progress. This operation may take several minutes, please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
         shinyjs::show("elbowPlotPCA_loader")
         shinyjs::show("PCAscatter_loader")
         
@@ -984,6 +985,7 @@ server <- function(input, output, session) {
         optimal_nPCs <- 0 #only for visualization purposes
         if(input$pcaRadio == "yes")
         {
+          
           data.use <- PrepDR(seurat_object, genes.use = VariableFeatures(seurat_object), use.imputed = F, assay.type = "RNA")
           initial_optimal_nPCs <- PCA_estimate_nPC(data.use, from.nPC = 1, to.nPC=100, by.nPC= 10, k = 10)
           
@@ -1063,6 +1065,7 @@ server <- function(input, output, session) {
       print(paste("Error :  ", e))
       session$sendCustomMessage("handler_alert", "There was an error with the PCA analysis.")
     }, finally = {
+      removeModal()
       session$sendCustomMessage("handler_startLoader", c("PCA1_loader", 75))
       Sys.sleep(1)
       session$sendCustomMessage("handler_finishLoader", "PCA1_loader")
@@ -1137,6 +1140,7 @@ server <- function(input, output, session) {
       if (identical(proj_default, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else
       {
+        showModal(modalDialog(div('Analysis in Progress. This operation may take several minutes, please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
         session$sendCustomMessage("handler_startLoader", c("lsi_loader", 25))
         proj_default <<- addIterativeLSI(ArchRProj = proj_default, useMatrix = "TileMatrix", name = "IterativeLSI", force = T,
                                          iterations = as.numeric(input$lsiIterations), varFeatures = as.numeric(input$lsiVarFeatures),
@@ -1155,6 +1159,7 @@ server <- function(input, output, session) {
       print(paste("Error :  ", e))
       session$sendCustomMessage("handler_alert", "There was an error with the LSI analysis.")
     }, finally = {
+      removeModal()
       session$sendCustomMessage("handler_startLoader", c("lsi_loader", 100))
       Sys.sleep(1)
       session$sendCustomMessage("handler_finishLoader", "lsi_loader")
@@ -1291,6 +1296,7 @@ server <- function(input, output, session) {
     tryCatch({
       if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else{
+        showModal(modalDialog(div('Analysis in Progress. This operation may take several minutes, please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
         shinyjs::show("snnSNN_loader")
         
         session$sendCustomMessage("handler_startLoader", c("clust3_loader", 20))
@@ -1301,6 +1307,7 @@ server <- function(input, output, session) {
             if(!is.null(seurat_object@graphs$RNA_snn))
             {
               #set.seed(9)
+              
               mygraph <- as.matrix(seurat_object@graphs$RNA_snn)
               graphOut <- graph_from_adjacency_matrix(mygraph, mode = "undirected", weighted = T, diag = F)
               graphSimple <- simplify(graphOut) #, remove.loops=T)
@@ -1328,6 +1335,7 @@ server <- function(input, output, session) {
       print(paste("Error :  ", e))
       session$sendCustomMessage("handler_alert", "The selected Quality Control arguments cannot produce meaningful visualizations.")
     }, finally = {
+      removeModal()
       session$sendCustomMessage("handler_startLoader", c("clust3_loader", 100))
       Sys.sleep(1)
       session$sendCustomMessage("handler_finishLoader", "clust3_loader")
@@ -1452,6 +1460,7 @@ server <- function(input, output, session) {
     tryCatch({
       if (identical(proj_default, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else {
+        showModal(modalDialog(div('Analysis in Progress. This operation may take several minutes, please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
         shinyjs::show("umapPlotATAC_loader")
         #get input
         dims <- as.numeric(input$umapDimensionsPlotATAC)
@@ -1536,6 +1545,7 @@ server <- function(input, output, session) {
       print(paste("Error :  ", e))
       session$sendCustomMessage("handler_alert", "There was an error during of UMAP or tSNE plotting.")
     }, finally = {
+      removeModal()
       session$sendCustomMessage("handler_startLoader", c("dim_red4_loader", 100))
       Sys.sleep(1)
       session$sendCustomMessage("handler_finishLoader", "dim_red4_loader")
@@ -1667,7 +1677,7 @@ server <- function(input, output, session) {
       if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else if (!"pca" %in% names(seurat_object)) session$sendCustomMessage("handler_alert", "Please, first execute PRINCIPAL COMPONENT ANALYSIS.")
       else {
-        showModal(modalDialog(span('Analysis in Progress, please wait...', style='color:lightseagreen'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;top:50%;left:50%'))
+        showModal(modalDialog(div('Analysis in Progress. This operation may take several minutes, please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
         
         session$sendCustomMessage("handler_startLoader", c("dim_red1_loader", 25))
         seurat_object <<- RunPHATE(seurat_object, dims = 1:as.numeric(input$umapPCs), n.components = as.numeric(input$umapOutComponents), reduction = "pca")
@@ -1735,6 +1745,7 @@ server <- function(input, output, session) {
       if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else if (identical(seurat_object@meta.data$seurat_clusters, NULL)) session$sendCustomMessage("handler_alert", "Please, execute CLUSTERING first and then re-run UMAP or tSNE or Diffusion Map above.")
       else {
+        showModal(modalDialog(div('Analysis in Progress. This operation may take several minutes, please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
         markers_logFCBase <<- input$findMarkersLogBase
         
         if(markers_logFCBase == "avg_logFC")
@@ -1768,6 +1779,7 @@ server <- function(input, output, session) {
       print(paste("Error :  ", e))
       session$sendCustomMessage("handler_alert", "There was an error with the DE Analysis")
     }, finally = {
+      removeModal()
       session$sendCustomMessage("handler_startLoader", c("DEA1_loader", 100))
       Sys.sleep(1)
       session$sendCustomMessage("handler_finishLoader", c("DEA1_loader"))
@@ -1783,6 +1795,7 @@ server <- function(input, output, session) {
     tryCatch({
       if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else{
+        showModal(modalDialog(div('Analysis in Progress. This operation may take several minutes, please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
         shinyjs::show("findMarkersHeatmap_loader")
         
         top10 <- seurat_object@misc$markers %>% group_by(cluster) %>% top_n(n = 10, wt = eval(parse(text=markers_logFCBase))) #wt = avg_logFC)
@@ -1828,6 +1841,7 @@ server <- function(input, output, session) {
       print(paste("Error :  ", e))
       session$sendCustomMessage("handler_alert", "The selected Quality Control arguments cannot produce meaningful visualizations.")
     }, finally = {
+      removeModal()
       session$sendCustomMessage("handler_startLoader", c("DEA2_loader", 100))
       Sys.sleep(1)
       session$sendCustomMessage("handler_finishLoader", "DEA2_loader")
@@ -2167,6 +2181,7 @@ observeEvent(input$findMarkersConfirmATAC, { #ADD loading bar
   tryCatch({
     if (identical(proj_default, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
     else {
+      showModal(modalDialog(div('Analysis in Progress. This operation may take several minutes, please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
       shinyjs::show("findMarkersGenesHeatmapATAC_loader")
       shinyjs::show("findMarkersGenesATACTable_loader")
       session$sendCustomMessage("handler_startLoader", c("DEA8_loader", 10))
@@ -2214,6 +2229,7 @@ observeEvent(input$findMarkersConfirmATAC, { #ADD loading bar
     print(paste("Error :  ", e))
     session$sendCustomMessage("handler_alert", "There was an error with the the detection of marker genes.")
   }, finally = {
+    removeModal()
     session$sendCustomMessage("handler_startLoader", c("DEA8_loader", 100))
     Sys.sleep(1)
     session$sendCustomMessage("handler_finishLoader", "DEA8_loader")
@@ -2227,6 +2243,7 @@ observeEvent(input$findMarkersPeaksConfirmATAC, {
   tryCatch({
     if (identical(proj_default, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
     else {
+      showModal(modalDialog(div('Analysis in Progress. This operation may take several minutes, please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
       updateTabsetPanel(session, inputId = "ATAC_markers_tabs", selected = "Marker peaks (ATAC)")
       shinyjs::show("findMarkersPeaksHeatmapATAC_loader")
       shinyjs::show("findMarkersPeaksATACTable_loader")
@@ -2342,6 +2359,7 @@ observeEvent(input$findMarkersPeaksConfirmATAC, {
     print(paste("Error :  ", e))
     session$sendCustomMessage("handler_alert", "There was an error with the the detection of marker genes.")
   }, finally = {
+    removeModal()
     session$sendCustomMessage("handler_startLoader", c("DEA9_loader", 100))
     Sys.sleep(1)
     session$sendCustomMessage("handler_finishLoader", "DEA9_loader")
@@ -2696,6 +2714,7 @@ observeEvent(input$findMotifsConfirmATAC, {
   tryCatch({
     if (identical(proj_default, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
     else {
+      showModal(modalDialog(div('Analysis in Progress. This operation may take several minutes, please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
       shinyjs::show("findMotifsHeatmapATAC_loader")
       shinyjs::show("findMotifsATACTable_loader")
       
@@ -2738,6 +2757,7 @@ observeEvent(input$findMotifsConfirmATAC, {
     print(paste("Error :  ", e))
     session$sendCustomMessage("handler_alert", "There was an error with the the detection of eriched motifs.")
   }, finally = {
+    removeModal()
     session$sendCustomMessage("handler_startLoader", c("motif_loader", 100))
     Sys.sleep(1)
     session$sendCustomMessage("handler_finishLoader", "motif_loader")
@@ -2850,6 +2870,7 @@ output$findMotifsATACExport <- downloadHandler(
       else if (identical(seurat_object@meta.data$seurat_clusters, NULL)) session$sendCustomMessage("handler_alert", "Please, execute CLUSTERING first and then run UMAP, in the NON LINEAR DIMENSIONALITY REDUCTION tab.")
       else if (identical(seurat_object$umap, NULL)) session$sendCustomMessage("handler_alert", "Please, calculate UMAP first, in the NON LINEAR DIMENSIONALITY REDUCTION tab.")
       else {
+        showModal(modalDialog(div('Analysis in Progress. This operation may take several minutes, please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
         shinyjs::show("trajectoryPlot_loader")
         shinyjs::show("trajectoryPseudotimePlot_loader")
         
@@ -2918,6 +2939,7 @@ output$findMotifsATACExport <- downloadHandler(
       shinyjs::hide("trajectoryPseudotimePlot_loader")
       session$sendCustomMessage("handler_alert", "There was an error with Trajectory Analysis.")
     }, finally = {
+      removeModal()
       session$sendCustomMessage("handler_startLoader", c("traj1_loader", 100))
       session$sendCustomMessage("handler_startLoader", c("traj2_loader", 100))
       Sys.sleep(1)
@@ -2967,6 +2989,7 @@ output$findMotifsATACExport <- downloadHandler(
     tryCatch({
       if (identical(proj_default, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else {
+        showModal(modalDialog(div('Analysis in Progress. This operation may take several minutes, please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
         #delete older trajectories 
         cols_to_delete <- grep(pattern = "^Lineage", x = colnames(getCellColData(proj_default)))
         if(length(cols_to_delete) != 0)
@@ -3009,6 +3032,7 @@ output$findMotifsATACExport <- downloadHandler(
       print(paste("Error :  ", e))
       session$sendCustomMessage("handler_alert", "There was an error with the the trajectory analysis.")
     }, finally = {
+      removeModal()
       session$sendCustomMessage("handler_startLoader", c("traj3_loader", 100))
       Sys.sleep(1)
       session$sendCustomMessage("handler_finishLoader", "traj3_loader")
@@ -3184,6 +3208,7 @@ output$findMotifsATACExport <- downloadHandler(
       if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else if (identical(seurat_object@meta.data$seurat_clusters, NULL)) session$sendCustomMessage("handler_alert", "Please, execute CLUSTERING first.")
       else {
+        showModal(modalDialog(div('Analysis in Progress. This operation may take several minutes, please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
         genome_info <- input$grnGenomeBuild
         print(genome_info)
         seurat_object_matrix<-seurat_object@assays$RNA@counts
@@ -3261,6 +3286,7 @@ output$findMotifsATACExport <- downloadHandler(
       print(paste("Error :  ", e))
       session$sendCustomMessage("handler_alert", "There was an error with generating pyscenic input files.")
     }, finally = {
+      removeModal()
       session$sendCustomMessage("handler_startLoader", c("loom_production_loader", 100))
       Sys.sleep(1)
       session$sendCustomMessage("handler_finishLoader", "loom_production_loader")
@@ -3291,6 +3317,7 @@ output$findMotifsATACExport <- downloadHandler(
     session$sendCustomMessage("handler_startLoader", c("loom_analysis_loader", 10))
     session$sendCustomMessage("handler_disableAllButtons", "grnLoomAnalysis")
     tryCatch({
+      showModal(modalDialog(div('Analysis in Progress. This operation may take several minutes, please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
         source('scenic_helper_files/aux_rss.R')
         userId <- session$token
         user_dir_pyscenic <<- paste0("./usr_temp/pysc_", userId, gsub(pattern = "[ ]|[:]", replacement = "_", x = paste0("_", Sys.time()))) #TODO remove 2 random barcodes, does it crash?
@@ -3421,6 +3448,7 @@ output$findMotifsATACExport <- downloadHandler(
       print(paste("Error :  ", e))
       session$sendCustomMessage("handler_alert", "There was an error with analyzing pyscenic results.")
     }, finally = {
+      removeModal()
       session$sendCustomMessage("handler_startLoader", c("loom_analysis_loader", 100))
       Sys.sleep(1)
       session$sendCustomMessage("handler_finishLoader", "loom_analysis_loader")
@@ -3469,6 +3497,7 @@ output$findMotifsATACExport <- downloadHandler(
     tryCatch({
       if (identical(proj_default, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else {
+        showModal(modalDialog(div('Analysis in Progress. This operation may take several minutes, please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
         shinyjs::show("grnHeatmapATAC_loader")
         shinyjs::show("grnATACTable_loader")
         shinyjs::show("grnATACTable2_loader")
@@ -3565,6 +3594,7 @@ output$findMotifsATACExport <- downloadHandler(
       print(paste("Error :  ", e))
       session$sendCustomMessage("handler_alert", "There was an error with the the GRN analysis.")
     }, finally = {
+      removeModal()
       session$sendCustomMessage("handler_startLoader", c("grn2_loader", 100))
       Sys.sleep(1)
       session$sendCustomMessage("handler_finishLoader", "grn2_loader")
