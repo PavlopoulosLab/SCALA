@@ -183,7 +183,7 @@ file_upload_metadata_ATAC <- HTML('
                         ')
 
 #######################################QC#######################################
-file_qc_tab_intro <- HTML('<h4 style = "line-height: 1.5; text-align:center; background-color: #ffffff; border: 1px solid #222d32; border-radius: 5px;">The <b>
+qc_tab_intro <- HTML('<h4 style = "line-height: 1.5; text-align:center; background-color: #ffffff; border: 1px solid #222d32; border-radius: 5px;">The <b>
                           Quality control tab</b> enables the generation of Quality Control (QC) plots for scRNA-seq and scATAC-seq datasets,<br> 
                           in order to examine the quality of the single-cell experiment. </h4>')
 
@@ -265,6 +265,65 @@ atac_qc <- HTML('
                       <li> Ridge plot of the per cell logged unique nuclear fragments number.
                       <li> Scatter plot of the logged unique nuclear fragments number versus the Transcription Start Site (TSS) enrichment score. Dashed lines indicate the thresholds used.
                     </ul>
+                 </p>
+                 </div>
+               ')
+
+############################Normalization#######################################
+
+norm_tab_intro <- HTML('<h4 style = "line-height: 1.5; text-align:center; background-color: #ffffff; border: 1px solid #222d32; border-radius: 5px;">The <b>DATA NORMALIZATION</b> tab enables the user to 
+                          perform cell-specific normalization and gene-specific scaling of scRNA-seq count data. The aforementioned procedures are essential in order to perform the downstream steps of 
+                          the analysis, including dimensionality reduction and differential expression. After these steps, the features that exhibit the higher variability in the dataset are detected.
+                          </h4>')
+
+rna_normalization_param <- HTML('<div class="col-md-4">
+                          <img src = "images/help_page/DATA_NORMALIZATION_AND_SCALING_parameters.PNG" style="border: 1px solid #222d32; border-radius: 15px;">
+                          <br>
+                          <figcaption style = "font-size:14px" class="figure-caption text-center"><b>Figure 9: </b> Parameters for the normalization and scaling procedure in RNA seq data </figcaption>
+                          </div>
+                          
+                        <div class="col-md-8" style="background-color: #ffffff; border: 1px solid #222d32; border-radius: 15px; font-size:16px;">
+                        
+                        <h3><u>Normalization</u></h3>
+                          <li> A global-scaling normalization is applied. The particular methodology normalizes the per-cell gene expression counts by the total 
+                               cell counts, multiplies this value by a scale factor (10,000 by default), and finally performs log-transformation. The user is able to 
+                               alter the scaling factor.
+                        
+                        <h3><u> Identification of highly variable features </u></h3>
+                        Detection of a set of genes that show high cell-to-cell variation in the scRNA-seq count matrix. One of the following methods can be selected:
+                             <ul>
+                                <li> Variance Stabilizing Transformation (vst) method. The particular method fits a line to the relationship of logged variance and logged 
+                                     mean using local polynomial regression. Consequently, standardization of feature values using the observed mean and expected variance is performed. 
+                                     Feature variance is finally calculated on standardized values, after clipping to a maximum. A fixed number of variable features is returned 
+                                     (default: 2,000 features. Recommended values range: 1000 - 8000).
+                                <li> Mean-Variance method. The particular method uses a function to calculate average gene counts and gene dispersions. All genes are separated into 20 
+                                     bins according to their average counts. Finally, dispersion z-scores are calculated in each gene group.
+                                <li> Dispersion method. Feature selection according to the highest dispersion values.
+                             </ul>
+                        
+                        <h3><u> Scaling the data </u></h3>
+                        <p>
+                          A linear transformation that shifts the counts of each feature, so that the mean counts across cells is 0, and the variance across cells is 1. This step ensures that 
+                          highly-expressed genes will not introduce biases during the downstream analysis.Additionally, in order to remove unwanted sources of variation, the user is able to 
+                          select which metadata values would like to regress out during the scaling procedure. Typically, mitochondrial percentage is usually regressed out.
+                        </p>
+                          
+                        </div>
+                        ')
+
+rna_normalization_output <- HTML('
+                          
+                <div class="col-md-12"> 
+                  <img src = "images/help_page/DATA_NORMALIZATION_AND_SCALING_mvgs.PNG" style="border: 1px solid #222d32; border-radius: 15px;">
+                          <br>
+                          <figcaption style = "font-size:14px" class="figure-caption text-center"><b>Figure 10: </b> Most variable genes </figcaption>
+                </div>
+                 
+                 <div class="col-md-12" style="background-color: #ffffff; border: 1px solid #222d32; border-radius: 15px; font-size:16px;">
+                 <h3><u> Exploration of MVGs </u></h3>
+                 <p>
+                    The particular visualization is a scatter plot that depicts the standardized variance versus the average expression of all features (vst method applied).
+                    If one of the other two methods is selected dispersion values are shown in the Y axis. The number of highly variable genes is also reported (red dots).
                  </p>
                  </div>
                ')

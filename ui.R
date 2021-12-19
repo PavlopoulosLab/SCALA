@@ -1491,23 +1491,34 @@ ui <- dashboardPage(
                                   tabsetPanel(type = "tabs",
                                     tabPanel("RNA QC prior-filtering",
                                              br(),
-                                             file_qc_tab_intro,
+                                             qc_tab_intro,
                                              rna_qc
                                     ),
                                     tabPanel("RNA QC post-filtering",
                                              br(),
-                                             file_qc_tab_intro,
+                                             qc_tab_intro,
                                              rna_qc_pf
                                     ),
                                     tabPanel("ATAC QC soft-filtering",
                                       br(),
-                                      file_qc_tab_intro,
+                                      qc_tab_intro,
                                       atac_qc
                                     )
                                   )
                          ),
-                         tabPanel("Normalization"
-                                  
+                         tabPanel("Normalization",
+                                  tabsetPanel(type = "tabs",
+                                              tabPanel("Normalization and scaling options",
+                                                       br(),
+                                                       norm_tab_intro,
+                                                       rna_normalization_param
+                                              ),
+                                              tabPanel("Most variable genes",
+                                                       br(),
+                                                       norm_tab_intro,
+                                                       rna_normalization_output
+                                              )
+                                  )     
                          ),
                          tabPanel("PCA/LSI"
                                   
