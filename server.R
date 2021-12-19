@@ -523,35 +523,6 @@ server <- function(input, output, session) {
     content = function(file) {
       write.table(export_metadata_RNA, file, sep = "\t", quote = F, row.names = F)
     })
-  
-  #SOS SERVER ABSOLUTE PATHS
-  output$downloadExampleRNA10xMatrix <- downloadHandler(
-    filename <- function() {
-      paste("10xExampleCountMatrix", "tar", sep=".")
-    },
-    
-    content <- function(file) {
-      tar(file, "/BSRC_Fleming/SCANNER/exampleRNA_matrix/exampleMatrix.zip")
-    })
-  
-  #Download examples from server, absolute paths needed
-  output$downloadExampleRNA10xFiles <- downloadHandler(
-    filename <- function() {
-      paste("10xExampleFiles", "tar", sep=".")
-    },
-    
-    content <- function(file) {
-      tar(file, "/BSRC_Fleming/SCANNER/exampleRNA_10xFiles/pbmc_example.zip")
-    })
-  
-  output$downloadExampleATACarrow <- downloadHandler(
-    filename <- function() {
-      paste("atacExample", "tar", sep=".")
-    },
-    
-    content <- function(file) {
-      tar(file, "/BSRC_Fleming/SCANNER/exampleATAC/arrowFile.zip")
-    })
     
   
   #------------------Utilities------------------------------------------

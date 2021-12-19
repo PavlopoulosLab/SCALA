@@ -1440,6 +1440,7 @@ ui <- dashboardPage(
               )
             ),
       
+      #---------------------------------HELP------------------------------------
       tabItem(tabName = "help",
               fluidRow(
                 column(12, 
@@ -1448,13 +1449,43 @@ ui <- dashboardPage(
                                   div(class = "div_container",
                                       examples_help
                                   ), 
-                                  div(downloadButton(outputId = "downloadExampleRNA10xMatrix", label = "Save RNA count matrix example for PBMC"),
-                                      downloadButton(outputId = "downloadExampleRNA10xFiles", label = "Save RNA 10x files example for PBMC"),
-                                      downloadButton(outputId = "downloadExampleATACarrow", label = "Save ATAC arrow file example")
-                                      )
                          ),
-                         tabPanel("Data Input"
-                      
+                         tabPanel("Data Input",
+                                  tabsetPanel(type = "tabs",
+                                    tabPanel("scRNA-seq: count matrix input",
+                                      br(),
+                                      file_upload_tab_intro,
+                                      file_upload_txt,
+                                      br(),
+                                      file_upload_tab_new_project
+                                    ),
+                                    tabPanel("scRNA-seq: 10x files input",
+                                      br(),
+                                      file_upload_tab_intro,
+                                      file_upload_10x,
+                                      br(),
+                                      file_upload_tab_new_project
+                                    ),
+                                    tabPanel("scATAC-seq: arrow file input",
+                                      br(),
+                                      file_upload_tab_intro,
+                                      file_upload_arrow,
+                                      br(),
+                                      file_upload_tab_new_project
+                                    ),
+                                    tabPanel("Metadata output",
+                                              tabsetPanel(type = "tabs",
+                                                            tabPanel("Metadata RNA",
+                                                              br(),
+                                                              file_upload_metadata_RNA
+                                                            ),
+                                                            tabPanel("Metadata ATAC",
+                                                              br(),
+                                                              file_upload_metadata_ATAC
+                                                            )
+                                                          )
+                                             )
+                                  )
                          ),
                          tabPanel("Quality Control"
                                   
