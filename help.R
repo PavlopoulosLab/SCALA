@@ -154,7 +154,7 @@ file_upload_metadata_RNA <- HTML('
                         </p>
                         
                         </div>
-                        <div class="col-md-12 ">
+                        <div class="col-md-12">
                           <img src = "images/help_page/DATA_INPUT_scRNA_Metedata_table.PNG" style="border: 1px solid #222d32; border-radius: 15px;">
                           <br>
                           <figcaption style = "font-size:14px" class="figure-caption text-center"><b>Figure 4: </b> RNA metadata table </figcaption>
@@ -175,9 +175,96 @@ file_upload_metadata_ATAC <- HTML('
                         </p>
                         
                         </div>
-                        <div class="col-md-12 ">
+                        <div class="col-md-12">
                           <img src = "images/help_page/DATA_INPUT_scATAC-seq_Metadata_table_merged.PNG" style="border: 1px solid #222d32; border-radius: 15px;">
                           <br>
                           <figcaption style = "font-size:14px" class="figure-caption text-center"><b>Figure 5: </b> ATAC metadata table </figcaption>
                           </div>
                         ')
+
+#######################################QC#######################################
+file_qc_tab_intro <- HTML('<h4 style = "line-height: 1.5; text-align:center; background-color: #ffffff; border: 1px solid #222d32; border-radius: 5px;">The <b>
+                          Quality control tab</b> enables the generation of Quality Control (QC) plots for scRNA-seq and scATAC-seq datasets,<br> 
+                          in order to examine the quality of the single-cell experiment. </h4>')
+
+rna_qc <- HTML('
+                          
+                <div class="col-md-12"> 
+                  <img src = "images/help_page/QC_pre_params.PNG" style="border: 1px solid #222d32; border-radius: 15px;">
+                          <br>
+                          <figcaption style = "font-size:14px" class="figure-caption text-center"><b>Figure 6: </b> Quality control parameters and plots before filtering </figcaption>
+                </div>
+                 
+                 <div class="col-md-12" style="background-color: #ffffff; border: 1px solid #222d32; border-radius: 15px; font-size:16px;">
+                 <h3><u> Quality control parameters </u></h3>
+                 <p>
+                 <ol>
+                  <li> Display quality control plots before filtering: The user is able to visualize QC plots, before the application of any cell-specific filter.<br>
+                       The particular visualization allows the user to explore cell count metrics and filter-out low-quality cells and non-informative genes in the next steps of this analysis. 
+                       The QC metrics included in this exploration are:
+                       <ul>
+                          <li> The number of detected features in each cell. Low-quality barcodes or empty droplets will exhibit low number of features, while multiplets may have a very high number of genes detected.
+                          <li> The total number of UMIs detected in each cell. This metric correlates strongly with the feature-per-cell metric.
+                          <li> The percentage of mitochondrial UMIs. Low-quality barcodes and dying cells contain high number of mitochondrial reads.
+                          <li> The correlation between detected features and total counts per-cell. The particular metrics should exhibit high correlation.
+                          <li> The correlation between mitochondrial counts and total counts per-cell. The particular metrics should exhibit negligible correlation.
+                          <li> The total number of non-filtered cells.
+                      </ul>
+                  <li> Filter out low quality cells: After exploring the QC metrics of the unfiltered cells, the user is enabled to apply his/her filtering 
+                      <ul>
+                        <li> Minimum features detected: Filter out all cells with less than the user-defined number of detected features.
+                        <li> Maximum features detected: Filter out all cells with more than the user-defined number of detected features.
+                        <li> Mitochondrial %: Filter out cells that have greater than the user-defined percentage of mitochondrial counts.
+                     </ul>
+                 </ol>
+                 </p>
+                 </div>
+               ')
+
+rna_qc_pf <- HTML('
+                          
+                <div class="col-md-12"> 
+                  <img src = "images/help_page/QC_post.PNG" style="border: 1px solid #222d32; border-radius: 15px;">
+                          <br>
+                          <figcaption style = "font-size:14px" class="figure-caption text-center"><b>Figure 7: </b> Quality control plots post filtering </figcaption>
+                </div>
+                 
+                 <div class="col-md-12" style="background-color: #ffffff; border: 1px solid #222d32; border-radius: 15px; font-size:16px;">
+                 <h3><u> Inspection of filtering criteria </u></h3>
+                 <p>
+                    The particular visualization allows the user to explore cell count metrics after the filtering procedure. The user is able to readjust the defined criteria if the results 
+                    are not satisfying. The QC metrics included in this figure are described in the previous tab.
+                 </p>
+                 </div>
+               ')
+
+atac_qc <- HTML('
+                <div class="col-md-12"> 
+                  <img src = "images/help_page/QC_all_ATAC.PNG" style="border: 1px solid #222d32; border-radius: 15px;">
+                          <br>
+                          <figcaption style = "font-size:14px" class="figure-caption text-center"><b>Figure 8: </b> Quality control plots after soft filtering </figcaption>
+                </div>
+                 
+                 <div class="col-md-12" style="background-color: #ffffff; border: 1px solid #222d32; border-radius: 15px; font-size:16px;">
+                 <h3><u> Inspection of filtering criteria for ATAC data </u></h3>
+                 <p>
+                    <h4>- Display soft filtered quality control plots: Visualization of soft filtered QC plots. Soft cell-filtering has been applied during the arrow file creation, 
+                    locally, by using the create_arrow_file.R Rscript (provided in github). The filtering parameters and their default values are:</h4>
+                    <ul>
+                      <li> "-t" or "--minTSS": The minimum numeric transcription start site (TSS) enrichment score required for a cell to pass filtering for use in downstream analyses. The default value will be set to 4.
+                      <li> "-m" or "--minFrags": The minimum number of mapped ATAC-seq fragments required per cell to pass filtering for use in downstream analyses. The default value will be set to 1000.
+                    </ul>
+                    Note:	If the user wants to adjust additional parameters included in the cell metadata, the ArchR function createArrowFiles() should be used in an R environment.
+                 </p>
+                 
+                 <p>
+                    <h4>- The particular visualization allows the user to explore cell metrics after the soft-filtering procedure. The user is able to readjust the defined criteria if the 
+                    results are not satisfying, by using the create_arrow_file.R Rscript and by tweaking the "--minTSS" and "--minFrags" parameters. The QC metrics included in this illustration are:</h4>
+                    <ul>
+                      <li> Violin plot of the per-cell TSS enrichment scores.
+                      <li> Ridge plot of the per cell logged unique nuclear fragments number.
+                      <li> Scatter plot of the logged unique nuclear fragments number versus the Transcription Start Site (TSS) enrichment score. Dashed lines indicate the thresholds used.
+                    </ul>
+                 </p>
+                 </div>
+               ')

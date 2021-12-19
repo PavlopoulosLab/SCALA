@@ -1487,8 +1487,24 @@ ui <- dashboardPage(
                                              )
                                   )
                          ),
-                         tabPanel("Quality Control"
-                                  
+                         tabPanel("Quality Control",
+                                  tabsetPanel(type = "tabs",
+                                    tabPanel("RNA QC prior-filtering",
+                                             br(),
+                                             file_qc_tab_intro,
+                                             rna_qc
+                                    ),
+                                    tabPanel("RNA QC post-filtering",
+                                             br(),
+                                             file_qc_tab_intro,
+                                             rna_qc_pf
+                                    ),
+                                    tabPanel("ATAC QC soft-filtering",
+                                      br(),
+                                      file_qc_tab_intro,
+                                      atac_qc
+                                    )
+                                  )
                          ),
                          tabPanel("Normalization"
                                   
