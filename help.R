@@ -327,3 +327,66 @@ rna_normalization_output <- HTML('
                  </p>
                  </div>
                ')
+
+##########################PCA/LSI###############################################
+
+pca_tab_intro <- HTML('<h4 style = "line-height: 1.5; text-align:center; background-color: #ffffff; border: 1px solid #222d32; border-radius: 5px;">The <b>PCA/LSI</b> tab enables the user 
+                                to perform Principal Component Analysis (PCA) to scRNA-seq datasets and Latent Semantic Indexing analysis to scATAC-seq datasets.
+                          </h4>')
+
+pca_optimal_pcs <- HTML('
+                        <div class="col-md-12"> 
+                          <img src = "images/help_page/PCA_selection.PNG" style="border: 1px solid #222d32; border-radius: 15px;">
+                          <img src = "images/help_page/PCA_slow_results.PNG" style="border: 1px solid #222d32; border-radius: 15px;">
+                          <figcaption style = "font-size:14px" class="figure-caption text-center"><b>Figure 11:</b> Determination of optimal number of principal components </figcaption>
+                       </div>
+                       
+                       <div class="col-md-12" style="background-color: #ffffff; border: 1px solid #222d32; border-radius: 15px; font-size:16px;">
+                          <h3>The user has two options during this analysis step:</h3>
+                          <ol>
+                            <li> Enable the automatic identification of the optimal number of Principal Components (PCs) using 1-fold SVA-CV. This option is significantly slower. 
+                                 The optimal number of PCs is indicated by the red dotted line.   
+                            <li> Perform PCA without automatic identification of the optimal number of Principal Components (PCs). The user will then decide about the dimensionality 
+                                 of the dataset (the number of most informative PCS), based on the generated "elbow" plot.
+                          <ol>
+                          <p>
+                            In the particular illustration,<br> (a) an elbow plot depicting the ranking of PCs based on the percentage of variance explained by each of them is illustrated, 
+                            as also<br> (b) a scatter plot of cells in 2D PCA space, using the first two PCs.
+                          </p>
+                       </div>
+                        ')
+
+pca_explore_pcs <- HTML('
+                        <div class="col-md-12"> 
+                          <img src = "images/help_page/PCA_exploration.PNG" style="border: 1px solid #222d32; border-radius: 15px;">
+                          <figcaption style = "font-size:14px" class="figure-caption text-center"><b>Figure 12:</b> Exploration of principal components </figcaption>
+                       </div>
+                       
+                       <div class="col-md-12" style="background-color: #ffffff; border: 1px solid #222d32; border-radius: 15px; font-size:16px;">
+                          <p>
+                            The particular visualization depicts<br> (a) the loading scores of the top genes of a PC of interest (top 30 features for the particular example), and<br> 
+                            (b) a heatmap of scaled counts of the top loadings of the PC of interest, across cells.
+                          </p>
+                       </div>
+                        ')
+
+pca_lsi <- HTML('
+                <div class="col-md-6"> 
+                          <img src = "images/help_page/PCA_lsi.PNG" style="border: 1px solid #222d32; border-radius: 15px;">
+                          <figcaption style = "font-size:14px" class="figure-caption text-center"><b>Figure 13:</b> LSI options </figcaption>
+                </div>
+                
+                <div class="col-md-6" style="background-color: #ffffff; border: 1px solid #222d32; border-radius: 15px; font-size:16px;">
+                          <p>
+                            In scAnner, LSI is run in an iterative manner (number of iterations). A first LSI transformation run is applied using the most accessible features. 
+                            This procedure identifies lower resolution clusters that are not batch confounded. Consequently, average accessibility for each of these clusters calculated across all features. 
+                            Finally, the most variable features are identified across the low resolution clusters, and are used as input for the next LSI iteration. 
+                            The parameters for identifying low resolution clusters are:
+                            <ul>
+                              <li> Number of variable features. Defaults to 25,000 features.
+                              <li> Number of LSI dimensions to use. Defaults to 30 dimensions.
+                              <li> Cluster resolution. Defaults to 1.
+                            </ul>
+                          </p>
+                       </div>
+                ')

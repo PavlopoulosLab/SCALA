@@ -1489,17 +1489,17 @@ ui <- dashboardPage(
                          ),
                          tabPanel("Quality Control",
                                   tabsetPanel(type = "tabs",
-                                    tabPanel("RNA QC prior-filtering",
+                                    tabPanel("scRNA-seq QC: prior-filtering",
                                              br(),
                                              qc_tab_intro,
                                              rna_qc
                                     ),
-                                    tabPanel("RNA QC post-filtering",
+                                    tabPanel("scRNA-seq QC: post-filtering",
                                              br(),
                                              qc_tab_intro,
                                              rna_qc_pf
                                     ),
-                                    tabPanel("ATAC QC soft-filtering",
+                                    tabPanel("scATAC-seq QC: soft-filtering",
                                       br(),
                                       qc_tab_intro,
                                       atac_qc
@@ -1520,8 +1520,27 @@ ui <- dashboardPage(
                                               )
                                   )     
                          ),
-                         tabPanel("PCA/LSI"
-                                  
+                         tabPanel("PCA/LSI",
+                                  tabsetPanel(type = "tabs",
+                                              tabPanel("scRNA-seq: Optimal number of PCs",
+                                                       br(),
+                                                       pca_tab_intro,
+                                                       br(),
+                                                       pca_optimal_pcs
+                                              ),
+                                              tabPanel("scRNA-seq: Exploration of PCs",
+                                                       br(),
+                                                       pca_tab_intro,
+                                                       br(),
+                                                       pca_explore_pcs
+                                              ),
+                                              tabPanel("scATAC-seq: LSI",
+                                                       br(),
+                                                       pca_tab_intro,
+                                                       br(),
+                                                       pca_lsi
+                                              )
+                                  )
                          ),
                          tabPanel("Clustering"
                                   
