@@ -63,9 +63,9 @@ ui <- dashboardPage(
       tabItem(tabName = "home", 
               div(id = "home_div", class = "div_container",
                   h1(class = "container_title", "Welcome to scAnner"),
-                  HTML("<p class=container_text> This is a web tool that handles the analysis of scRNAseq and scATAC data 
-                  from quality control and normalization, to dimensionality reduction, differential expression/accessibility analysis, clustering and visualization.
-                  </br> Try out our sample data and visit the Help pages for guidance. </p>"
+                  HTML("<p class=container_text> scAnner is a web application and stand-alone toolkit, that handles the analysis of scRNA-seq and scATAC-seq datasets, 
+                  from quality control and normalization, to dimensionality reduction, differential expression/accessibility analysis, cell clustering, functional enrichment analysis, 
+                  trajectory inference, ligand – receptor analysis, gene regulatory network inference, and visualization. Try out our sample data and visit the Help pages for guidance. </p>"
                   ),
                   actionButton(inputId = "debugRNA", label = "Fast debug RNA"),
                   actionButton(inputId = "debugATAC", label = "Fast debug ATAC")
@@ -1542,19 +1542,71 @@ ui <- dashboardPage(
                                               )
                                   )
                          ),
-                         tabPanel("Clustering"
+                         tabPanel("Clustering",
+                                  tabsetPanel(type = "tabs",
+                                              tabPanel("scRNA-seq: Clustering parameters",
+                                                       br(),
+                                                       clustering_tab_intro,
+                                                       br(),
+                                                       clustering_rna_input
+                                              ),
+                                              tabPanel("scRNA-seq: Clustering output",
+                                                       br(),
+                                                       clustering_tab_intro,
+                                                       br(),
+                                                       clustering_rna_output
+                                              ),
+                                              tabPanel("scATAC-seq: Clustering parameters",
+                                                       br(),
+                                                       clustering_tab_intro,
+                                                       br(),
+                                                       clustering_atac_input
+                                              ),
+                                              tabPanel("scATAC-seq: Clustering output",
+                                                       br(),
+                                                       clustering_tab_intro,
+                                                       br(),
+                                                       clustering_atac_output
+                                              )
+                                  )
                                   
                          ),
-                         tabPanel("UMAP"
+                         tabPanel("Additional dimensionality reduction methods",
+                                  tabsetPanel(type = "tabs",
+                                              tabPanel("scRNA-seq: Input parameters",
+                                                       br(),
+                                                       umap_tab_intro,
+                                                       br(),
+                                                       umap_rna_input
+                                              ),
+                                              tabPanel("scRNA-seq: Visualization",
+                                                       br(),
+                                                       umap_tab_intro,
+                                                       br(),
+                                                       umap_rna_output
+                                              ),
+                                              tabPanel("scATAC-seq: Input parameters",
+                                                       br(),
+                                                       umap_tab_intro,
+                                                       br(),
+                                                       umap_atac_input
+                                              ),
+                                              tabPanel("scATAC-seq: Visualization",
+                                                       br(),
+                                                       umap_tab_intro,
+                                                       br(),
+                                                       umap_atac_output
+                                              )
+                                  )    
                                   
                          ),
-                         tabPanel("Markers"
+                         tabPanel("Markers identification analysis"
                                   
                          ),
-                         tabPanel("Cell Cycle"
+                         tabPanel("Cell Cycle phase"
                                   
                          ),
-                         tabPanel("Enrichment"
+                         tabPanel("Functional/Motif Enrichment"
                                   
                          ),
                          tabPanel("Cluster Annotation"
@@ -1565,7 +1617,11 @@ ui <- dashboardPage(
                          ),
                          tabPanel("Ligand-Receptor Analysis"
                                   
-                         )
+                         ),
+                         tabPanel("Gene regulatory networks analysis"
+                                  
+                         ),
+                         tabPanel("Tracks")
                        )
                 )
               ) #fluidRow end
@@ -1574,21 +1630,23 @@ ui <- dashboardPage(
       tabItem (tabName = "about",
                div(id = "about_div", class = "div_container",
                    h1(class = "container_title", "About scAnner"),
-                   HTML("<p class=container_text> scAnner is actively developed and maintained by the 
-                              Bioinformatics and Integrative Biology Lab. </br></br> </p> 
+                   HTML("<p class=container_text> scAnner is actively developed and maintained by the Single-Cell Analysis Unit, 
+                                                  and Bioinformatics and Integrative Biology Lab. </br></br> 
+                        </p> 
                               <h2 class=sub_title> Developers </h2>
                               <ul>
                               <li> Christos Tzaferis, tzaferis[at]fleming[dot]com
                               <li> Evangelos Karatzas, karatzas[at]fleming[dot]gr
                               <li> Fotis Baltoumas, baltoumas[at]fleming[dot]gr
-                              <li> Dimitris Konstantopoulos, konstantopoulos[at]fleming[dot]gr
-                              <li> George Kollias, kollias[at]fleming[dot]gr
                               <li> Georgios A. Pavlopoulos, pavlopoulos[at]fleming[dot]gr 
+                              <li> George Kollias, kollias[at]fleming[dot]gr
+                              <li> Dimitris Konstantopoulos, konstantopoulos[at]fleming[dot]gr
                               </ul>
                               <footer>
-                              &copy; 2021 <a href=\"https://sites.google.com/site/pavlopoulossite\" target=\"_blank\">Bioinformatics and Integrative Biology Lab</a> | 
+                              &copy; 2021 <a href=\"https://fleming.gr/kollias-lab-single-cell-analysis-unit\" target=\"_blank\">Single Cell Analysis Unit</a> | 
+                              <a href=\"https://sites.google.com/site/pavlopoulossite\" target=\"_blank\">Bioinformatics and Integrative Biology Lab</a> | 
                               <a href=\"https://www.fleming.gr\" target=\"_blank\">Biomedical Sciences Research Center \"Alexander Fleming\"</a>
-                              </footer>"
+                              </footer>"     
                    )
                )
       )

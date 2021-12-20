@@ -7,7 +7,7 @@ examples_help <- HTML(
                   <li><a href="example_files/..." download> PBMC 3K features file (*.tsv.gz) </a></li>
                   <li><a href="example_files/..." download> PBMC 3K matrix file (*.mtx.gz) </a></li>
                   
-                  <h4>Example files for GRN analysis in scRNA-seq PBMC 3K:</h4>
+                  <h4>Example files for GRN analysis:</h4>
                   <li><a href="example_files/..." download> PBMC 3K seurat object (*.RDS) </a></li>
                   <li><a href="example_files/..." download> Pyscenic output file (*.loom) </a></li>
                   
@@ -390,3 +390,219 @@ pca_lsi <- HTML('
                           </p>
                        </div>
                 ')
+
+#########################Clustering#############################################
+clustering_tab_intro <- HTML('<h4 style = "line-height: 1.5; text-align:center; background-color: #ffffff; border: 1px solid #222d32; border-radius: 5px;">
+                                The <b>CLUSTERING</b> tab enables the user to perform graph-based clustering in scRNA-seq and scATAC-seq datasets, in order to define cell types and cellular states. 
+                             </h4>')
+
+clustering_rna_input <- HTML('
+                             <div class="col-md-4"> 
+                              <img src = "images/help_page/Clustering Parameters.PNG" style="border: 1px solid #222d32; border-radius: 15px;">
+                              <figcaption style = "font-size:14px" class="figure-caption text-center"><b>Figure 14:</b> Clustering options </figcaption>
+                            </div>
+                
+                        <div class="col-md-8" style="background-color: #ffffff; border: 1px solid #222d32; border-radius: 15px; font-size:16px;">
+                           <p>
+                              <h3><u>Clustering steps</u></h3>
+                              <ol>
+                                <li> Construction of the shared nearest neighbour (SNN) graph<br>
+                                     Initially, cells are embedded in a K-nearest neighbor (KNN) graph structure based on Euclidean distances in the PCA space. 
+                                     Cells that exhibit similar gene expression profiles are connected with edges. 
+                                     The user can define (a) the maximum number of neighbors of each cell (defaults to 20), as also the number of principal components 
+                                     to use (defaults to 10). 
+                               <li> Communities\' detection (Louvain algorithm)<br>
+                                    The formed graph of the previous step is partitioned into highly interconnected communities using the Louvain algorithm.
+                                    The user can define (a) the desired clustering resolution (defaults to 0.5), as also the number of principal components to 
+                                    use (defaults to 10). Higher values of these parameters will result to an increased formation of communities/cell clusters.
+                              </ol>
+                          </p>
+                       </div>
+                             ')
+
+clustering_rna_output <- HTML('<div class="col-md-12" style="background-color: #ffffff; border: 1px solid #222d32; border-radius: 15px; font-size:16px;">
+                                  <br>
+                                  <img src = "images/help_page/Clustering Results_1.PNG" style="border: 1px solid #222d32; border-radius: 15px;">
+                                  <figcaption style = "font-size:14px" class="figure-caption text-center"><b>Figure 15:</b> Table of the identified clusters </figcaption>
+                                  <br>
+                                  <p>
+                                    The clustering results can be explored by downloading the respective data table, which encapsulates information regarding the cluster name, 
+                                    the number of cells in each cluster, and the percentage of total cells that is included in each cluster. The particular information is stored 
+                                    in the 1st, 2nd and 3rd columns of the aforementioned data table respectively.
+                                  </p>
+                                  <br>
+                              </div>
+                              
+                              <br>
+                              
+                              <div class="col-md-12" style="background-color: #ffffff; border: 1px solid #222d32; border-radius: 15px; font-size:16px;">
+                                  <br>
+                                  <img src = "images/help_page/Clustering Results_2.PNG" style="border: 1px solid #222d32; border-radius: 15px;">
+                                  <figcaption style = "font-size:14px" class="figure-caption text-center"><b>Figure 16:</b> Barplot of the identified clusters </figcaption>
+                                  <br>
+                                  <p>
+                                    The clustering results are also depicted in a stacked barplot of percentages of cells in each of the identified clusters.
+                                  </p>
+                                  <br>
+                              </div>
+                              
+                              <div class="col-md-12" style="background-color: #ffffff; border: 1px solid #222d32; border-radius: 15px; font-size:16px;">
+                                  <br>
+                                  <img src = "images/help_page/Clustering SNN_graph.PNG" style="border: 1px solid #222d32; border-radius: 15px;">
+                                  <figcaption style = "font-size:14px" class="figure-caption text-center"><b>Figure 17:</b> The shared nearest neighbor graph (SNN) used in clustering </figcaption>
+                                  <br>
+                                  <p>
+                                    The user is also able to explore the formation of the SNN graph that led to the identification of the final cluster set.
+                                  </p>
+                                  <br>
+                              </div>
+                              ')
+
+clustering_atac_input <- HTML('
+                             <div class="col-md-4"> 
+                              <img src = "images/help_page/ClusteringOptionsATAC.PNG" style="border: 1px solid #222d32; border-radius: 15px;">
+                              <figcaption style = "font-size:14px" class="figure-caption text-center"><b>Figure 18:</b> Clustering options </figcaption>
+                            </div>
+                
+                        <div class="col-md-5" style="background-color: #ffffff; border: 1px solid #222d32; border-radius: 15px; font-size:16px;">
+                           <p>
+                              <h3>scATAC-seq clustering, enables the same methodology as in described in scRNA-seq.</h3><br> 
+                              The user is able to define<br> (a) the number of LSI dimensions to use 
+                              (defaults to 30), as also<br> (b) the clustering resolution (defaults to 0.6).
+                          </p>
+                       </div>
+                             ')
+
+clustering_atac_output <- HTML('<div class="col-md-12" style="background-color: #ffffff; border: 1px solid #222d32; border-radius: 15px; font-size:16px;">
+                                  <br>
+                                  <img src = "images/help_page/ClusteringResultsATAC.PNG" style="border: 1px solid #222d32; border-radius: 15px;">
+                                  <figcaption style = "font-size:14px" class="figure-caption text-center"><b>Figure 19:</b> Table of the identified clusters </figcaption>
+                                  <br>
+                                  <p>
+                                    The clustering results can be explored by downloading the respective data table, which encapsulates information regarding the cluster name, 
+                                    the number of cells in each cluster, and the percentage of total cells that is included in each cluster. The particular information is stored 
+                                    in the 1st, 2nd and 3rd columns of the aforementioned data table respectively.
+                                  </p>
+                                  <br>
+                              </div>
+                              
+                              <br>
+                              <br>
+                              
+                              <div class="col-md-12" style="background-color: #ffffff; border: 1px solid #222d32; border-radius: 15px; font-size:16px;">
+                                  <br>
+                                  <img src = "images/help_page/ClusteringBarplotATAC.PNG" style="border: 1px solid #222d32; border-radius: 15px;">
+                                  <figcaption style = "font-size:14px" class="figure-caption text-center"><b>Figure 20:</b> Table of the identified clusters </figcaption>
+                                  <br>
+                                  <p>
+                                    The clustering results are also depicted in a barplot of percentages of cells in each of the identified clusters.
+                                  </p>
+                                  <br>
+                              </div>
+                              ')
+
+################################Umap############################################
+umap_tab_intro <- HTML('<h4 style = "line-height: 1.5; text-align:center; background-color: #ffffff; border: 1px solid #222d32; border-radius: 5px;">
+                                The <b>ADDITIONAL DIMENSIONALITY REDUCTION METHODS</b> tab enables the user to perform nonlinear dimensionality 
+                                reduction methodologies to scRNA-seq and scATAC-seq, in order to uncover patterns of cell similarity and differentiation. 
+                             </h4>')
+
+umap_rna_input <- HTML('
+                      <div class="col-md-4"> 
+                              <img src = "images/help_page/UMAPparameters.PNG" style="border: 1px solid #222d32; border-radius: 15px;">
+                              <figcaption style = "font-size:14px" class="figure-caption text-center"><b>Figure 21:</b> Options </figcaption>
+                            </div>
+                        
+                        <div class="col-md-8" style="background-color: #ffffff; border: 1px solid #222d32; border-radius: 15px; font-size:16px;">
+                           <p>
+                              <h3><u>Options for non linear dimensionality reductions</u></h3>
+                              <ol>
+                                <li> User-defined parameters for nonlinear dimensionality reduction application
+                                  <ul>
+                                    <li> Number of principal components to use. The user is able to define the number of the most informative principal components to be used for nonlinear dimensionality reduction.
+                                    <li> Number of dimensions to fit output. The user is able to define the number of output dimensions for each of the available nonlinear dimensionality reduction methods.
+                                  </ul>
+                                <li> Available dimensionality reduction methodologies. The user can choose among: 
+                                  <ul>
+                                    <li> Uniform Manifold Approximation and Projection (UMAP)
+                                    <li> t-distributed stochastic neighbor embedding (tSNE)
+                                    <li> Diffusion Maps
+                                    <li> PHATE
+                                  </ul>   
+                                <li> Display settings
+                                  <ul>
+                                    <li> Plot type. The user is able to choose which of the available nonlinear dimensionality reduction spaces to visualize. Default to pca.
+                                    <li> Dimensions. The number of dimensions to be plotted. Defaults to 2D.
+                                    <li> Color by. Apply different coloring based on the available cell metadata columns. Defaults to orig_ident.
+                                    <li> Size. The size of the plotted cells/dots. Defaults to 5.
+                                    <li> Opacity. Define the level of the transparency of the plotted cells/dots. Defaults to 1.
+                                    <li> Border width. The dot/cell perimeter thickness. Defaults to 0.5.
+                                  </ul>   
+                              </ol>
+                          </p>
+                       </div>
+                   ')
+
+umap_rna_output <- HTML('
+                        <div class="col-md-12" style="background-color: #ffffff; border: 1px solid #222d32; border-radius: 15px; font-size:16px;">
+                          <br>
+                          <img src = "images/help_page/UMAP.PNG" style="border: 1px solid #222d32; border-radius: 15px;">
+                          <figcaption style = "font-size:14px" class="figure-caption text-center"><b>Figure 22:</b> Output example </figcaption>
+                          <br>
+                          <p>
+                            Each nonlinear dimensionality reduction space is visualized using a scatter plot. Each dot represents a cell, and each axis a nonlinear dimension. 
+                            The particular illustration hosts a UMAP visualization in 2D.
+                          </p>
+                          <br>
+                      </div>
+                   ')
+
+umap_atac_input <- HTML('
+                        <div class="col-md-4"> 
+                              <img src = "images/help_page/UMAPparametersATAC.PNG" style="border: 1px solid #222d32; border-radius: 15px;">
+                              <figcaption style = "font-size:14px" class="figure-caption text-center"><b>Figure 23:</b> Options </figcaption>
+                            </div>
+                        
+                        <div class="col-md-8" style="background-color: #ffffff; border: 1px solid #222d32; border-radius: 15px; font-size:16px;">
+                           <p>
+                              <h3><u>Options for non linear dimensionality reductions</u></h3>
+                              <ol>
+                                <li> User-defined parameters for nonlinear dimensionality reduction application
+                                  <ul>
+                                    <li> Number of LSI dimensions to use. The user is able to define the number of the most informative LSI dimensions to be used for nonlinear dimensionality reduction.
+                                    <li> Number of dimensions to fit output. The user is able to define the number of output dimensions for each of the available nonlinear dimensionality reduction methods.
+                                  </ul>
+                                <li> Available dimensionality reduction methodologies. The user can choose among: 
+                                  <ul>
+                                    <li> Uniform Manifold Approximation and Projection (UMAP)
+                                    <li> t-distributed stochastic neighbor embedding (tSNE)
+                                  </ul>   
+                                <li> Display settings
+                                  <ul>
+                                    <li> Plot type. The user is able to choose which of the available nonlinear dimensionality reduction spaces to visualize. Default to pca.
+                                    <li> Dimensions. The number of dimensions to be plotted. Defaults to 2D.
+                                    <li> Color by. Apply different coloring based on the available cell metadata columns. Defaults to orig_ident.
+                                    <li> Size. The size of the plotted cells/dots. Defaults to 5.
+                                    <li> Opacity. Define the level of the transparency of the plotted cells/dots. Defaults to 1.
+                                    <li> Border width. The dot/cell perimeter thickness. Defaults to 0.5.
+                                  </ul>   
+                              </ol>
+                          </p>
+                       </div>
+                   ')
+
+umap_atac_output <- HTML('
+                     <div class="col-md-12" style="background-color: #ffffff; border: 1px solid #222d32; border-radius: 15px; font-size:16px;">
+                          <br>
+                          <img src = "images/help_page/UMAPATAC.PNG" style="border: 1px solid #222d32; border-radius: 15px;">
+                          <figcaption style = "font-size:14px" class="figure-caption text-center"><b>Figure 24:</b> Output example </figcaption>
+                          <br>
+                          <p>
+                            Each nonlinear dimensionality reduction space is visualized using a scatter plot. Each dot represents a cell, and each axis a nonlinear dimension. 
+                            The particular illustration hosts a UMAP visualization in 2D.
+                          </p>
+                          <br>
+                      </div>
+                   ')
+##############################Tracks############################################
+
