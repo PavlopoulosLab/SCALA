@@ -1,5 +1,5 @@
 #SET THE NUMBER OF CPUs TO USE FOR PACKAGE INSTALLATION
-cpus=8
+cpus=4
 
 # Step 0: setup environmental values. ####
 #0.1 Set CRAN mirror: This is required if you want to run the script in the CMD/terminal with Rscript, instead of R-studio
@@ -40,7 +40,7 @@ if("BiocManager" %in% rownames(installed.packages()))
 }
 if("reticulate" %in% rownames(installed.packages()))
 {
-  require(BiocManager)
+  require(reticulate)
 } else {
   install.packages("reticulate")
   require(reticulate)
@@ -52,6 +52,7 @@ libraries_CRAN <- c(
   "shinyjs",
   "shinydashboard",
   "shinycssloaders",
+  "shinythemes",
   "shinyalert",
   "bsplus",
   "tidyverse",
@@ -74,7 +75,10 @@ libraries_CRAN <- c(
   "pheatmap",
   "hdf5r",
   "missMDA",
-  "dismo"
+  "dismo",
+  "Cairo",
+  "mlrMBO",
+  "rhandsontable"
 )
 for (i in 1:length(libraries_CRAN))
 {
@@ -89,53 +93,7 @@ for (i in 1:length(libraries_CRAN))
 }
 
 
-# Step 3: Check and install (if required) libraries that need to be installed from GitHub with remotes or devtools ####
-if("chromVARmotifs" %in% rownames(installed.packages()))
-{
-  print("chromVARmotifs is installed")
-} else {  
-  devtools::install_github("GreenleafLab/chromVARmotifs", upgrade = c("never"))
-}
-if("SCopeLoomR" %in% rownames(installed.packages()))
-{
-  print("SCopeLoomR is installed")
-} else {  
-  devtools::install_github("aertslab/SCopeLoomR", upgrade=c("never"))
-}
-if("CIPR" %in% rownames(installed.packages()))
-{
-  print("CIPR is installed")
-} else {  
-  devtools::install_github("atakanekiz/CIPR-Package", build_vignettes = F, upgrade=c("never"))
-}
-if("mrlMBO" %in% rownames(installed.packages()))
-{
-  print("mrlMBO is installed")
-} else {  
-  remotes::install_github("mlr-org/mlrMBO", upgrade=c("never"))
-}
-if("nichenetr" %in% rownames(installed.packages()))
-{
-  print("nichenetr is installed")
-} else {  
-  devtools::install_github("saeyslab/nichenetr", build_vignettes = F, upgrade=c("never"))
-}
-if("destiny" %in% rownames(installed.packages()))
-{
-  print("destiny is installed")
-} else {  
-  remotes::install_github("theislab/destiny", upgrade=c("never"))
-}
-if("UCell" %in% rownames(installed.packages()))
-{
-  print("UCell is installed")
-} else {  
-  remotes::install_github("carmonalab/UCell", upgrade=c("never"))
-}
-
-# 
-
-# Step 4: Check and install (if required) libraries from BioConductor through BiocManager
+# Step 3: Check and install (if required) libraries from BioConductor through BiocManager
 libraries_bioconductor <- c(
   "DirichletMultinomial",
   "TFBSTools",
@@ -145,9 +103,9 @@ libraries_bioconductor <- c(
   "RcisTarget",
   "GENIE3",
   "GSEABase",
-  "RcisTarget",
   "dittoSeq",
   "slingshot",
+  "DelayedMatrixStats",
   "JASPAR2020",
   "JASPAR2018",
   "JASPAR2016",
@@ -170,26 +128,17 @@ for (i in 1:length(libraries_bioconductor))
 }
 
 
-# Step 5: Install ArchR, SCENIC and other very specific ones ####
+# Step 4: Install remotes, including some very specific ones ####
 
-# 5.1 SCENIC ####
+
 if("SCENIC" %in% rownames(installed.packages()))
 {
   print("SCENIC is installed")
 }  else {
-  bmv = BiocManager::version() #first, get the bioconductor version
-  #if bioconductor 4 or newer
-  if(unlist(bmv)[1] >= 4)
-  {
     devtools::install_github("aertslab/SCENIC", upgrade = c("never")) 
-  }
-  else
-  {
-    devtools::install_github("aertslab/SCENIC@v1.1.2", upgrade = c("never"))
-  }
 }
-# 5.2 PhateR
-if("PhateR" %in% rownames(installed.packages()))
+
+if("phateR" %in% rownames(installed.packages()))
 {
   
   print("PhateR is installed")
@@ -197,13 +146,59 @@ if("PhateR" %in% rownames(installed.packages()))
   #reticulate::py_install("phate", pip=TRUE) #uncomment this if you don't already have phate installed
   devtools::install_github("KrishnaswamyLab/phateR", upgrade=c("never"))
   devtools::install_github("scottgigante/seurat", ref="patch/add-PHATE-again", upgrade=c("never"))
+  BiocManager::install("slingshot", force=T, update=F)
+}
+
+if("chromVARmotifs" %in% rownames(installed.packages()))
+{
+  print("chromVARmotifs is installed")
+} else {
+  devtools::install_github("GreenleafLab/chromVARmotifs", upgrade = c("never"))
+}
+
+if("nichenetr" %in% rownames(installed.packages()))
+{
+  print("nichenetr is installed")
+} else {  
+  devtools::install_github("saeyslab/nichenetr", build_vignettes = F, upgrade=c("never"))
+}
+if("SCopeLoomR" %in% rownames(installed.packages()))
+{
+  print("SCopeLoomR is installed")
+} else {  
+  devtools::install_github("aertslab/SCopeLoomR", upgrade=c("never"))
+}
+if("CIPR" %in% rownames(installed.packages()))
+{
+  print("CIPR is installed")
+} else {  
+  devtools::install_github("atakanekiz/CIPR-Package", build_vignettes = F, upgrade=c("never"))
+}
+if("mlrMBO" %in% rownames(installed.packages()))
+{
+  print("mlrMBO is installed")
+} else {  
+  remotes::install_github("mlr-org/mlrMBO", upgrade=c("never"))
+}
+if("destiny" %in% rownames(installed.packages()))
+{
+  print("destiny is installed")
+} else {  
+  remotes::install_github("theislab/destiny", upgrade=c("never"))
+}
+if("UCell" %in% rownames(installed.packages()))
+{
+  print("UCell is installed")
+} else {  
+  remotes::install_github("carmonalab/UCell", upgrade=c("never"))
 }
 # 5.3 ArchR ####
 if("ArchR" %in% rownames(installed.packages()))
 {
   print("ArchR is installed")
 }  else { devtools::install_github("GreenleafLab/ArchR", ref="master", repos = BiocManager::repositories(), upgrade = c("never"))
-  library(ArchR)
-  ArchR::installExtraPackages() 
+    #now follow the ArchR extra packages
+    
+    devtools::install_github('immunogenomics/harmony', repos = BiocManager::repositories(),  upgrade = c("never"))
+    devtools::install_github('immunogenomics/presto', repos = BiocManager::repositories(), upgrade = c("never"))
 }
-

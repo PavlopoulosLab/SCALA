@@ -16,67 +16,6 @@ server <- function(input, output, session) {
   hideAllLoaders() # helper function (in global.R) that initially hides all loaders (TODO: needs to be executed while switching form RNA to ATAC)
   metaD <- reactiveValues(my_project_name="-", all_lin="0")
   
-  #Fast debug mode RNA
-  observeEvent(input$debugRNA, {
-
-    tryCatch({
-      seurat_object <<- readRDS("processed_seurat_object-2021-12-11.RDS")
-      init_seurat_object <<- readRDS("processed_seurat_object-2021-12-11.RDS")
-      session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " QUALITY CONTROL", " DATA NORMALIZATION\n& SCALING", " PCA/LSI",
-                                                        " CLUSTERING", " CELL CYCLE PHASE ANALYSIS", " ADDITIONAL DIMENSIONALITY\nREDUCTION METHODS", " TRAJECTORY ANALYSIS",
-                                                        " MARKERS' IDENTIFICATION", " LIGAND - RECEPTOR\nANALYSIS", " FUNCTIONAL/MOTIF\nENRICHMENT ANALYSIS", " CLUSTERS' ANNOTATION"))
-      
-      output$metadataTable <- renderDataTable(seurat_object@meta.data, options = list(pageLength = 10), rownames = TRUE)
-      updateClusterTab()
-      output$findMarkersTable <- renderDataTable(seurat_object@misc$markers, options = list(pageLength = 20), filter = 'top', rownames = FALSE) 
-      updateUmapTypeChoices(c("pca", "umap", "tsne", "phate", "dfm"))
-      updateSignatures()
-      updateSelInpColor()
-      updateRegressOut()
-      updateGeneSearchFP()
-      #updateInputGeneList()
-      updateInputLRclusters()
-      #updateInpuTrajectoryClusters()
-      # setwd("exampleRNA_10xFiles/") # TODO remove this, never use setwd() on server apps. create a path with paste() instead
-      organism <<- "human"
-      disableTabsATAC()
-      
-      if(organism == "human")
-        updateTextAreaInput(session, inputId="findMarkersSignatureMembers", placeholder = "PRG4\nTSPAN15\nCOL22A1\nHTRA4")
-        
-      print("Load complete")
-    }, error = function(e) {
-      print(paste("Error :  ", e))
-      session$sendCustomMessage("handler_alert", "Error.")
-    }, finally = { # with or without error
-      
-    })
-  })
-  
-  #Fast debug mode ATAC
-  observeEvent(input$debugATAC, {
-    
-    tryCatch({
-      proj_default <<- loadArchRProject("usr_temp/f0323da1b14bfb29f967ef3341bd771aPBMC_ATAC_2021-12-19_00_31_02/default/")
-      session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " QUALITY CONTROL", " PCA/LSI",
-                                                        " CLUSTERING", " ADDITIONAL DIMENSIONALITY\nREDUCTION METHODS", " TRAJECTORY ANALYSIS",
-                                                        " MARKERS' IDENTIFICATION", " FUNCTIONAL/MOTIF\nENRICHMENT ANALYSIS", " TRACKS"))
-      
-      output$metadataTableATAC <- renderDataTable(as.data.frame(getCellColData(proj_default)), options = list(pageLength = 10), rownames = TRUE)
-      updateInpuTrajectoryClustersATAC()
-      updateSelInpColorATAC()
-      
-      organism <<- "human"
-      disableTabsRNA()
-      print("Load complete ATAC")
-    }, error = function(e) {
-      print(paste("Error :  ", e))
-      session$sendCustomMessage("handler_alert", "Error.")
-    }, finally = { # with or without error
-      
-    })
-  })
-  
   #------------------Upload tab--------------------------------
   observeEvent(input$uploadCountMatrixConfirm, {
     #options(shiny.maxRequestSize=0.5*1024^3) #500 MB

@@ -67,8 +67,6 @@ ui <- dashboardPage(
                   from quality control and normalization, to dimensionality reduction, differential expression/accessibility analysis, cell clustering, functional enrichment analysis, 
                   trajectory inference, ligand – receptor analysis, gene regulatory network inference, and visualization. Try out our sample data and visit the Help pages for guidance. </p>"
                   ),
-                  actionButton(inputId = "debugRNA", label = "Fast debug RNA"),
-                  actionButton(inputId = "debugATAC", label = "Fast debug ATAC")
               )
       ),
       
@@ -134,7 +132,7 @@ ui <- dashboardPage(
                                                                    "Homo sapiens (Human) - hg38" = "hg38"
                                                     ), 
                                                     selected = "mm10"),
-                                       sliderInput(inputId = "upload10xATACThreads", label = "Threads to be used:", min = 1, max = 200, value = 2, step = 1), #TODO floor(parallel::detectCores()/2)
+                                       sliderInput(inputId = "upload10xATACThreads", label = "Threads to be used:", min = 1, max = 2, value = 2, step = 1), #TODO floor(parallel::detectCores()/2)
                                        actionButton(inputId = "upload10xATACConfirm", label = "Submit"),
                                        tags$h3("Load an example dataset"),
                                        tags$hr(),
@@ -1600,28 +1598,113 @@ ui <- dashboardPage(
                                   )    
                                   
                          ),
-                         tabPanel("Markers identification analysis"
+                         tabPanel("Markers identification analysis",
+                                  tabsetPanel(type = "tabs",
+                                              tabPanel("scRNA-seq: Marker genes",
+                                                       br(),
+                                                       dea_tab_intro,
+                                                       br(),
+                                                       dea_rna_input
+                                              ),
+                                              tabPanel("scRNA-seq: Feature and signature visualization",
+                                                       br(),
+                                                       dea_tab_intro,
+                                                       br(),
+                                                       dea_rna_signature
+                                              ),
+                                              tabPanel("scATAC-seq: Marker genes",
+                                                       br(),
+                                                       dea_tab_intro,
+                                                       br(),
+                                                       dea_atac_genes
+                                              ),
+                                              tabPanel("scATAC-seq: Marker peaks",
+                                                       br(),
+                                                       dea_tab_intro,
+                                                       br(),
+                                                       dea_atac_peaks
+                                              ),
+                                              tabPanel("scATAC-seq: Gene activity score",
+                                                       br(),
+                                                       dea_tab_intro,
+                                                       br(),
+                                                       dea_atac_activity
+                                              )
+                                  )    
                                   
                          ),
-                         tabPanel("Cell Cycle phase"
-                                  
+                         tabPanel("Cell Cycle phase",
+                                  br(),
+                                  cellCycle_tab_intro,
+                                  br(),
+                                  cell_cycle_rna
                          ),
-                         tabPanel("Functional/Motif Enrichment"
-                                  
+                         tabPanel("Functional/Motif Enrichment",
+                                  tabsetPanel(type = "tabs",
+                                              tabPanel("scRNA-seq: Functional enrichment analysis",
+                                                br(),
+                                                functional_tab_intro,
+                                                br(),
+                                                grpofiler_tab_rna
+                                              ),
+                                              tabPanel("scATAC-seq: Motif enrichment analysis",
+                                                br(),
+                                                functional_tab_intro,
+                                                br(),
+                                                motif_tab_atac       
+                                              )
+                                            )
                          ),
-                         tabPanel("Cluster Annotation"
-                                  
+                         tabPanel("Cluster Annotation",
+                                  br(),
+                                  annot_tab_intro,
+                                  br(),
+                                  annot_cipr_rna
                          ),
-                         tabPanel("Trajectory Analysis"
-                                  
+                         tabPanel("Trajectory Inference",
+                                  tabsetPanel(type = "tabs",
+                                              tabPanel("scRNA-seq: Trajectory inference analysis",
+                                                       br(),
+                                                       traj_tab_intro,
+                                                       br(),
+                                                       traj_rna_slingshot
+                                              ),
+                                              tabPanel("scATAC-seq: Trajectory inference analysis",
+                                                       br(),
+                                                       traj_tab_intro,
+                                                       br(),
+                                                       traj_atac_slingshot
+                                              )
+                                  )
                          ),
-                         tabPanel("Ligand-Receptor Analysis"
-                                  
+                         tabPanel("Ligand-Receptor Analysis",
+                                 br(),  
+                                 lr_tab_intro,
+                                 br(),
+                                 lr_rna_nichnet
                          ),
-                         tabPanel("Gene regulatory networks analysis"
-                                  
+                         tabPanel("Gene regulatory networks analysis",
+                                  tabsetPanel(type="tabs",
+                                    tabPanel("scRNA-seq: GRN inference analysis",
+                                             br(),
+                                             grn_tab_intro,
+                                             br(),
+                                             grn_tab_rna
+                                    ),
+                                    tabPanel("scATAC-seq: GRN inference analysis",
+                                             br(),
+                                             grn_tab_intro,
+                                             br(),
+                                             grn_tab_atac
+                                    )
+                                  )
                          ),
-                         tabPanel("Tracks")
+                         tabPanel("Tracks",
+                                  br(),
+                                  tracks_tab_intro,
+                                  br(),
+                                  tracks_tab_atac
+                                  )
                        )
                 )
               ) #fluidRow end
@@ -1630,10 +1713,9 @@ ui <- dashboardPage(
       tabItem (tabName = "about",
                div(id = "about_div", class = "div_container",
                    h1(class = "container_title", "About scAnner"),
-                   HTML("<p class=container_text> scAnner is actively developed and maintained by the Single-Cell Analysis Unit, 
-                                                  and Bioinformatics and Integrative Biology Lab. </br></br> 
-                        </p> 
-                              <h2 class=sub_title> Developers </h2>
+                   HTML(" 
+                              <hr>
+                              <h2 class=sub_title> Research team </h2>
                               <ul>
                               <li> Christos Tzaferis, tzaferis[at]fleming[dot]com
                               <li> Evangelos Karatzas, karatzas[at]fleming[dot]gr
@@ -1643,6 +1725,19 @@ ui <- dashboardPage(
                               <li> Dimitris Konstantopoulos, konstantopoulos[at]fleming[dot]gr
                               </ul>
                               <footer>
+                              
+                              <h2 class=sub_title> Developers </h2>
+                              <ul>
+                                <li> Christos Tzaferis, tzaferis[at]fleming[dot]com
+                                <li> Dimitris Konstantopoulos, konstantopoulos[at]fleming[dot]gr
+                              </ul>
+                              
+                              <h3 class=sub_title>Code Availability</h3>
+                              <p>The source code for scAnner can be found in <a href='https://github.com/PavlopoulosLab/scAnner/' target='_blank'>this</a> repository.</p>
+                              
+                              <h3 class=sub_title> Cite scAnner </h3>
+                              <p style='font-size:15px'>If you find scAnner useful in your work please cite: to be announced soon</p>
+                               
                               &copy; 2021 <a href=\"https://fleming.gr/kollias-lab-single-cell-analysis-unit\" target=\"_blank\">Single Cell Analysis Unit</a> | 
                               <a href=\"https://sites.google.com/site/pavlopoulossite\" target=\"_blank\">Bioinformatics and Integrative Biology Lab</a> | 
                               <a href=\"https://www.fleming.gr\" target=\"_blank\">Biomedical Sciences Research Center \"Alexander Fleming\"</a>

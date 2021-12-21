@@ -80,6 +80,10 @@ td{ /* for tags */
   min-height: 250px;
 }
 
+.scrollable{
+  overflow-x: scroll;
+}
+
 #metadataTable, #metadataTableATAC{
   overflow-x: scroll;
 }
