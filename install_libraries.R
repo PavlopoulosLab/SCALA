@@ -78,7 +78,8 @@ libraries_CRAN <- c(
   "dismo",
   "Cairo",
   "mlrMBO",
-  "rhandsontable"
+  "rhandsontable",
+  "optparse"
 )
 for (i in 1:length(libraries_CRAN))
 {
