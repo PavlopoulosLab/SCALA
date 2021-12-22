@@ -103,8 +103,8 @@ ui <- dashboardPage(
                                        tags$h3("Upload your files"),
                                        tags$hr(),
                                        textInput(inputId = "upload10xRNAprojectID", label = "Project name : ", value = "Project1"),
-                                       fileInput(inputId = "barcodes", label = "1. Choose barcodes.csv.gz file", accept = ".gz"),
-                                       fileInput(inputId = "genes", label = "2. Choose features.csv.gz file", accept = ".gz"),
+                                       fileInput(inputId = "barcodes", label = "1. Choose barcodes.tsv.gz file", accept = ".gz"),
+                                       fileInput(inputId = "genes", label = "2. Choose features.tsv.gz file", accept = ".gz"),
                                        fileInput(inputId = "matrix", label = "3. Choose matrix.mtx.gz file", accept = ".gz"),
                                        sliderInput(inputId = "upload10xRNAminCells", label = "Include features detected in at least this many cells :", min = 1, max = 20, value = 3, step = 1),
                                        sliderInput(inputId = "upload10xRNAminFeatures", label = "Include cells where at least this many features are detected :", min = 1, max = 200, value = 200, step = 1),
@@ -911,7 +911,7 @@ ui <- dashboardPage(
                                          sliderInput(inputId = "findMarkersPeaksLogFCATAC", label = "Log2FC threshold:", min = 0, max = 3, value = 0.25, step = 0.05),
                                          
                                          sliderInput(inputId = "findMarkersPeaksFDRATAC", label = "FDR threshold:", min = 0, max = 1, value = 0.01, step = 0.01),
-                                         fileInput(inputId = "findMarkersPeaksCustomPeaks", label = "Please upload a .bed file", accept = ".bed"),
+                                         fileInput(inputId = "findMarkersPeaksCustomPeaks", label = "Please upload a .bed file (If you are using the example dataset you can upload the peakset file (.bed) provided in Help > Examples)", accept = ".bed"),
                                          #--activation in local version--
                                          # textInput(inputId = "pathToMacs2", label = "Absolute path to MACS2")%>%
                                          #   shinyInput_label_embed(

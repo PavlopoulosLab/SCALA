@@ -1127,7 +1127,7 @@ traj_rna_slingshot <- HTML('
                                 <ul>
                                   <li> Dimensionality reduction method. A sliding window of available dimensionality reduction spaces to use for the trajectory 
                                        inference analysis. Available options are derived by the previous analysis steps in the "ADDITIONAL DIMENSIONALITY 
-                                       REDUCTION METHODS" tab.
+                                       REDUCTION METHODS" tab.<br><b>Note that UMAP should be completed before running this analysis. </b>
                                   <li> Number of dimensions to use. The number of dimensions to incorporate during the trajectory inference procedure. Defaults to 3.
                                   <li> Initial and final state selection. The user should set the root and the terminal cell-cluster of the underlying differentiation process.
                                 </ul>
