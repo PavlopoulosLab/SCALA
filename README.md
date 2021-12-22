@@ -17,6 +17,9 @@ A web application for multimodal analysis of single cell next generation sequenc
   * [On Linux](#on-linux)
   * [On Windows](#on-windows)
 
+4 [Advanced Operations](#advanced-operations)
+  * [Creating and using arrow files for scATAC analysis](#creating-and-using-arrow-files-for-scatac-analysis)
+  * [Run pyscenic to perform analyses with scAnner](#run-pyscenic-to-perform-analyses-with-scanner)
 
 ----
 ## Overview
@@ -122,7 +125,7 @@ Online version: http://bib.fleming.gr:8084/SCANNER/, http://scanner.pavlopoulosl
 - [harmony](https://github.com/immunogenomics/harmony)
 - [presto](https://github.com/immunogenomics/presto)
 - [phateR](https://github.com/KrishnaswamyLab/phateR) (**Note**: SCANNER requires the GitHub version of phateR to perform phate runs with Seurat.  The version of phateR that is available in CRAN **WILL NOT WORK**)
-- The Seurat patch for support of PHATE (**Note**: This needs to be applied **after** the original Seurat, phate and phateR have been installed)
+- [The Seurat patch for support of PHATE](https://github.com/scottgigante/seurat) (**Note**: This needs to be applied **after** the original Seurat, phate and phateR have been installed)
 
 **Note 1:** All of the aforementioned packages can be installed through R, Rscript or R-studio. **A script ("install_libraries.R")** is included to automate the installation process.
 
@@ -148,24 +151,24 @@ To aid you in installing and configuring SCANNER, we provide three installation 
 
 1. The first script ("install_dependencies.sh") installs and configures all required software in your Linux distribution.  The file provided is written for Debian and Debian-based (Ubuntu, Debian, Linux Mint etc) and can be run as follows:
 
->     sudo bash install_dependencies.sh
+     sudo bash install_dependencies.sh
 
 or
 
->     chmod +x install_dependencies.sh
->     sudo ./install_dependencies.sh
+     chmod +x install_dependencies.sh
+     sudo ./install_dependencies.sh
 
 **Note 1:** To run this script, you **will** need an account with administrative ("sudo") privileges. If you are working on a system without sudo access, please consult your system administrator.
 **Note 2:** Users of other Linux distributions, like SUSE, Fedora, Arch etc, should edit this script and replace "apt-get" with the analogous package manager of their system (e.g. "zypper").
 
 2. The second script ("install_libraries.R") will install all required libraries in your R environment.  It can be run as follows:
 
->     Rscript install_libraries.R
+     Rscript install_libraries.R
 
 (local installation of R packages in the user's home environment)
 or
 
->     sudo Rscript install_libraries.R
+     sudo Rscript install_libraries.R
 
 (system-wide installation)
 
@@ -173,20 +176,20 @@ or it can be loaded and executed in R-studio.
 
 3. The third script ("install_datasets.sh") utilizes wget to retrieve a number of helper files that are required by several of the analyses in SCANNER. These need to be downloaded, unzipped and placed in specific directories. You can run the script as follows:
 
->     bash install_datasets.sh
+     bash install_datasets.sh
 
 or
 
->     chmod +x install_datasets.sh
->     ./install_ddatasets.sh
+     chmod +x install_datasets.sh
+     ./install_ddatasets.sh
 
 
 ### On Windows
 - To be added
 
-----
+## Advanced Operations
 
-## Creating and using *.arrow files for scATAC analysis
+### Creating and using arrow files for scATAC analysis
 
 We provide a script ("create_arrow_file.R"), in order to easily create scATAC-seq *.arrow files. The particular file type is compatible with ArchR package, which is the essential component of scAnner's scATAC-seq data analysis pipeline.
 
@@ -217,8 +220,7 @@ Parameter description:
 create_arrow_file.R run will generate 1 arrow file per fragment file in the current directory. Each of these files can be uploaded to scAnner, under the "DATA INPUT" and "Arrow input files (scATAC-seq)" tabs, in order to initialize a scAnner scATAC-seq analysis.
 
 
-----
-## Run pyscenic to perform analyses with scAnner
+### Run pyscenic to perform analyses with scAnner
 
 We provide a convenient wrapper called "pyscenic_local.py" in order to easily run pyscenic with default parameters. If the user desires to tweak pyscenic parameters, he/she is encouraged to visit pyscenic site (https://pyscenic.readthedocs.io/) and run the pipeline accordingly.
 
@@ -289,7 +291,6 @@ https://github.com/aertslab/pySCENIC/blob/master/resources/mm_mgi_tfs.txt
 
 Human:
 https://github.com/aertslab/pySCENIC/blob/master/resources/hs_hgnc_curated_tfs.txt
-
 
 
 
