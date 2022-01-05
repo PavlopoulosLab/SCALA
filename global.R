@@ -50,8 +50,7 @@ user_dir <- "" #user's folder in temp
 user_dir_pyscenic <- "" #user's folder for pyscenic results
 
 #tab Upload
-#objectInputType <- "Input10x"
-seurat_object <- NULL # readRDS("seurat_processed.RDS") # NULL
+seurat_object <- NULL 
 init_seurat_object <- NULL
 #my_metadata <- NULL
 minimum_cells <- 3
@@ -165,7 +164,7 @@ hideAllLoaders <- function(){
   shinyjs::hide("findMarkersPeaksHeatmapATAC_loader")
   shinyjs::hide("cellCyclePCA_loader")
   shinyjs::hide("cellCycleBarplot_loader")
-  shinyjs::hide("gProfilerManhatan_loader")
+  shinyjs::hide("gProfilerManhattan_loader")
   shinyjs::hide("findMotifsHeatmapATAC_loader")
   shinyjs::hide("findMotifsATACTable_loader")
   shinyjs::hide("annotateClustersCIPRDotplot_loader")
@@ -184,6 +183,3 @@ hideAllLoaders <- function(){
 
 #gProfiler
 #set_base_url("http://biit.cs.ut.ee/gprofiler_archive3/e102_eg49_p15")
-
-#TO DO
-# bug barplot in clustering doesn't appear when loading a new object
