@@ -1,5 +1,3 @@
-# TODO add loading bar divs and source js file
-# TODO version2 add all additional parameters per function
 source("help.R", local=TRUE)
 library(bsplus)
 
@@ -19,6 +17,7 @@ ui <- dashboardPage(
       menuItem(text = "HOME", tabName = "home", icon = icon("home")),
       tags$hr(),
       menuItem(text = "DATA INPUT", tabName = "upload", icon = icon("upload")),
+      menuItem(text = "UTILITY OPTIONS", tabName = "utilities", icon = icon("edit")),
       menuItem(text = "QUALITY CONTROL", tabName = "qc", icon = icon("check-circle")),
       menuItem(tags$div("DATA NORMALIZATION",
                         tags$br(),
@@ -71,10 +70,8 @@ ui <- dashboardPage(
       ),
       
       #Upload tab
-      tabItem(tabName = "upload", #TODO 3 tabs
-              # two boxes inside upload tab
+      tabItem(tabName = "upload",
               fluidRow(
-                #useShinyalert(),
                 box(
                   width = 4, status = "info", solidHeader = TRUE,
                   title = "Upload your data",
@@ -132,7 +129,7 @@ ui <- dashboardPage(
                                                                    "Homo sapiens (Human) - hg38" = "hg38"
                                                     ), 
                                                     selected = "mm10"),
-                                       sliderInput(inputId = "upload10xATACThreads", label = "Threads to be used:", min = 1, max = 2, value = 2, step = 1), #TODO floor(parallel::detectCores()/2)
+                                       sliderInput(inputId = "upload10xATACThreads", label = "Threads to be used:", min = 1, max = 2, value = 2, step = 1),
                                        actionButton(inputId = "upload10xATACConfirm", label = "Submit"),
                                        tags$h3("Load an example dataset"),
                                        tags$hr(),
@@ -159,11 +156,32 @@ ui <- dashboardPage(
               ),
       ),
       
+      #utilities tab
+      tabItem(tabName = "utilities",
+              fluidRow(
+                box(
+                  width = 12, status = "info", solidHeader = TRUE,
+                  title = "Edit/export working object",
+                  tags$h3("Rename cluster"),
+                  tags$hr(),
+                  selectInput(inputId = "utilitiesRenameOldName", label = "Cluster to be renamed (old name):", choices = "-", multiple = F),
+                  textInput(inputId = "utilitiesRenameNewName", label = "New name of the cluster:", value = "New_name_1"),
+                  actionButton(inputId = "utilitiesConfirmRename", label = "Rename"),
+                  tags$h3("Delete cluster"),
+                  tags$hr(),
+                  selectInput(inputId = "utilitiesDeleteCluster", label = "Cluster to be deleted:", choices = "-", multiple = F),
+                  actionButton(inputId = "utilitiesConfirmDelete", label = "Delete"),
+                  tags$h3("Export working object as .RDS file"),
+                  tags$hr(),
+                  downloadButton(outputId = "utilitiesConfirmExport", label = "Export .RDS")
+                )
+              )
+      ),
+      
       #QC tab
       tabItem(tabName = "qc",
               tabsetPanel(type = "tabs", id = "qcTabPanel",
                           tabPanel("scRNA-seq",
-                                   #two boxes inside QC tab
                                    fluidRow(
                                      box(
                                        width = 3, status = "info", solidHeader = TRUE,
@@ -208,8 +226,6 @@ ui <- dashboardPage(
                                        div(class="ldBar", id="qc_loader", "data-preset"="circle"),
                                        tabsetPanel(type="tabs", id = "qc_tabs_rna",
                                                    tabPanel("Pre-filtering plots",
-                                                            #column(tags$h3("Pre-filtering plots"), width=12),
-                                                            #column(tags$hr(), width = 12),
                                                             column(
                                                               div(id="nFeatureViolin_loader",
                                                                   shinycssloaders::withSpinner(
@@ -243,8 +259,6 @@ ui <- dashboardPage(
                                                             column(verbatimTextOutput(outputId = "cellStats"), width = 4)
                                                    ),
                                                    tabPanel("Post-filtering plots",
-                                                            #column(tags$h3("Post-filtering plots"), width=12),
-                                                            #column(tags$hr(), width = 12),
                                                             column(
                                                               div(id="filteredNFeatureViolin_loader",
                                                                   shinycssloaders::withSpinner(
@@ -282,16 +296,12 @@ ui <- dashboardPage(
                                   )
                           ),
                           tabPanel("scATAC-seq",
-                                   #two boxes inside QC tab
                                    fluidRow(
                                      box(
                                        width = 3, status = "info", solidHeader = TRUE,
                                        title = "Quality control",
                                        tags$h3("Display soft filtered quality control plots"),
                                        actionButton(inputId = "qcDisplayATAC", label = "OK"),
-                                       
-                                       #TODO list of chromosomes to be analysed
-                                       #TODO mark doublets (ATAC, RNA) incorporate after tSNE, UMAP generation and visualize on UMAP, output .csv - exclude? [optional]
                                      ),
                                      box(
                                        width = 9, status = "info", solidHeader = TRUE,
@@ -332,7 +342,6 @@ ui <- dashboardPage(
                   title = "Normalize and scale the data",
                   tags$h3("1. Log-normalization"),
                   tags$hr(),
-                  #textInput(inputId = "normScaleFactor", label = "Scale factor :", value = "10000"), 
                   sliderInput(inputId = "normScaleFactor", label = "Scale factor :", min = 1000, max = 1000000, value = 10000, step = 1000)%>%
                     shinyInput_label_embed(
                       shiny_iconlink() %>%
@@ -357,7 +366,6 @@ ui <- dashboardPage(
                                          "- dispersion (disp): selects the genes with the highest dispersion values"), placement = "left"
                         )
                     ), 
-                  #textInput(inputId = "nHVGs", label = "Number of genes to select as top variable genes (applicable only to the first and third option) :", value = "2000"),
                   sliderInput(inputId = "nHVGs", label = "Number of genes to select as top variable genes (applicable only to the first and third option) :", min = 200, max = 4000, value = 2000, step = 100),
                   tags$h3("3. Scaling the data"),
                   tags$hr(),
@@ -403,7 +411,6 @@ ui <- dashboardPage(
                                                                                 choices = list("Yes (slow operation)" = "yes", 
                                                                                                "No" = "no"), 
                                                                                 selected = "no"), width = 12),
-                                                            #column(sliderInput(inputId = "pcaStepBy", label = "Resolution/step-by: (applicable only in SVA-CV)", min = 1, max = 5, value = 3, step = 1), width = 12),
                                                             column(actionButton(inputId = "PCrunPCA", label = "Run PCA"), width = 12),
                                                             div(class="ldBar", id="PCA1_loader", "data-preset"="circle"),
                                                             div(
@@ -467,9 +474,6 @@ ui <- dashboardPage(
               )
       ),
       #ATAC 
-      #input: varFeatures[5000, 100000] step=1000, default=25000, dimsToUse[1, 50] default=30, resolution[0, 10] default=2, iterations [1, 10] default=2
-      #visualize LSI?
-      
       #Clustering tab
       tabItem(tabName = "clustering", 
               tabsetPanel(type = "tabs", id = "clusteringTabPanel",
@@ -489,7 +493,7 @@ ui <- dashboardPage(
                                        actionButton(inputId = "snnConfirm", label = "Perform clustering"),
                                      ),
                                      box(
-                                       width = 8, status = "info", solidHeader = TRUE, title = "Clustering output", #height = "1500px",
+                                       width = 8, status = "info", solidHeader = TRUE, title = "Clustering output",
                                        tabsetPanel(type = "tabs",
                                                    tabPanel("Clustering results",
                                                             tabsetPanel(type = "tabs",
@@ -559,9 +563,6 @@ ui <- dashboardPage(
               )
       ),
       #ATAC 
-      # resolution, dimsToUse
-      # correlation heatmap (RNA, ATAC) using most variable features/or markers [optional]
-
       #UMAP tab
       tabItem(tabName = "umap", 
               tabsetPanel(type = "tabs", id = "umapTabPanel",
@@ -654,9 +655,6 @@ ui <- dashboardPage(
               )
       ),
       #ATAC
-      #UMAP: n_components, ndimsToUse, distance=cosine, neighbors=30, minDist=0.5
-      #tSNE: n_components, ndimsToUse, perplexity =30, check for 3D
-      
       #DEA tab
       tabItem(tabName = "findMarkers", 
               tabsetPanel(type = "tabs", id = "findMarkersTabPanel",
@@ -705,7 +703,7 @@ ui <- dashboardPage(
                                      ),
                                      
                                      box(
-                                       width = 9, status = "info", solidHeader = TRUE, title = "DEA results", #height = "1500px",
+                                       width = 9, status = "info", solidHeader = TRUE, title = "DEA results",
                                        tabsetPanel(type = "tabs",
                                                    tabPanel("Marker genes", 
                                                             div(class="ldBar", id="DEA1_loader", "data-preset"="circle"),
@@ -838,7 +836,6 @@ ui <- dashboardPage(
                                                    ),
                                                    tabPanel("Violin plot", fluidRow(
                                                      box(width = 3, status = "info", solidHeader = TRUE, title = "Options",
-                                                         #textInput(inputId = "findMarkersGeneSelect", label = "Search for gene:", value = "Actb"),
                                                          radioButtons("findMarkersViolinFeaturesSignature", label = "Select between gene or signature: ",
                                                                       choices = list("Gene" = "gene", 
                                                                                      "Gene signature" = "signature"
@@ -1010,10 +1007,10 @@ ui <- dashboardPage(
                   title = "Cell cycle phase analysis",
                   tabsetPanel(type = "tabs",
                               tabPanel("Dimensionality reduction plot", 
-                                       selectInput("cellCycleReduction", "Plot type:", # TODO observe this selectbox instead, default value "-" -> do nothing
+                                       selectInput("cellCycleReduction", "Plot type:",
                                                    c("-" = "-")
                                        ),
-                                       actionButton(inputId = "cellCycleRun", label = "Run cell cycle analysis"), # TODO remove this button
+                                       actionButton(inputId = "cellCycleRun", label = "Run cell cycle analysis"),
                                        div(class="ldBar", id="CC1_loader", "data-preset"="circle"),
                                        div(id="cellCyclePCA_loader",
                                            shinycssloaders::withSpinner(
@@ -1021,7 +1018,7 @@ ui <- dashboardPage(
                                            )
                                        )
                               ),
-                              tabPanel("Barplot", # TODO this should appear together with cellCyclePCA output, by observed event cellCycleReduction
+                              tabPanel("Barplot",
                                        div(class="ldBar", id="CC2_loader", "data-preset"="circle"),
                                        div(id="cellCycleBarplot_loader",
                                            shinycssloaders::withSpinner(
@@ -1086,11 +1083,11 @@ ui <- dashboardPage(
                                                             div(class="ldBar", id="gprof1_loader", "data-preset"="circle"),
                                                             dataTableOutput(outputId = "gProfilerTable"),
                                                             downloadButton(outputId = "gProfilerRNAExport", label = "Save table")),
-                                                   tabPanel("Manhatan plot", 
+                                                   tabPanel("Manhattan plot", 
                                                             div(class="ldBar", id="gprof2_loader", "data-preset"="circle"),
-                                                            div(id="gProfilerManhatan_loader",
+                                                            div(id="gProfilerManhattan_loader",
                                                                 shinycssloaders::withSpinner(
-                                                                  plotlyOutput(outputId = "gProfilerManhatan")
+                                                                  plotlyOutput(outputId = "gProfilerManhattan")
                                                                 )
                                                             )
                                                    )
@@ -1204,8 +1201,8 @@ ui <- dashboardPage(
                                        selectInput("trajectoryReduction", "Dimensionality reduction method:", choices=c("PCA"="pca","UMAP"="umap", "tSNE"="tsne", "Diffusion Map"="dfm"), selected = "PCA",
                                                    multiple = FALSE,selectize = TRUE, width = NULL, size = NULL),
                                        sliderInput("trajectorySliderDimensions", "Number of dimensions to use :", min = 0, max = 100, value = 3, step = 1),
-                                       selectInput("trajectoryStart", "Initial state:", choices=c("0"="0"), selected = "0", multiple = F, selectize = F),
-                                       selectInput("trajectoryEnd", "Final state:", choices=c("0"="0"), selected = "0", multiple = F, selectize = F),
+                                       selectInput("trajectoryStart", "Initial state:", choices=c("-"="-"), selected = "-", multiple = F, selectize = F),
+                                       selectInput("trajectoryEnd", "Final state:", choices=c("-"="-"), selected = "0", multiple = F, selectize = F),
                                        actionButton(inputId = "trajectoryConfirm", label = "OK")
                                      ),
 
@@ -1222,12 +1219,12 @@ ui <- dashboardPage(
                                                           verbatimTextOutput(outputId="trajectoryText")),
                                                  tabPanel("Lineage-Pseudotime view", fluidRow(
                                                    box(width = 3, status = "info", solidHeader = TRUE, title = "Options",
-                                                       selectInput(inputId = 'trajectoryLineageSelect', # TODO observe this instead of action button below, default = "-" and handle it
+                                                       selectInput(inputId = 'trajectoryLineageSelect',
                                                                    label = 'Select lineage:',
                                                                    choices = c("Lineage1"),
                                                                    selected = "Lineage1",
                                                                    multiple = FALSE),
-                                                       actionButton(inputId = "trajectoryConfirmLineage", label = "ok") # TODO remove this and observe selectbox above
+                                                       actionButton(inputId = "trajectoryConfirmLineage", label = "ok")
                                                    ),
                                                    box(width = 9, status = "info", solidHeader = TRUE, title = "Pseudotime plot",
                                                        div(class="ldBar", id="traj2_loader", "data-preset"="circle"),
@@ -1256,7 +1253,7 @@ ui <- dashboardPage(
                            box(
                              width = 9, status = "info", solidHeader = TRUE, 
                              title = "Pseudotime plot",
-                             selectInput(inputId = 'trajectoryLineageSelectATAC', # TODO observe this instead of action button below, default = "-" and handle it
+                             selectInput(inputId = 'trajectoryLineageSelectATAC',
                                          label = 'Select lineage:',
                                          choices = c("Lineage1"),
                                          selected = "Lineage1",
@@ -1314,7 +1311,7 @@ ui <- dashboardPage(
       #GRN analysis
       tabItem(tabName = "grn",
               tabsetPanel(type="tabs", id = "grnTabPanel",
-                          tabPanel("scRNA-seq", #TODO for pyscenic ctx minimun number of genes per module, AUC+NES thresholds [for the update]
+                          tabPanel("scRNA-seq",
                                    fluidRow(
                                      box(width = 3, status = "info", solidHeader = TRUE, title = "GRN input parameters",
                                          div(class="ldBar", id="loom_production_loader", "data-preset"="circle"),
