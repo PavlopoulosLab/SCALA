@@ -19,7 +19,7 @@ A web application for multimodal analysis of single cell next generation sequenc
 
 4 [Advanced Operations](#advanced-operations)
   * [Creating and using arrow files for scATAC analysis](#creating-and-using-arrow-files-for-scatac-analysis)
-  * [Run pyscenic to perform analyses with scAnner](#run-pyscenic-to-perform-analyses-with-scanner)
+  * [Run pyscenic to perform analyses with SCALA](#run-pyscenic-to-perform-analyses-with-SCALA)
 
 ----
 ## Overview
@@ -124,7 +124,7 @@ Online version: http://scala.pavlopouloslab.info
 - [ArchR](https://github.com/GreenleafLab/ArchR)
 - [harmony](https://github.com/immunogenomics/harmony)
 - [presto](https://github.com/immunogenomics/presto)
-- [phateR](https://github.com/KrishnaswamyLab/phateR) (**Note**: SCANNER requires the GitHub version of phateR to perform phate runs with Seurat.  The version of phateR that is available in CRAN **WILL NOT WORK**)
+- [phateR](https://github.com/KrishnaswamyLab/phateR) (**Note**: SCALA requires the GitHub version of phateR to perform phate runs with Seurat.  The version of phateR that is available in CRAN **WILL NOT WORK**)
 - [The Seurat patch for support of PHATE](https://github.com/scottgigante/seurat) (**Note**: This needs to be applied **after** the original Seurat, phate and phateR have been installed)
 
 **Note 1:** All of the aforementioned packages can be installed through R, Rscript or R-studio. **A script ("install_libraries.R")** is included to automate the installation process.
@@ -133,21 +133,21 @@ Online version: http://scala.pavlopouloslab.info
 
 **Note 3:** The order of installing is important for some of the packages. If you perform the installation by hand, make sure you follow the precise order given in **install_libraries.R**.
 
-**Note 4:** SCANNER requires modifications to the Seurat package, in order for it to be compatible with phate and phateR (see above). These modifications may lead to inconsistencies with other packages in your R installation.
+**Note 4:** SCALA requires modifications to the Seurat package, in order for it to be compatible with phate and phateR (see above). These modifications may lead to inconsistencies with other packages in your R installation.
 
 ----
 
 ## Installation Instructions
 
 ### On Linux
-Linux is the native environment SCANNER is designed to operate in.  The main steps that need to be followed are:
+Linux is the native environment SCALA is designed to operate in.  The main steps that need to be followed are:
 1. Install all software dependencies and packages
 2. Install R and R-studio
 3. Install all required R libraries
 4. Retrieve and install the required reference datasets
-4. Open the tool's project file (SCANNER.rproj) in R-studio, select **ui.R**, **server.R** or **global.R** and click "Run App" **or** (alternatively), configure shiny-server and setup SCANNER as a service.
+4. Open the tool's project file (SCALA.rproj) in R-studio, select **ui.R**, **server.R** or **global.R** and click "Run App" **or** (alternatively), configure shiny-server and setup SCALA as a service.
 
-To aid you in installing and configuring SCANNER, we provide three installation scripts, "install_dependencies.sh",  "install_libraries.R" and "install_datasets.sh". 
+To aid you in installing and configuring SCALA, we provide three installation scripts, "install_dependencies.sh",  "install_libraries.R" and "install_datasets.sh". 
 
 1. The first script ("install_dependencies.sh") installs and configures all required software in your Linux distribution.  The file provided is written for Debian and Debian-based (Ubuntu, Debian, Linux Mint etc) and can be run as follows:
 
@@ -174,7 +174,7 @@ or
 
 or it can be loaded and executed in R-studio.
 
-3. The third script ("install_datasets.sh") utilizes wget to retrieve a number of helper files that are required by several of the analyses in SCANNER. These need to be downloaded, unzipped and placed in specific directories. You can run the script as follows:
+3. The third script ("install_datasets.sh") utilizes wget to retrieve a number of helper files that are required by several of the analyses in SCALA. These need to be downloaded, unzipped and placed in specific directories. You can run the script as follows:
 
      bash install_datasets.sh
 
@@ -191,9 +191,9 @@ or
 
 ### Creating and using arrow files for scATAC analysis
 
-We provide a script ("create_arrow_file.R"), in order to easily create scATAC-seq *.arrow files. The particular file type is compatible with ArchR package, which is the essential component of scAnner's scATAC-seq data analysis pipeline.
+We provide a script ("create_arrow_file.R"), in order to easily create scATAC-seq *.arrow files. The particular file type is compatible with ArchR package, which is the essential component of SCALA's scATAC-seq data analysis pipeline.
 
-create_arrow_file.R requires R version 4, with "optparse" and "ArchR" packages installed. Since scAnner is compatible with hg19, hg38, mm9, and mm10 UCSC genome builds, the respective packages should be also installed accordingly. All of the aforementioned packages are part of scAnner's dependencies, but can also be installed as follows:
+create_arrow_file.R requires R version 4, with "optparse" and "ArchR" packages installed. Since SCALA is compatible with hg19, hg38, mm9, and mm10 UCSC genome builds, the respective packages should be also installed accordingly. All of the aforementioned packages are part of SCALA's dependencies, but can also be installed as follows:
 
     install.package("optparse")
     if (!requireNamespace("devtools", quietly = TRUE)) install.packages("devtools")
@@ -217,17 +217,17 @@ Parameter description:
     "-m" or "--minFrags": The minimum number of mapped ATAC-seq fragments required per cell to pass filtering for use in downstream analyses. The default value will be set to 1000.
     "-p" or "--threads": The number of threads to be used for parallel computing. The default value will be set to 8. For windows users, it will be automatically set to 1. 
 
-create_arrow_file.R run will generate 1 arrow file per fragment file in the current directory. Each of these files can be uploaded to scAnner, under the "DATA INPUT" and "Arrow input files (scATAC-seq)" tabs, in order to initialize a scAnner scATAC-seq analysis.
+create_arrow_file.R run will generate 1 arrow file per fragment file in the current directory. Each of these files can be uploaded to SCALA, under the "DATA INPUT" and "Arrow input files (scATAC-seq)" tabs, in order to initialize a SCALA scATAC-seq analysis.
 
 
-### Run pyscenic to perform analyses with scAnner
+### Run pyscenic to perform analyses with SCALA
 
 We provide a convenient wrapper called "pyscenic_local.py" in order to easily run pyscenic with default parameters. If the user desires to tweak pyscenic parameters, he/she is encouraged to visit pyscenic site (https://pyscenic.readthedocs.io/) and run the pipeline accordingly.
 
 The particular wrapper is applicable to scRNA-seq loom files generated by the R package SCopeLoomR. Ideally, the basic steps of a typical scRNA-seq analysis should have been applied.
 Gene filtering is considered as a vital step. The particular wrapper currently supports only hg19, hg38, mm9 and mm10 genome builds.
 
-We encourage the user to first run all the steps provided in our scAnner web server.
+We encourage the user to first run all the steps provided in our SCALA web server.
 
 
 The particular script should be run by using python v.3.7 or newer.
@@ -254,9 +254,9 @@ Parameter description:
     '--threads' or '-t' :The number of threads to be used for each step of the analysis.
 
 pyscenic_local.py run will generate 3 files, located in the predefined output folder ('--outputFolder' or '-o' ): adjacencies.*.tsv, auc.*.loom and nes.score.*.csv. 
-auc.*.loom contains all the necessary information for visualizing the inferred Regulons in scAnner. This loom can be finally uploaded to http://scanner.pavlopouloslab.info/ , and in particular under the scRNA-seq Gene Regulatory Network analysis tab, in order to proceed with regulon visualization.
+auc.*.loom contains all the necessary information for visualizing the inferred Regulons in SCALA. This loom can be finally uploaded to http://SCALA.pavlopouloslab.info/ , and in particular under the scRNA-seq Gene Regulatory Network analysis tab, in order to proceed with regulon visualization.
 
-The required files can be found in the following links.  They can also be retrieved automatically during the installation of scAnner, using the "install_datasets.sh" script.
+The required files can be found in the following links.  They can also be retrieved automatically during the installation of SCALA, using the "install_datasets.sh" script.
 
 Feather Files:
 
@@ -291,6 +291,7 @@ https://github.com/aertslab/pySCENIC/blob/master/resources/mm_mgi_tfs.txt
 
 Human:
 https://github.com/aertslab/pySCENIC/blob/master/resources/hs_hgnc_curated_tfs.txt
+
 
 
 
