@@ -1,4 +1,4 @@
-# scAnner
+# SCALA
 
 A web application for multimodal analysis of single cell next generation sequencing data
 
@@ -25,7 +25,7 @@ A web application for multimodal analysis of single cell next generation sequenc
 ## Overview
 A web tool that handles the analysis of scRNAseq data, from quality control and normalization, to dimensionality reduction, differential expression analysis, clustering and visualization.
 
-Online version: http://bib.fleming.gr:8084/SCANNER/, http://scanner.pavlopouloslab.info
+Online version: http://scala.pavlopouloslab.info
 
 
 ----
