@@ -26,6 +26,7 @@ library(UCell) #remotes::install_github("carmonalab/UCell")
 library(colorspace)
 library(missMDA)
 library(dismo)
+library(DoubletFinder)
 library(phateR) #pip install phate //\\ #install.packages("phateR") //\\ *devtools::install_github("scottgigante/seurat", ref="patch/add-PHATE-again") //\\ #reticulate::py_install("phate", pip=TRUE)
 #ATAC libraries
 library(ArchR)
@@ -46,6 +47,7 @@ library(JASPAR2018)
 library(JASPAR2016) #BiocManager::install("JASPAR2020"), BiocManager::install("JASPAR2018"), BiocManager::install("JASPAR2016")
 
 #Global variables
+YEAR <- substr(Sys.Date(), 1, 4)
 user_dir <- "" #user's folder in temp
 user_dir_pyscenic <- "" #user's folder for pyscenic results
 
@@ -87,6 +89,7 @@ reductions_choices <- c("-")
 
 #export tables RNA
 export_metadata_RNA <- ""
+export_loadingScoresTable_RNA <- ""
 export_clustertable_RNA <- ""
 export_markerGenes_RNA <- ""
 export_enrichedTerms_RNA <- ""
@@ -162,12 +165,15 @@ hideAllLoaders <- function(){
   shinyjs::hide("findMarkersGenesATACTable_loader")
   shinyjs::hide("findMarkersPeaksATACTable_loader")
   shinyjs::hide("findMarkersPeaksHeatmapATAC_loader")
+  shinyjs::hide("doubletATAC_loader3")
+  shinyjs::hide("doubletATAC_loader4")
   shinyjs::hide("cellCyclePCA_loader")
   shinyjs::hide("cellCycleBarplot_loader")
   shinyjs::hide("gProfilerManhattan_loader")
   shinyjs::hide("findMotifsHeatmapATAC_loader")
   shinyjs::hide("findMotifsATACTable_loader")
   shinyjs::hide("annotateClustersCIPRDotplot_loader")
+  shinyjs::hide("annotateClustersUMAP_loader")
   shinyjs::hide("ligandReceptorFullHeatmap_loader")
   shinyjs::hide("ligandReceptorCuratedHeatmap_loader")
   shinyjs::hide("trajectoryPlot_loader")

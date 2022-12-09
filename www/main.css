@@ -14,20 +14,22 @@ td{ /* for tags */
 
 .col-sm-4, .col-sm-6
 {
-  /*margin-top: 50px;*/
+  margin-left: 0px;
 }
 
 .logo{
-  height: 79px !important;
+  height: 139px !important;
+  padding-bottom: 30px !important;
 }
 
 .sidebar-menu{
-  padding-top: 30px;
+  padding-top: 90px;
 }
 
 .sidebar-toggle{
-  height: 79px !important;
-  padding-top: 30px !important;
+  height: 139px !important;
+  padding-top: 60px !important;
+  background-color: white!important;
 }
 
 .menu_item_div
@@ -84,6 +86,43 @@ td{ /* for tags */
   overflow-x: scroll;
 }
 
+.content-wrapper
+{
+  margin-top: 39px;
+}
+
+.navbar-static-top
+{
+  background-image: url("images/banner2.png")!important;
+  background-position:center;
+  background-size: 100%;
+  background-repeat: no-repeat;
+}
+
+.skin-black .main-header .navbar 
+{
+  /*background-color: rgb(10 75 105 / 48%);*/
+}
+
+.btn-example
+{
+  background-color: #F28C28;
+  color: #FFFFFF;
+  font-weight: bold;
+}
+
+.h3-example
+{
+  color: #FF6600;
+}
+
+.hr-example
+{
+  color: #FF6600;
+  background-color: #FF6600;
+  border-color: #FF6600;
+}
+
 #metadataTable, #metadataTableATAC{
   overflow-x: scroll;
 }
@@ -93,6 +132,7 @@ td{ /* for tags */
   width: 90%;
   height: 70vh;
   background-color: lightblue;
+
 }
 
 #clusterBarplot
@@ -101,7 +141,7 @@ td{ /* for tags */
 }
 
 #clust1_loader{
-  margin-top: -250px;
+  margin-top: 250px;
 }
 
 #clust2_loader{

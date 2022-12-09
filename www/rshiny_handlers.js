@@ -117,6 +117,11 @@ function enableTabs(tab_ids){
   return true;
 }
 
+const browseUrl = url => {
+  window.open(url, "_blank");
+};
+
+
 Shiny.addCustomMessageHandler("handler_alert", shinyAlert);
 Shiny.addCustomMessageHandler("handler_log", shinyLog);
 Shiny.addCustomMessageHandler("handler_disableButton", disableButton);
@@ -128,3 +133,4 @@ Shiny.addCustomMessageHandler("handler_finishLoader", finishLoader);
 Shiny.addCustomMessageHandler("handler_fixHeight", fixHeight);
 Shiny.addCustomMessageHandler("handler_disableTabs", disableTabs);
 Shiny.addCustomMessageHandler("handler_enableTabs", enableTabs);
+Shiny.addCustomMessageHandler("handler_browseUrl", browseUrl);

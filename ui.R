@@ -2,22 +2,21 @@ source("help.R", local=TRUE)
 library(bsplus)
 
 ui <- dashboardPage(
-  title="scAnner",
+  title="SCALA",
   skin = "black",
   #------------------------------------------------------------Header
   dashboardHeader(
-    titleWidth = "280px",
+    titleWidth = "285px",
     title = tags$img(src='logo.png')
   ),
   
   #------------------------------------------------------------Sidebar
   dashboardSidebar(
-    width = "280px",
+    width = "285px",
     sidebarMenu(id = "sidebarMenu",
       menuItem(text = "HOME", tabName = "home", icon = icon("home")),
       tags$hr(),
       menuItem(text = "DATA INPUT", tabName = "upload", icon = icon("upload")),
-      menuItem(text = "UTILITY OPTIONS", tabName = "utilities", icon = icon("edit")),
       menuItem(text = "QUALITY CONTROL", tabName = "qc", icon = icon("check-circle")),
       menuItem(tags$div("DATA NORMALIZATION",
                         tags$br(),
@@ -25,10 +24,13 @@ ui <- dashboardPage(
       tags$hr(),
       menuItem(text = "PCA/LSI", tabName = "pca", icon = icon("chart-line")),
       menuItem(text = "CLUSTERING", tabName = "clustering", icon = icon("project-diagram")),
+      menuItem(text = "UTILITY OPTIONS", tabName = "utilities", icon = icon("edit")),
       menuItem(tags$div("ADDITIONAL DIMENSIONALITY",
                         tags$br(),
                         "REDUCTION METHODS", class = "menu_item_div"), tabName = "umap", icon = icon("draw-polygon")),
+      menuItem(text = "FEATURE INSPECTION", tabName = "features", icon = icon("braille")),
       menuItem(text = "MARKERS' IDENTIFICATION", tabName = "findMarkers", icon = icon("map-marker-alt")),
+      menuItem(text = "DOUBLETS' DETECTION", tabName = "doubletDetection", icon = icon("check-double")),
       menuItem(text = "CELL CYCLE PHASE ANALYSIS", tabName = "cellCycle", icon = icon("circle-notch")),
       tags$hr(),
       menuItem(tags$div("FUNCTIONAL/MOTIF",
@@ -61,8 +63,8 @@ ui <- dashboardPage(
       #home tab
       tabItem(tabName = "home", 
               div(id = "home_div", class = "div_container",
-                  h1(class = "container_title", "Welcome to scAnner"),
-                  HTML("<p class=container_text> scAnner is a web application and stand-alone toolkit, that handles the analysis of scRNA-seq and scATAC-seq datasets, 
+                  h1(class = "container_title", "Welcome to SCALA"),
+                  HTML("<p class=container_text> SCALA is a web application and stand-alone toolkit, that handles the analysis of scRNA-seq and scATAC-seq datasets, 
                   from quality control and normalization, to dimensionality reduction, differential expression/accessibility analysis, cell clustering, functional enrichment analysis, 
                   trajectory inference, ligand – receptor analysis, gene regulatory network inference, and visualization. Try out our sample data and visit the Help pages for guidance. </p>"
                   ),
@@ -73,52 +75,71 @@ ui <- dashboardPage(
       tabItem(tabName = "upload",
               fluidRow(
                 box(
-                  width = 4, status = "info", solidHeader = TRUE,
+                  width = 3, status = "info", solidHeader = TRUE,
                   title = "Upload your data",
                   tabsetPanel(type = "tabs",
                               tabPanel("Gene-count matrix (scRNA-seq)",
+                                       tags$h3("Load PBMC 10x dataset (example scRNA-seq)", class="h3-example"),
+                                       tags$hr(class="hr-example"),
+                                       actionButton(inputId = "upload10xExampleRNACountMatrixConfirm", label = "Load example", class="btn-example"),
                                        tags$h3("Upload your file"),
                                        tags$hr(),
                                        textInput(inputId = "uploadCountMatrixprojectID", label = "Project name : ", value = "Project1"),
                                        fileInput(inputId = "countMatrix", label = "1. Genes-Cells count matrix", accept = ".txt"),
                                        sliderInput(inputId = "uploadCountMatrixminCells", label = "Include features detected in at least this many cells :", min = 1, max = 20, value = 3, step = 1),
-                                       sliderInput(inputId = "uploadCountMatrixminFeatures", label = "Include cells where at least this many features are detected :", min = 1, max = 200, value = 200, step = 1),
+                                       sliderInput(inputId = "uploadCountMatrixminFeatures", label = "Include cells where at least this many features are detected :", min = 1, max = 1000, value = 200, step = 1),
                                        radioButtons("uploadCountMatrixRadioSpecies", label = h3("Select organism : "),
                                                     choices = list("Mus musculus (Mouse)" = "mouse", 
                                                                    "Homo sapiens (Human)" = "human"
                                                     ), 
                                                     selected = "mouse"),
                                        actionButton(inputId = "uploadCountMatrixConfirm", label = "Submit"),
-                                       tags$h3("Load PBMC 10x dataset (example scRNA-seq)"),
-                                       tags$hr(),
-                                       actionButton(inputId = "upload10xExampleRNACountMatrixConfirm", label = "Load example"),
                                        tags$h3("Export working object as .RDS file"),
                                        tags$hr(),
                                        downloadButton(outputId = "utilitiesConfirmExport1", label = "Export .RDS"),
                                        ),
                               tabPanel("10x input files (scRNA-seq)", 
+                                       tags$h3("Load PBMC 10x dataset (example scRNA-seq)", class="h3-example"),
+                                       tags$hr(class="hr-example"),
+                                       actionButton(inputId = "upload10xExampleRNA10xFilesConfirm", label = "Load example", class="btn-example"),
                                        tags$h3("Upload your files"),
                                        tags$hr(),
                                        textInput(inputId = "upload10xRNAprojectID", label = "Project name : ", value = "Project1"),
                                        fileInput(inputId = "barcodes", label = "1. Choose barcodes.tsv.gz file", accept = ".gz"),
                                        fileInput(inputId = "genes", label = "2. Choose features.tsv.gz file", accept = ".gz"),
                                        fileInput(inputId = "matrix", label = "3. Choose matrix.mtx.gz file", accept = ".gz"),
-                                       sliderInput(inputId = "upload10xRNAminCells", label = "Include features detected in at least this many cells :", min = 1, max = 20, value = 3, step = 1),
-                                       sliderInput(inputId = "upload10xRNAminFeatures", label = "Include cells where at least this many features are detected :", min = 1, max = 200, value = 200, step = 1),
+                                       sliderInput(inputId = "upload10xRNAminCells", label = "Include features detected in at least this many cells :", min = 0, max = 20, value = 3, step = 1),
+                                       sliderInput(inputId = "upload10xRNAminFeatures", label = "Include cells where at least this many features are detected :", min = 0, max = 1000, value = 200, step = 1),
                                                     radioButtons("upload10xRNARadioSpecies", label = h3("Select organism : "),
                                                                  choices = list("Mus musculus (Mouse)" = "mouse", 
                                                                                 "Homo sapiens (Human)" = "human"
                                                                  ), 
                                                                  selected = "mouse"),
                                        actionButton(inputId = "upload10xRNAConfirm", label = "Submit"),
-                                       tags$h3("Load PBMC 10x dataset (example scRNA-seq)"),
-                                       tags$hr(),
-                                       actionButton(inputId = "upload10xExampleRNA10xFilesConfirm", label = "Load example"),
                                        tags$h3("Export working object as .RDS file"),
                                        tags$hr(),
                                        downloadButton(outputId = "utilitiesConfirmExport2", label = "Export .RDS"),
                                        ),
-                              tabPanel("Arrow input files (scATAC-seq)", 
+                              tabPanel("RDS Seurat object input (scRNA-seq)",
+                                       fileInput(inputId = "uploadRdsFile", label = "Choose a Seurat object saved in .RDS format", accept = ".RDS"),
+                                       radioButtons("uploadRdsRadioSpecies", label = h3("Select organism : "),
+                                                    choices = list("Mus musculus (Mouse)" = "mouse", 
+                                                                   "Homo sapiens (Human)" = "human"
+                                                    ), 
+                                                    selected = "mouse"),
+                                       actionButton(inputId = "uploadSeuratRdsConfirm", label = "Load Seurat object"),
+                                       selectInput("utilitiesActiveAssay", "Set active assay:",
+                                                   c("Assay" = "RNA")),
+                                       actionButton(inputId = "utilitiesConfirmChangeAssay", label = "Change assay"),
+                                       
+                                       tags$h3("Export working object as .RDS file"),
+                                       tags$hr(),
+                                       downloadButton(outputId = "utilitiesConfirmExport", label = "Export .RDS")
+                                       ),
+                              tabPanel("Arrow input files (scATAC-seq)",
+                                       tags$h3("PBMC 10x dataset (example scATAC-seq)", class="h3-example"),
+                                       tags$hr(class="hr-example"),
+                                       actionButton(inputId = "upload10xExampleATACConfirm", label = "Load example", class="btn-example"),
                                        tags$h3("Upload your file"),
                                        tags$hr(),
                                        textInput(inputId = "uploadATACprojectID", label = "Project name : ", value = "Project1"),
@@ -130,10 +151,7 @@ ui <- dashboardPage(
                                                     ), 
                                                     selected = "mm10"),
                                        sliderInput(inputId = "upload10xATACThreads", label = "Threads to be used:", min = 1, max = 2, value = 2, step = 1),
-                                       actionButton(inputId = "upload10xATACConfirm", label = "Submit"),
-                                       tags$h3("Load an example dataset"),
-                                       tags$hr(),
-                                       actionButton(inputId = "upload10xExampleATACConfirm", label = "Load PBMC 10x dataset (example scATAC-seq)")
+                                       actionButton(inputId = "upload10xATACConfirm", label = "Submit")
                               )
                   )
                 ),
@@ -171,9 +189,12 @@ ui <- dashboardPage(
                   tags$hr(),
                   selectInput(inputId = "utilitiesDeleteCluster", label = "Cluster to be deleted:", choices = "-", multiple = F),
                   actionButton(inputId = "utilitiesConfirmDelete", label = "Delete"),
-                  tags$h3("Export working object as .RDS file"),
+                  
+                  tags$h3("Active clusters"),
                   tags$hr(),
-                  downloadButton(outputId = "utilitiesConfirmExport", label = "Export .RDS")
+                  selectInput("utilitiesActiveClusters", "Set active clustering column:",
+                              c("Cluster" = "seurat_clusters")),
+                  actionButton(inputId = "utilitiesConfirmChangeCluster", label = "Change cluster")
                 )
               )
       ),
@@ -366,7 +387,7 @@ ui <- dashboardPage(
                                          "- dispersion (disp): selects the genes with the highest dispersion values"), placement = "left"
                         )
                     ), 
-                  sliderInput(inputId = "nHVGs", label = "Number of genes to select as top variable genes (applicable only to the first and third option) :", min = 200, max = 4000, value = 2000, step = 100),
+                  sliderInput(inputId = "nHVGs", label = "Number of genes to select as top variable genes (applicable only to the first and third option) :", min = 200, max = 8000, value = 2000, step = 100),
                   tags$h3("3. Scaling the data"),
                   tags$hr(),
                   radioButtons("normalizeScaleGenes", label = h3("Genes to be scaled : "),
@@ -392,7 +413,8 @@ ui <- dashboardPage(
                       shinycssloaders::withSpinner(
                         plotlyOutput(outputId = "hvgScatter", height = "800px")
                       )
-                  )
+                  ),
+                  column(verbatimTextOutput(outputId = "hvgTop10Stats"), width = 8)
                 ),  
               )
       ),
@@ -447,7 +469,8 @@ ui <- dashboardPage(
                                                                       plotlyOutput(outputId = "PCAheatmap", height = "700px")
                                                                     )
                                                                 ), width = 6)
-                                                            )
+                                                            ),
+                                                            downloadButton(outputId = "pcaRNAExport", label = "Save table")
                                                    )
                                        )
                                      )
@@ -473,7 +496,7 @@ ui <- dashboardPage(
                           )
               )
       ),
-      #ATAC 
+      
       #Clustering tab
       tabItem(tabName = "clustering", 
               tabsetPanel(type = "tabs", id = "clusteringTabPanel",
@@ -488,8 +511,7 @@ ui <- dashboardPage(
                                        sliderInput(inputId = "snnPCs", label = "Number of principal components to use :", min = 1, max = 100, value = 10, step = 1),
                                        tags$h3("2. Communities' detection (Louvain algorithm)"),
                                        tags$hr(),
-                                       sliderInput(inputId = "clusterRes", label = "Clustering resolution :", min = 0.1, max = 60, value = 0.5, step = 0.1),
-                                       sliderInput(inputId = "clusterPCs", label = "Number of principal components to use :", min = 1, max = 100, value = 10, step = 1),
+                                       sliderInput(inputId = "clusterRes", label = "Clustering resolution :", min = 0.1, max = 5, value = 0.5, step = 0.1),
                                        actionButton(inputId = "snnConfirm", label = "Perform clustering"),
                                      ),
                                      box(
@@ -562,7 +584,7 @@ ui <- dashboardPage(
                           )
               )
       ),
-      #ATAC 
+      
       #UMAP tab
       tabItem(tabName = "umap", 
               tabsetPanel(type = "tabs", id = "umapTabPanel",
@@ -570,6 +592,7 @@ ui <- dashboardPage(
                                    fluidRow(
                                      box(width = 3, status = "info", solidHeader = TRUE,
                                          title = "Cells visualization options in reduced space",
+                                         sliderInput(inputId = "umapSeed", label = "Set seed :", min = 1, max = 500, value = 42, step = 1),
                                          sliderInput(inputId = "umapPCs", label = "Number of principal components to use :", min = 1, max = 100, value = 10, step = 1),
                                          sliderInput(inputId = "umapOutComponents", label = "Number of dimensions to fit output:", min = 2, max = 100, value = 3, step = 1)%>%
                                            shinyInput_label_embed(
@@ -614,7 +637,7 @@ ui <- dashboardPage(
                                    fluidRow(
                                      box(width = 3, status = "info", solidHeader = TRUE,
                                          title = "Cells visualization options in reduced space",
-                                         sliderInput(inputId = "umapDimensionsATAC", label = "Number of input dimensions to use :", min = 1, max = 100, value = 15, step = 1),
+                                         sliderInput(inputId = "umapDimensionsATAC", label = "Number of input dimensions to use :", min = 1, max = 100, value = 30, step = 1),
                                          sliderInput(inputId = "umapOutComponentsATAC", label = "Number of dimensions to fit output:", min = 2, max = 100, value = 3, step = 1)%>%
                                            shinyInput_label_embed(
                                              shiny_iconlink() %>%
@@ -654,6 +677,177 @@ ui <- dashboardPage(
                           )
               )
       ),
+      
+      #Feature inspection
+      tabItem(tabName = "features",
+              tabsetPanel(type = "tabs", id = "featuresTabPanel",
+                          tabPanel("scRNA-seq",
+                                   fluidRow(
+                                     tabsetPanel(type = "tabs",
+                                                 tabPanel("Feature plot", fluidRow(
+                                                   box(width = 3, status = "info", solidHeader = TRUE, title = "Options",
+                                                       radioButtons("findMarkersFeatureSignature", label = "Select between gene or signature to plot: ",
+                                                                    choices = list("Gene" = "gene", 
+                                                                                   "Gene signature" = "signature"
+                                                                    ), 
+                                                                    selected = "gene"),
+                                                       selectizeInput(inputId = 'findMarkersGeneSelect',
+                                                                      label = 'Select a gene:',
+                                                                      choices = NULL,
+                                                                      selected = NULL,
+                                                                      multiple = FALSE),
+                                                       selectizeInput(inputId = 'findMarkersSignatureSelect',
+                                                                      label = 'Select signature/numeric variable:',
+                                                                      choices = "-",
+                                                                      selected = "-",
+                                                                      multiple = FALSE),
+                                                       selectInput("findMarkersReductionType", "Plot type:",
+                                                                   c("-" = "-")
+                                                       ),
+                                                       radioButtons("findMarkersLabels", label = "Show cluster labels: ",
+                                                                    choices = list("Yes" = TRUE, 
+                                                                                   "No" = FALSE)
+                                                       ),
+                                                       radioButtons("findMarkersOrder", label = "Prioritize expressing cells: ",
+                                                                    choices = list("Yes" = TRUE, 
+                                                                                   "No" = FALSE)
+                                                       ),
+                                                       sliderInput("findMarkersMaxCutoff", "Set max expression value: (quantile)", min = 0, max = 99, value = 99, step = 1),
+                                                       sliderInput("findMarkersMinCutoff", "Set minimum expression value: (quantile)", min = 0, max = 99, value = 0, step = 1),
+                                                       actionButton(inputId = "findMarkersFPConfirm", label = "Display plot"),
+                                                       tags$hr(),
+                                                       tags$h3("Add a new signature"),
+                                                       textInput(inputId = "findMarkersSignatureName", label = "Gene signature name :", value = "Signature1"),
+                                                       textAreaInput(inputId = "findMarkersSignatureMembers", label = "Paste a list of genes", cols = 80, rows = 15, placeholder = "Prg4\nTspan15\nCol22a1\nHtra4"),
+                                                       actionButton(inputId = "findMarkersSignatureAdd", label = "Calculate signature score")
+                                                   ),
+                                                   box(width = 9, status = "info", solidHeader = TRUE, title = "Plot",
+                                                       div(class="ldBar", id="DEA4_loader", "data-preset"="circle"),
+                                                       div(id="findMarkersFeaturePlot_loader",
+                                                           shinycssloaders::withSpinner(
+                                                             plotlyOutput(outputId = "findMarkersFeaturePlot", height = "1300px")
+                                                           )
+                                                       )
+                                                   )
+                                                 )),
+                                                 tabPanel("Multi-feature vizualization", fluidRow(
+                                                   box(width=3, status="info", solidHeader=T, title="Options",
+                                                       selectizeInput(inputId = 'findMarkersFeaturePair1',
+                                                                      label = 'Select 1st feature:',
+                                                                      choices = NULL,
+                                                                      selected = NULL,
+                                                                      multiple = FALSE),
+                                                       selectizeInput(inputId = 'findMarkersFeaturePair2',
+                                                                      label = 'Select 2nd Feature:',
+                                                                      choices = NULL,
+                                                                      selected = NULL,
+                                                                      multiple = FALSE),
+                                                       sliderInput("findMarkersBlendThreshold", "Select threshold for blending:", min = 0, max = 1, value = 0.5, step = 0.1),
+                                                       selectInput("findMarkersFeaturePairReductionType", "Plot type:",
+                                                                   c("-" = "-")
+                                                       ),
+                                                       radioButtons("findMarkersFeaturePairLabels", label = "Show cluster labels: ",
+                                                                    choices = list("Yes" = TRUE, 
+                                                                                   "No" = FALSE)
+                                                       ),
+                                                       radioButtons("findMarkersFeaturePairOrder", label = "Prioritize expressing cells: ",
+                                                                    choices = list("Yes" = TRUE, 
+                                                                                   "No" = FALSE)
+                                                       ),
+                                                       sliderInput("findMarkersFeaturePairMaxCutoff", "Set max expression value: (quantile)", min = 0, max = 99, value = 99, step = 1),
+                                                       sliderInput("findMarkersFeaturePairMinCutoff", "Set minimum expression value: (quantile)", min = 0, max = 99, value = 0, step = 1),
+                                                       actionButton(inputId = "findMarkersFeaturePairConfirm", label = "Display plot")
+                                                   ),
+                                                   box(width=9, status="info", solidHeader=TRUE, title="Plot",
+                                                       div(class="ldBar", id="DEA5_loader", "data-preset"="circle"),
+                                                       div(
+                                                         column(
+                                                           div(id="findMarkersFPfeature1_loader",
+                                                               shinycssloaders::withSpinner(
+                                                                 plotlyOutput(outputId="findMarkersFPfeature1", height = "650px")
+                                                               )
+                                                           ), width = 6),
+                                                         column(
+                                                           div(id="findMarkersFPfeature2_loader",
+                                                               shinycssloaders::withSpinner(
+                                                                 plotlyOutput(outputId="findMarkersFPfeature2", height = "650px")
+                                                               )
+                                                           ), width = 6),
+                                                         column(
+                                                           div(id="findMarkersFPfeature1_2_loader",
+                                                               shinycssloaders::withSpinner(
+                                                                 plotlyOutput(outputId="findMarkersFPfeature1_2", height = "650px")
+                                                               )
+                                                           ), width = 6),
+                                                         column(
+                                                           div(id="findMarkersFPcolorbox_loader",
+                                                               shinycssloaders::withSpinner(
+                                                                 plotlyOutput(outputId="findMarkersFPcolorbox", height = "650px")
+                                                               )
+                                                           ), width = 6),
+                                                       )
+                                                   )
+                                                 )
+                                                 ),
+                                                 tabPanel("Violin plot", fluidRow(
+                                                   box(width = 3, status = "info", solidHeader = TRUE, title = "Options",
+                                                       radioButtons("findMarkersViolinFeaturesSignature", label = "Select between gene or signature: ",
+                                                                    choices = list("Gene" = "gene", 
+                                                                                   "Gene signature" = "signature"
+                                                                    ), 
+                                                                    selected = "gene"),
+                                                       selectizeInput(inputId = 'findMarkersGeneSelect2',
+                                                                      label = 'Search for gene:',
+                                                                      choices = NULL,
+                                                                      selected = NULL,
+                                                                      multiple = FALSE), # allow for multiple inputs
+                                                       selectizeInput(inputId = 'findMarkersViolinSignatureSelect',
+                                                                      label = 'Select signature/numeric variable:',
+                                                                      choices = "-",
+                                                                      selected = "-",
+                                                                      multiple = FALSE),
+                                                       actionButton(inputId = "findMarkersViolinConfirm", label = "Display plot")
+                                                   ),
+                                                   box(width = 9, status = "info", solidHeader = TRUE, title = "Plot",
+                                                       div(class="ldBar", id="DEA6_loader", "data-preset"="circle"),
+                                                       div(id="findMarkersViolinPlot_loader",
+                                                           shinycssloaders::withSpinner(
+                                                             plotlyOutput(outputId = "findMarkersViolinPlot", height = "800px")
+                                                           )
+                                                       )
+                                                   )
+                                                 )
+                                                 )
+                                     )
+                                   )
+                                  ),
+                          tabPanel("scATAC-seq",
+                                    fluidRow(
+                                      box(width = 3, status = "info", solidHeader = TRUE, title = "Options",
+                                          selectizeInput(inputId = 'findMarkersGeneSelectATAC',
+                                                         label = 'Select a gene:',
+                                                         choices = NULL,
+                                                         selected = NULL,
+                                                         multiple = FALSE),
+                                          selectInput("findMarkersReductionTypeATAC", "Plot type:",
+                                                      c("UMAP" = "umap",
+                                                        "tSNE" = "tsne")
+                                          ),
+                                          actionButton(inputId = "findMarkersFPConfirmATAC", label = "Display plot"),
+                                      ),
+                                      box(width = 9, status = "info", solidHeader = TRUE, title = "Plot",
+                                          div(class="ldBar", id="DEA10_loader", "data-preset"="circle"),
+                                          div(id="findMarkersFeaturePlotATAC_loader",
+                                              shinycssloaders::withSpinner(
+                                                plotOutput(outputId = "findMarkersFeaturePlotATAC", height = "1100px")
+                                              )
+                                          )
+                                      )
+                                    ) 
+                                  )
+                          )
+      ),
+      
       #ATAC
       #DEA tab
       tabItem(tabName = "findMarkers", 
@@ -728,140 +922,6 @@ ui <- dashboardPage(
                                                                 )
                                                             )
                                                    ),
-                                                   
-                                                   tabPanel("Feature plot", fluidRow(
-                                                     box(width = 3, status = "info", solidHeader = TRUE, title = "Options",
-                                                         radioButtons("findMarkersFeatureSignature", label = "Select between gene or signature to plot: ",
-                                                                      choices = list("Gene" = "gene", 
-                                                                                     "Gene signature" = "signature"
-                                                                      ), 
-                                                                      selected = "gene"),
-                                                         selectizeInput(inputId = 'findMarkersGeneSelect',
-                                                                        label = 'Select a gene:',
-                                                                        choices = NULL,
-                                                                        selected = NULL,
-                                                                        multiple = FALSE),
-                                                         selectizeInput(inputId = 'findMarkersSignatureSelect',
-                                                                        label = 'Select signature/numeric variable:',
-                                                                        choices = "-",
-                                                                        selected = "-",
-                                                                        multiple = FALSE),
-                                                         selectInput("findMarkersReductionType", "Plot type:",
-                                                                     c("-" = "-")
-                                                         ),
-                                                         radioButtons("findMarkersLabels", label = "Show cluster labels: ",
-                                                                      choices = list("Yes" = TRUE, 
-                                                                                     "No" = FALSE)
-                                                         ),
-                                                         radioButtons("findMarkersOrder", label = "Prioritize expressing cells: ",
-                                                                      choices = list("Yes" = TRUE, 
-                                                                                     "No" = FALSE)
-                                                         ),
-                                                         sliderInput("findMarkersMaxCutoff", "Set max expression value: (quantile)", min = 0, max = 99, value = 99, step = 1),
-                                                         sliderInput("findMarkersMinCutoff", "Set minimum expression value: (quantile)", min = 0, max = 99, value = 0, step = 1),
-                                                         actionButton(inputId = "findMarkersFPConfirm", label = "Display plot"),
-                                                         tags$hr(),
-                                                         tags$h3("Add a new signature"),
-                                                         textInput(inputId = "findMarkersSignatureName", label = "Gene signature name :", value = "Signature1"),
-                                                         textAreaInput(inputId = "findMarkersSignatureMembers", label = "Paste a list of genes", cols = 80, rows = 15, placeholder = "Prg4\nTspan15\nCol22a1\nHtra4"),
-                                                         actionButton(inputId = "findMarkersSignatureAdd", label = "Calculate signature score")
-                                                     ),
-                                                     box(width = 9, status = "info", solidHeader = TRUE, title = "Plot",
-                                                         div(class="ldBar", id="DEA4_loader", "data-preset"="circle"),
-                                                         div(id="findMarkersFeaturePlot_loader",
-                                                             shinycssloaders::withSpinner(
-                                                               plotlyOutput(outputId = "findMarkersFeaturePlot", height = "1300px")
-                                                             )
-                                                         )
-                                                     )
-                                                   )),
-                                                   tabPanel("Multi-feature vizualization", fluidRow(
-                                                     box(width=3, status="info", solidHeader=T, title="Options",
-                                                         selectizeInput(inputId = 'findMarkersFeaturePair1',
-                                                                        label = 'Select 1st feature:',
-                                                                        choices = NULL,
-                                                                        selected = NULL,
-                                                                        multiple = FALSE),
-                                                         selectizeInput(inputId = 'findMarkersFeaturePair2',
-                                                                        label = 'Select 2nd Feature:',
-                                                                        choices = NULL,
-                                                                        selected = NULL,
-                                                                        multiple = FALSE),
-                                                         sliderInput("findMarkersBlendThreshold", "Select threshold for blending:", min = 0, max = 1, value = 0.5, step = 0.1),
-                                                         selectInput("findMarkersFeaturePairReductionType", "Plot type:",
-                                                                     c("-" = "-")
-                                                         ),
-                                                         radioButtons("findMarkersFeaturePairLabels", label = "Show cluster labels: ",
-                                                                      choices = list("Yes" = TRUE, 
-                                                                                     "No" = FALSE)
-                                                         ),
-                                                         radioButtons("findMarkersFeaturePairOrder", label = "Prioritize expressing cells: ",
-                                                                      choices = list("Yes" = TRUE, 
-                                                                                     "No" = FALSE)
-                                                         ),
-                                                         sliderInput("findMarkersFeaturePairMaxCutoff", "Set max expression value: (quantile)", min = 0, max = 99, value = 99, step = 1),
-                                                         sliderInput("findMarkersFeaturePairMinCutoff", "Set minimum expression value: (quantile)", min = 0, max = 99, value = 0, step = 1),
-                                                         actionButton(inputId = "findMarkersFeaturePairConfirm", label = "Display plot")
-                                                     ),
-                                                     box(width=9, status="info", solidHeader=TRUE, title="Plot",
-                                                         div(class="ldBar", id="DEA5_loader", "data-preset"="circle"),
-                                                         div(
-                                                           column(
-                                                             div(id="findMarkersFPfeature1_loader",
-                                                                 shinycssloaders::withSpinner(
-                                                                   plotlyOutput(outputId="findMarkersFPfeature1", height = "650px")
-                                                                   )
-                                                                 ), width = 6),
-                                                           column(
-                                                             div(id="findMarkersFPfeature2_loader",
-                                                                 shinycssloaders::withSpinner(
-                                                                   plotlyOutput(outputId="findMarkersFPfeature2", height = "650px")
-                                                                   )
-                                                                 ), width = 6),
-                                                           column(
-                                                             div(id="findMarkersFPfeature1_2_loader",
-                                                                 shinycssloaders::withSpinner(
-                                                                   plotlyOutput(outputId="findMarkersFPfeature1_2", height = "650px")
-                                                                   )
-                                                                 ), width = 6),
-                                                           column(
-                                                             div(id="findMarkersFPcolorbox_loader",
-                                                                 shinycssloaders::withSpinner(
-                                                                   plotlyOutput(outputId="findMarkersFPcolorbox", height = "650px")
-                                                                   )
-                                                                 ), width = 6),
-                                                         )
-                                                     )
-                                                   )
-                                                   ),
-                                                   tabPanel("Violin plot", fluidRow(
-                                                     box(width = 3, status = "info", solidHeader = TRUE, title = "Options",
-                                                         radioButtons("findMarkersViolinFeaturesSignature", label = "Select between gene or signature: ",
-                                                                      choices = list("Gene" = "gene", 
-                                                                                     "Gene signature" = "signature"
-                                                                      ), 
-                                                                      selected = "gene"),
-                                                         selectizeInput(inputId = 'findMarkersGeneSelect2',
-                                                                        label = 'Search for gene:',
-                                                                        choices = NULL,
-                                                                        selected = NULL,
-                                                                        multiple = FALSE), # allow for multiple inputs
-                                                         selectizeInput(inputId = 'findMarkersViolinSignatureSelect',
-                                                                        label = 'Select signature/numeric variable:',
-                                                                        choices = "-",
-                                                                        selected = "-",
-                                                                        multiple = FALSE),
-                                                         actionButton(inputId = "findMarkersViolinConfirm", label = "Display plot")
-                                                     ),
-                                                     box(width = 9, status = "info", solidHeader = TRUE, title = "Plot",
-                                                         div(class="ldBar", id="DEA6_loader", "data-preset"="circle"),
-                                                         div(id="findMarkersViolinPlot_loader",
-                                                             shinycssloaders::withSpinner(
-                                                               plotlyOutput(outputId = "findMarkersViolinPlot", height = "800px")
-                                                             )
-                                                         )
-                                                     )
-                                                   )),
                                                    tabPanel("VolcanoPlot", fluidRow(
                                                      box(width = 3, status = "info", solidHeader = TRUE, title = "Cluster selection",
                                                          selectInput("findMarkersClusterSelect", "Cluster:", choices=c("-"="-"), multiple = F, selectize = F),
@@ -893,7 +953,11 @@ ui <- dashboardPage(
                                                        "Binomial" = "binomial",
                                                        "T-test" = "ttest"
                                                      )),
-                                         sliderInput(inputId = "findMarkersLogFCATAC", label = "Log2FC threshold:", min = 0, max = 3, value = 0.25, step = 0.05),
+                                         selectInput("findMarkersGroupByATAC", "Cells group by:",
+                                                     c("Clusters" = "Clusters",
+                                                       "Integration predicted clusters" = "predictedGroup_Co"
+                                                     )),
+                                         sliderInput(inputId = "findMarkersLogFCATAC", label = "Log2FC threshold:", min = 0, max = 3, value = 0.25, step = 0.01),
                                          
                                          sliderInput(inputId = "findMarkersFDRATAC", label = "FDR threshold:", min = 0, max = 1, value = 0.01, step = 0.01),
                                          actionButton(inputId = "findMarkersConfirmATAC", label = "OK"),
@@ -905,7 +969,11 @@ ui <- dashboardPage(
                                                        "Binomial" = "binomial",
                                                        "T-test" = "ttest"
                                                      )),
-                                         sliderInput(inputId = "findMarkersPeaksLogFCATAC", label = "Log2FC threshold:", min = 0, max = 3, value = 0.25, step = 0.05),
+                                         selectInput("findMarkersPeaksGroupByATAC", "Cells group by:",
+                                                     c("Clusters" = "Clusters",
+                                                       "Integration predicted clusters" = "predictedGroup_Co"
+                                                     )),
+                                         sliderInput(inputId = "findMarkersPeaksLogFCATAC", label = "Log2FC threshold:", min = 0, max = 3, value = 0.25, step = 0.01),
                                          
                                          sliderInput(inputId = "findMarkersPeaksFDRATAC", label = "FDR threshold:", min = 0, max = 1, value = 0.01, step = 0.01),
                                          fileInput(inputId = "findMarkersPeaksCustomPeaks", label = "Please upload a .bed file (If you are using the example dataset you can upload the peakset file (.bed) provided in Help > Examples)", accept = ".bed"),
@@ -968,35 +1036,94 @@ ui <- dashboardPage(
                                                        )
                                                      )
                                                     )
-                                                   ),
-                                                   tabPanel("Gene-score plot", fluidRow(
-                                                     box(width = 3, status = "info", solidHeader = TRUE, title = "Options",
-                                                         selectizeInput(inputId = 'findMarkersGeneSelectATAC',
-                                                                        label = 'Select a gene:',
-                                                                        choices = NULL,
-                                                                        selected = NULL,
-                                                                        multiple = FALSE),
-                                                         selectInput("findMarkersReductionTypeATAC", "Plot type:",
-                                                                     c("UMAP" = "umap",
-                                                                       "tSNE" = "tsne")
-                                                         ),
-                                                         actionButton(inputId = "findMarkersFPConfirmATAC", label = "Display plot"),
-                                                     ),
-                                                     box(width = 9, status = "info", solidHeader = TRUE, title = "Plot",
-                                                         div(class="ldBar", id="DEA10_loader", "data-preset"="circle"),
-                                                         div(id="findMarkersFeaturePlotATAC_loader",
-                                                             shinycssloaders::withSpinner(
-                                                               plotOutput(outputId = "findMarkersFeaturePlotATAC", height = "1100px")
-                                                             )
-                                                         )
-                                                     )
                                                    )
-                                                  )
+                                                  #  tabPanel("Gene-score plot", fluidRow(
+                                                  #    box(width = 3, status = "info", solidHeader = TRUE, title = "Options",
+                                                  #        selectizeInput(inputId = 'findMarkersGeneSelectATAC',
+                                                  #                       label = 'Select a gene:',
+                                                  #                       choices = NULL,
+                                                  #                       selected = NULL,
+                                                  #                       multiple = FALSE),
+                                                  #        selectInput("findMarkersReductionTypeATAC", "Plot type:",
+                                                  #                    c("UMAP" = "umap",
+                                                  #                      "tSNE" = "tsne")
+                                                  #        ),
+                                                  #        actionButton(inputId = "findMarkersFPConfirmATAC", label = "Display plot"),
+                                                  #    ),
+                                                  #    box(width = 9, status = "info", solidHeader = TRUE, title = "Plot",
+                                                  #        div(class="ldBar", id="DEA10_loader", "data-preset"="circle"),
+                                                  #        div(id="findMarkersFeaturePlotATAC_loader",
+                                                  #            shinycssloaders::withSpinner(
+                                                  #              plotOutput(outputId = "findMarkersFeaturePlotATAC", height = "1100px")
+                                                  #            )
+                                                  #        )
+                                                  #    )
+                                                  #  )
+                                                  # )
                                        )
                                      )
                                    )
                           )
               )	
+      ),
+      
+      #Doublets' detection
+      tabItem(tabName = "doubletDetection", 
+              tabsetPanel(type = "tabs", id = "doubletDetectionTabPanel",
+                          tabPanel("scRNA-seq",
+                                   fluidRow(
+                                     box(
+                                       width = 4, status = "info", solidHeader = TRUE,
+                                       title = "Doublet detection parameters",
+                                       sliderInput(inputId = "doubletsPN", label = "Artificial doublet's rate :", min = 0.01, max = 1, value = 0.25, step = 0.01),
+                                       sliderInput(inputId = "doubletsPCs", label = "Number of principal components to use :", min = 1, max = 100, value = 10, step = 1),
+                                       radioButtons("doubletsPKRadio", label = "PC neighborhood size estimation: ",
+                                                    choices = list("Automatic" = "auto", 
+                                                                   "Manual" = "manual"
+                                                    ), 
+                                                    selected = "auto"),
+                                       sliderInput(inputId = "doubletsPK", label = "PC neighborhood size (used only when manual is selected):", min = 0, max = 1, value = 0.09, step = 0.01),
+                                       sliderInput(inputId = "doubletsNExp", label = "Percentage of doubles expected :", min = 0.01, max = 1, value = 0.03, step = 0.01),
+                                       actionButton(inputId = "doubletsConfirm", label = "Perform doublets' detection"),
+                                     ),
+                                     box(
+                                       width = 8, status = "info", solidHeader = TRUE, title = "Doublet detection output",
+                                       div(class="ldBar", id="doubletRNA_loader1", "data-preset"="circle"),
+                                       column(verbatimTextOutput(outputId = "doubletsInfo"), width = 4)
+                                       )
+                                   )
+                          ),
+                          tabPanel("scATAC-seq",
+                                   fluidRow(
+                                     box(
+                                       width = 4, status = "info", solidHeader = TRUE,
+                                       title = "Doublet detection options",
+                                       sliderInput(inputId = "doubletsATACk", label = "The number of cells neighboring a simulated doublet to be considered as putative doublets :", min = 5, max = 100, value = 10, step = 1),
+                                       radioButtons("doubletsATACLSI", label = "Order of operations in the TF-IDF normalization: ",
+                                                    choices = list("tf-logidf" = "1", 
+                                                                   "log(tf-idf)" = "2",
+                                                                   "logtf-logidf" = "3"
+                                                    ), 
+                                                    selected = "1"),
+                                       actionButton(inputId = "doubletsATACConfirm", label = "Perform doublets' detection"), 
+                                     ),
+                                     box(
+                                       width = 8, status = "info", solidHeader = TRUE, title = "Doublet detection output",
+                                       div(class="ldBar", id="doubletATAC_loader2", "data-preset"="circle"),
+                                       div(id="doubletATAC_loader3",
+                                           shinycssloaders::withSpinner(
+                                            plotOutput(outputId = "doubletsScoreATAC")
+                                            ), width = 6
+                                           ),
+                                       div(id="doubletATAC_loader4",
+                                           shinycssloaders::withSpinner(
+                                            plotOutput(outputId = "doubletEnrichmentATAC")
+                                           ), width = 6
+                                       )
+                                     ),
+                                   )
+                          )
+              )
       ),
       
       #Cell cycle phase analysis
@@ -1054,7 +1181,7 @@ ui <- dashboardPage(
                                                                      "Down-regulated" = "Down"),
                                                       selected = "Up"
                                          ),
-                                         sliderInput("gProfilerSliderLogFC", "Log FC threshold:", min = 0, max = 3, value = 0.25, step = 0.05),
+                                         sliderInput("gProfilerSliderLogFC", "Log FC threshold:", min = 0, max = 3, value = 0.25, step = 0.01),
                                          tags$h3("2. Options for enrichment analysis"),
                                          tags$hr(),
                                          selectInput("gProfilerDatasources", "Select datasources", list('Gene Ontology'=list("Gene Ontology-Molecular Function (GO:MF)"="GO:MF", "Gene Ontology-Cellular Component (GO:CC)"= "GO:CC", "Gene Ontology-Biological Process (GO:BP)"="GO:BP"),
@@ -1074,6 +1201,15 @@ ui <- dashboardPage(
                                          ), 
                                          sliderInput("gProfilerSliderSignificanceTerms", "Significance for enriched terms :", min = 0, max = 1, value = 0.05, step = 0.01),
                                          actionButton(inputId = "gProfilerConfirm", label = "OK"),
+                                         tags$h3("3. Multiple cluster enrichment analysis"),
+                                         tags$hr(),
+                                         selectizeInput(
+                                           "gProfilerFlameSelection",
+                                           label = "Select up to 10 clusters",
+                                           choices = c("-"="-"),
+                                           multiple = TRUE,
+                                           options = list(maxItems = 10)
+                                         ),
                                          actionButton(inputId = "sendToFlame", label = "Send to Flame")
                                      ),
                                      box(
@@ -1107,7 +1243,11 @@ ui <- dashboardPage(
                                                        "JASPAR 2018" = "JASPAR2018",
                                                        "JASPAR 2020" = "JASPAR2020"
                                                      )),
-                                         sliderInput(inputId = "findMotifsLogFCATAC", label = "Log2FC threshold:", min = 0, max = 3, value = 0.25, step = 0.05),
+                                         selectInput("findMotifsGroupByATAC", "Cells group by:",
+                                                     c("Clusters" = "Clusters",
+                                                       "Integration predicted clusters" = "predictedGroup_Co"
+                                                     )),
+                                         sliderInput(inputId = "findMotifsLogFCATAC", label = "Log2FC threshold:", min = 0, max = 3, value = 0.25, step = 0.01),
                                          sliderInput(inputId = "findMotifsFDRATAC", label = "FDR threshold:", min = 0, max = 1, value = 0.01, step = 0.01),
                                          actionButton(inputId = "findMotifsConfirmATAC", label = "OK"),
                                      ),
@@ -1138,56 +1278,77 @@ ui <- dashboardPage(
       ),
       
       #Clusters' annotation
-      tabItem(tabName = "annotateClusters", 
-              fluidRow(
-                box(
-                  width = 3, status = "info", solidHeader = TRUE,
-                  title = "Annotation parameters",
-                  radioButtons("annotateClustersReference", label = "Reference dataset : ",
-                               choices = list("ImmGen (mouse)" = "immgen", 
-                                              "Presorted RNAseq (mouse)" = "mmrnaseq",
-                                              "Blueprint-Encode (human)" = "blueprint",
-                                              "Primary Cell Atlas (human)" = "hpca",
-                                              "DICE (human)" = "dice",
-                                              "Hematopoietic diff (human)" = "hema",
-                                              "Presorted RNA seq (human)" = "hsrnaseq"
-                               ),
-                               selected = "mmrnaseq"
-                  ),
-                  tags$hr(),
-                  sliderInput("annotateClustersSlider", "Keep top Nth % of variable genes in reference :", min = 0, max = 100, value = 100, step = 1),
-                  tags$hr(),
-                  radioButtons("annotateClustersMethod", label = "Select method for comparisons : ",
-                               choices = list("logFC dot product" = "logfc_dot_product", 
-                                              "logFC Spearman" = "logfc_spearman",
-                                              "logFC Pearson" = "logfc_pearson",
-                                              "Spearman (all genes)" = "all_genes_spearman",
-                                              "Pearson (all genes)" = "all_genes_pearson"
-                               ),
-                               selected = "all_genes_pearson"
-                  ),
-                  tags$hr(),
-                  actionButton(inputId = "annotateClustersConfirm", label = "OK"),
-                ),
-                box(
-                  width = 9, status = "info", solidHeader = TRUE, title = "Cell type annotation",
-                  tabsetPanel(type = "tabs",
-                              tabPanel("Top-5 hits table", 
-                                       div(class="ldBar", id="annot1_loader", "data-preset"="circle"),
-                                       dataTableOutput(outputId="annotateClustersCIPRTable"),
-                                       downloadButton(outputId = "annotationRNAExport", label = "Save table")
+      tabItem(tabName = "annotateClusters",
+              tabsetPanel(type="tabs", id = "annotateClustersTabPanel",
+                          tabPanel("scRNA-seq",
+                                   fluidRow(
+                                     box(
+                                       width = 3, status = "info", solidHeader = TRUE,
+                                       title = "Annotation parameters",
+                                       radioButtons("annotateClustersReference", label = "Reference dataset : ",
+                                                    choices = list("ImmGen (mouse)" = "immgen", 
+                                                                   "Presorted RNAseq (mouse)" = "mmrnaseq",
+                                                                   "Blueprint-Encode (human)" = "blueprint",
+                                                                   "Primary Cell Atlas (human)" = "hpca",
+                                                                   "DICE (human)" = "dice",
+                                                                   "Hematopoietic diff (human)" = "hema",
+                                                                   "Presorted RNA seq (human)" = "hsrnaseq"
+                                                    ),
+                                                    selected = "mmrnaseq"
                                        ),
-                              tabPanel("Top-5 hits dotplot", 
-                                       div(class="ldBar", id="annot2_loader", "data-preset"="circle"),
-                                       div(id="annotateClustersCIPRDotplot_loader",
+                                       tags$hr(),
+                                       sliderInput("annotateClustersSlider", "Keep top Nth % of variable genes in reference :", min = 0, max = 100, value = 100, step = 1),
+                                       tags$hr(),
+                                       radioButtons("annotateClustersMethod", label = "Select method for comparisons : ",
+                                                    choices = list("logFC dot product" = "logfc_dot_product", 
+                                                                   "logFC Spearman" = "logfc_spearman",
+                                                                   "logFC Pearson" = "logfc_pearson",
+                                                                   "Spearman (all genes)" = "all_genes_spearman",
+                                                                   "Pearson (all genes)" = "all_genes_pearson"
+                                                    ),
+                                                    selected = "all_genes_pearson"
+                                       ),
+                                       tags$hr(),
+                                       actionButton(inputId = "annotateClustersConfirm", label = "OK"),
+                                     ),
+                                     box(
+                                       width = 9, status = "info", solidHeader = TRUE, title = "Cell type annotation",
+                                       tabsetPanel(type = "tabs",
+                                                   tabPanel("Top-5 hits table", 
+                                                            div(class="ldBar", id="annot1_loader", "data-preset"="circle"),
+                                                            dataTableOutput(outputId="annotateClustersCIPRTable"),
+                                                            downloadButton(outputId = "annotationRNAExport", label = "Save table")
+                                                   ),
+                                                   tabPanel("Top-5 hits dotplot", 
+                                                            div(class="ldBar", id="annot2_loader", "data-preset"="circle"),
+                                                            div(id="annotateClustersCIPRDotplot_loader",
+                                                                shinycssloaders::withSpinner(
+                                                                  plotlyOutput(outputId="annotateClustersCIPRDotplot", height = "1100px")
+                                                                )
+                                                            )
+                                                   )
+                                       )
+                                     )
+                                   )
+                          ),
+                          tabPanel("scATAC-seq",
+                                   fluidRow(
+                                     box(
+                                       width = 3, status = "info", solidHeader = TRUE, title = "Annotation options",
+                                       fileInput(inputId = "annotateClustersRDSInput", label = "Upload an .RDS file", accept = ".RDS"),
+                                       actionButton(inputId = "annotateClustersConfirmATAC", label = "OK"),
+                                     ),
+                                     box(
+                                       width = 9, status = "info", solidHeader = TRUE, title = "Cell type annotation from scRNA-seq", # #
+                                       div(id="annotateClustersUMAP_loader",
                                            shinycssloaders::withSpinner(
-                                             plotlyOutput(outputId="annotateClustersCIPRDotplot", height = "1100px")
-                                             )
+                                             plotlyOutput(outputId="annotateClustersUMAPplot", height = "1100px")
                                            )
                                        )
-                  )
-                )
-              )
+                                     )
+                                   )
+                          )
+              ) 
       ),
       
       #Trajectory analysis
@@ -1246,8 +1407,14 @@ ui <- dashboardPage(
                              width = 3, status = "info", solidHeader = TRUE,
                              title = "Trajectory parameters",
                              sliderInput("trajectorySliderDimensionsATAC", "Number of UMAP dimensions to use :", min = 0, max = 100, value = 3, step = 1),
-                             selectInput("trajectoryStartATAC", "Initial state:", choices=c("C1"="C1"), selected = "C1", multiple = F, selectize = F),
-                             selectInput("trajectoryEndATAC", "Final state:", choices=c("C1"="C1"), selected = "C1", multiple = F, selectize = F),
+                             selectInput(inputId = "trajectoryGroupByATAC", 
+                                         label = "Cells group by: ", 
+                                         choices = c("-"="-", 
+                                                     "Clusters"="Clusters", 
+                                                     "Integration predicted clusters"="predictedGroup_Co"), 
+                                         selected = "-"),
+                             selectInput("trajectoryStartATAC", "Initial state:", choices=c("-"="-"), selected = "-", multiple = F, selectize = F),
+                             selectInput("trajectoryEndATAC", "Final state:", choices=c("-"="-"), selected = "-", multiple = F, selectize = F),
                              actionButton(inputId = "trajectoryConfirmATAC", label = "OK")
                            ),
                            box(
@@ -1362,6 +1529,14 @@ ui <- dashboardPage(
                                    fluidRow(
                                      box(
                                        width = 3, status = "info", solidHeader = TRUE, title = "Analysis options",
+                                       selectInput("grnGroupByATAC", "Cells group by:",
+                                                   c("Clusters" = "Clusters",
+                                                     "Integration predicted clusters" = "predictedGroup_Co"
+                                                   )),
+                                       selectInput("grnMatrixATAC", "Matrix:",
+                                                   c("Gene activity score matrix" = "GeneScoreMatrix",
+                                                     "Gene Integration matrix" = "GeneIntegrationMatrix"
+                                                   )),
                                        sliderInput(inputId = "grnFdrATAC", label = "FDR threshold:", min = 0, max = 1, value = 0.1, step = 0.01),
                                        sliderInput(inputId = "grnCorrlationATTAC", label = "Correllation threshold:", min = 0, max = 1, value = 0.7, step = 0.1),
                                        actionButton(inputId = "grnConfirmATAC", label = "OK")
@@ -1414,6 +1589,10 @@ ui <- dashboardPage(
               fluidRow(
                 box(width = 3, status = "info", solidHeader = TRUE,
                     title = "scATAC-seq tracks options",
+                    selectInput("visualizeTracksGroupByATAC", "Cells group by:", 
+                                c("Clusters" = "Clusters",
+                                  "Integration predicted clusters" = "predictedGroup_Co"
+                                )),
                     selectizeInput(inputId = 'visualizeTracksGene',
                                    label = 'Select a gene:',
                                    choices = NULL,
@@ -1709,7 +1888,7 @@ ui <- dashboardPage(
       
       tabItem (tabName = "about",
                div(id = "about_div", class = "div_container",
-                   h1(class = "container_title", "About scAnner"),
+                   h1(class = "container_title", "About SCALA"),
                    HTML(" 
                               <hr>
                               <h2 class=sub_title> Research team </h2>
@@ -1730,19 +1909,24 @@ ui <- dashboardPage(
                               </ul>
                               
                               <h3 class=sub_title>Code Availability</h3>
-                              <p>The source code for scAnner can be found in <a href='https://github.com/PavlopoulosLab/scAnner/' target='_blank'>this</a> repository.</p>
+                              <p>The source code for SCALA can be found in <a href='https://github.com/PavlopoulosLab/SCALA/' target='_blank'>this</a> repository.</p>
                               
-                              <h3 class=sub_title> Cite scAnner </h3>
-                              <p style='font-size:15px'>If you find scAnner useful in your work please cite: to be announced soon</p>
-                               
-                              &copy; 2021 <a href=\"https://fleming.gr/kollias-lab-single-cell-analysis-unit\" target=\"_blank\">Single Cell Analysis Unit</a> | 
+                              <h3 class=sub_title> Cite SCALA </h3>
+                              <p style='font-size:15px'>If you find SCALA useful in your work please cite: </br>Tzaferis C., Karatzas E., Baltoumas F.A., Pavlopoulos G.A., 
+                              Kollias G., Konstantopoulos D. (2022) <b>SCALA: A web application for multimodal analysis of single cell next generation sequencing data.</b> 
+                              <i>bioRxiv 2022.11.24.517826; doi: <a href='https://doi.org/10.1101/2022.11.24.517826' target='_blank'>https://doi.org/10.1101/2022.11.24.517826</a></i></p>
+                              
+                              &copy;"), 
+                              sprintf("%s", YEAR), 
+                              HTML("
+                              <a href=\"https://fleming.gr/kollias-lab-single-cell-analysis-unit\" target=\"_blank\">Single Cell Analysis Unit</a> | 
                               <a href=\"https://sites.google.com/site/pavlopoulossite\" target=\"_blank\">Bioinformatics and Integrative Biology Lab</a> | 
                               <a href=\"https://www.fleming.gr\" target=\"_blank\">Biomedical Sciences Research Center \"Alexander Fleming\"</a>
-                              </footer>"     
+                              </footer>"
+                                   )     
                    )
                )
       )
       
     )# tab item list
   )
-)
