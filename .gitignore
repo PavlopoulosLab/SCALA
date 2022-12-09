@@ -1,0 +1,13 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+scenic_helper_files
+cell_cycle_phase_helper_files
+nichenetr_helper_files
+exampleATAC
+exampleRNA_matrix
+exampleRNA_10xFiles
+www/example_files
+usr_temp
+ArchRLogs
