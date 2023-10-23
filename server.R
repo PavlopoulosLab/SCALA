@@ -1,20 +1,19 @@
 server <- function(input, output, session) { 
-  #use_python("/opt/conda39/envs/pyscenic/bin/python")
+  #use_python("/opt/conda39/envs/pyscenic/bin/python") #environment containing phate
   source("global.R", local=TRUE)
   source("addPeak2GeneLinks_shiny.R")
   
-  options(shiny.maxRequestSize=4*1024^3) #500 MB
+  options(shiny.maxRequestSize=100*1024^3) # 2GB limit in the online version
   session$sendCustomMessage("handler_disableTabs", "sidebarMenu") # disable all tab panels (except Data Input) until files are uploaded
   
-  session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " GENE REGULATORY NETWORK\nANALYSIS")) #enable GRN tab only for RNA
+  session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " GENE REGULATORY NETWORK\nANALYSIS", " UTILITY OPTIONS")) #enable GRN tab only for RNA
   hideTab(inputId="grnTabPanel", target="scATAC-seq", session = session)
   
-  hideAllLoaders() # helper function (in global.R) that initially hides all loaders (TODO: needs to be executed while switching form RNA to ATAC)
+  hideAllLoaders() # helper function (in global.R) that initially hides all loaders
   metaD <- reactiveValues(my_project_name="-", all_lin="0")
   
   #------------------Upload tab--------------------------------
   observeEvent(input$uploadCountMatrixConfirm, {
-    #options(shiny.maxRequestSize=0.5*1024^3) #500 MB
     if(!is.null(proj_default) | !is.null(seurat_object))
     {
       showModal(modal_confirm)
@@ -22,10 +21,9 @@ server <- function(input, output, session) {
     else
     {
       session$sendCustomMessage("handler_disableTabs", "sidebarMenu") 
-      session$sendCustomMessage("handler_startLoader", c("input_loader", 10))
       session$sendCustomMessage("handler_disableAllButtons", "uploadCountMatrixConfirm") 
       tryCatch({
-        showModal(modalDialog(div('Analysis in Progress. This operation may take several minutes, please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
+        showModal(modalDialog(div('Data upload in progress. Please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
         # Create the user directory for the input and output of the analysis
         metaD$my_project_name <- input$uploadCountMatrixprojectID
         minimum_cells <<- input$uploadCountMatrixminCells
@@ -41,8 +39,6 @@ server <- function(input, output, session) {
         
         init_seurat_object <<- CreateSeuratObject(counts = testMatrix, project = metaD$my_project_name, min.cells = as.numeric(minimum_cells), min.features = as.numeric(minimum_features))
         
-        
-        session$sendCustomMessage("handler_startLoader", c("input_loader", 25))
         if(organism == "mouse")
         {
           seurat_object[["percent.mt"]] <<- PercentageFeatureSet(seurat_object, pattern = "^mt-")
@@ -54,10 +50,8 @@ server <- function(input, output, session) {
           init_seurat_object[["percent.mt"]] <<- PercentageFeatureSet(init_seurat_object, pattern = "^MT-")
         }
         
-        session$sendCustomMessage("handler_startLoader", c("input_loader", 50))
-        
         updateMetadata()
-        session$sendCustomMessage("handler_startLoader", c("input_loader", 75))
+        
         updateSelInpColor()
         updateGeneSearchFP()
         updateQC_choices()
@@ -70,17 +64,12 @@ server <- function(input, output, session) {
           updateTextAreaInput(session, inputId="findMarkersSignatureMembers", placeholder = "PRG4\nTSPAN15\nCOL22A1\nHTRA4")
         
         session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " QUALITY CONTROL", " DATA NORMALIZATION\n& SCALING"))
-        
-        # }, warning = function(w) {
-        #   print(paste("Warning:  ", w))
       }, error = function(e) {
         print(paste("Error :  ", e))
         session$sendCustomMessage("handler_alert", "Data Input error. Please, refer to the help pages for input format.")
       }, finally = { # with or without error
         removeModal()
-        session$sendCustomMessage("handler_startLoader", c("input_loader", 100))
-        Sys.sleep(1) # giving some time for renderer for smoother transition
-        session$sendCustomMessage("handler_finishLoader", "input_loader")
+        Sys.sleep(1) # giving some time for rendering, for smoother transition
         session$sendCustomMessage("handler_enableAllButtons", "uploadCountMatrixConfirm")
       })
     }
@@ -94,17 +83,16 @@ server <- function(input, output, session) {
     else
     {
       session$sendCustomMessage("handler_disableTabs", "sidebarMenu")
-      session$sendCustomMessage("handler_startLoader", c("input_loader", 10))
       session$sendCustomMessage("handler_disableAllButtons", "upload10xExampleRNACountMatrixConfirm") 
       tryCatch({
-        showModal(modalDialog(div('Analysis in Progress. This operation may take several minutes, please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
+        showModal(modalDialog(div('Data upload in progress. Please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
         # Create the user directory for the input and output of the analysis
         metaD$my_project_name <- input$uploadCountMatrixprojectID
         minimum_cells <<- input$uploadCountMatrixminCells
         minimum_features <<- input$uploadCountMatrixminFeatures
         organism <<- "human"
         userId <- session$token
-        user_dir <<- paste0("./usr_temp/", userId, metaD$my_project_name, gsub(pattern = "[ ]|[:]", replacement = "_", x = paste0("_", Sys.time()))) #TODO remove 2 random barcodes, does it crash?
+        user_dir <<- paste0("./usr_temp/", userId, metaD$my_project_name, gsub(pattern = "[ ]|[:]", replacement = "_", x = paste0("_", Sys.time())))
         dir.create(user_dir)
         
         testMatrix <- read.table("exampleRNA_matrix/exampleMatrix.txt")
@@ -112,16 +100,11 @@ server <- function(input, output, session) {
         
         init_seurat_object <<- CreateSeuratObject(counts = testMatrix, project = metaD$my_project_name, min.cells = as.numeric(minimum_cells), min.features = as.numeric(minimum_features))
         
-        session$sendCustomMessage("handler_startLoader", c("input_loader", 25))
-        
         seurat_object[["percent.mt"]] <<- PercentageFeatureSet(seurat_object, pattern = "^MT-")
         init_seurat_object[["percent.mt"]] <<- PercentageFeatureSet(init_seurat_object, pattern = "^MT-")
         
-        
-        session$sendCustomMessage("handler_startLoader", c("input_loader", 50))
-        
         updateMetadata()
-        session$sendCustomMessage("handler_startLoader", c("input_loader", 75))
+        
         updateSelInpColor()
         updateGeneSearchFP()
         updateQC_choices()
@@ -139,16 +122,13 @@ server <- function(input, output, session) {
         session$sendCustomMessage("handler_alert", "Data Input error. Please, refer to the help pages for input format.")
       }, finally = { # with or without error
         removeModal()
-        session$sendCustomMessage("handler_startLoader", c("input_loader", 100))
-        Sys.sleep(1) # giving some time for renderer for smoother transition
-        session$sendCustomMessage("handler_finishLoader", "input_loader")
+        Sys.sleep(1) # giving some time for rendering for smoother transition
         session$sendCustomMessage("handler_enableAllButtons", "upload10xExampleRNACountMatrixConfirm")
       })
     }
   })
   
   observeEvent(input$upload10xRNAConfirm, {
-    #options(shiny.maxRequestSize=0.5*1024^3) #500 MB
     if(!is.null(proj_default) | !is.null(seurat_object))
     {
       showModal(modal_confirm)
@@ -156,10 +136,9 @@ server <- function(input, output, session) {
     else
     {
       session$sendCustomMessage("handler_disableTabs", "sidebarMenu") 
-      session$sendCustomMessage("handler_startLoader", c("input_loader", 10))
       session$sendCustomMessage("handler_disableAllButtons", "upload10xRNAConfirm")
       tryCatch({
-        showModal(modalDialog(div('Analysis in Progress. This operation may take several minutes, please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
+        showModal(modalDialog(div('Data upload in progress. Please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
         metaD$my_project_name <- input$upload10xRNAprojectID
         minimum_cells <<- input$upload10xRNAminCells
         minimum_features <<- input$upload10xRNAminFeatures
@@ -177,7 +156,6 @@ server <- function(input, output, session) {
         
         init_seurat_object <<- CreateSeuratObject(counts = seurat_data, project = metaD$my_project_name, min.cells = as.numeric(minimum_cells), min.features = as.numeric(minimum_features))
         
-        session$sendCustomMessage("handler_startLoader", c("input_loader", 25))
         if(organism == "mouse")
         {
           seurat_object[["percent.mt"]] <<- PercentageFeatureSet(seurat_object, pattern = "^mt-")
@@ -189,10 +167,8 @@ server <- function(input, output, session) {
           init_seurat_object[["percent.mt"]] <<- PercentageFeatureSet(init_seurat_object, pattern = "^MT-")
         }
         
-        session$sendCustomMessage("handler_startLoader", c("input_loader", 50))
-        
         updateMetadata()
-        session$sendCustomMessage("handler_startLoader", c("input_loader", 75))
+        
         updateSelInpColor()
         updateGeneSearchFP()
         updateQC_choices()
@@ -210,9 +186,7 @@ server <- function(input, output, session) {
         session$sendCustomMessage("handler_alert", "Data Input error. Please, refer to the help pages for input format.")
       }, finally = { # with or without error
         removeModal()
-        session$sendCustomMessage("handler_startLoader", c("input_loader", 100))
-        Sys.sleep(1) # giving some time for renderer for smoother transition
-        session$sendCustomMessage("handler_finishLoader", "input_loader")
+        Sys.sleep(1) # giving some time for rendering for smoother transition
         session$sendCustomMessage("handler_enableAllButtons", "upload10xRNAConfirm")
       })
     }
@@ -226,10 +200,9 @@ server <- function(input, output, session) {
     else
     {
       session$sendCustomMessage("handler_disableTabs", "sidebarMenu") # disable all tab panels (except Data Input) until files are uploaded
-      session$sendCustomMessage("handler_startLoader", c("input_loader", 10))
       session$sendCustomMessage("handler_disableAllButtons", "upload10xExampleRNA10xFilesConfirm")
       tryCatch({
-        showModal(modalDialog(div('Analysis in Progress. This operation may take several minutes, please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
+        showModal(modalDialog(div('Data upload in progress. Please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
         metaD$my_project_name <- "PBMC3k"
         minimum_cells <<- 3
         minimum_features <<- 200
@@ -245,17 +218,13 @@ server <- function(input, output, session) {
         
         init_seurat_object <<- CreateSeuratObject(counts = seurat_data, project = metaD$my_project_name, min.cells = as.numeric(minimum_cells), min.features = as.numeric(minimum_features))
         
-        session$sendCustomMessage("handler_startLoader", c("input_loader", 25))
-        
         seurat_object[["percent.mt"]] <<- PercentageFeatureSet(seurat_object, pattern = "^MT-")
         init_seurat_object[["percent.mt"]] <<- PercentageFeatureSet(init_seurat_object, pattern = "^MT-") #as.double(sprintf("%.3f", as.double(seurat_object@meta.data$percent.mt)))
         seurat_object@meta.data$percent.mt <<- as.double(seurat_object@meta.data$percent.mt)
         init_seurat_object@meta.data$percent.mt <<- as.double(init_seurat_object@meta.data$percent.mt)
         
-        session$sendCustomMessage("handler_startLoader", c("input_loader", 50))
-        
         updateMetadata()
-        session$sendCustomMessage("handler_startLoader", c("input_loader", 75))
+        
         updateSelInpColor()
         updateGeneSearchFP()
         updateQC_choices()
@@ -273,9 +242,7 @@ server <- function(input, output, session) {
         session$sendCustomMessage("handler_alert", "Data Input error. Please, refer to the help pages for input format.")
       }, finally = { # with or without error
         removeModal()
-        session$sendCustomMessage("handler_startLoader", c("input_loader", 100))
-        Sys.sleep(1) # giving some time for renderer for smoother transition
-        session$sendCustomMessage("handler_finishLoader", "input_loader")
+        Sys.sleep(1) # giving some time for rendering for smoother transition
         session$sendCustomMessage("handler_enableAllButtons", "upload10xExampleRNA10xFilesConfirm")
       })
     }
@@ -288,14 +255,19 @@ server <- function(input, output, session) {
     }
     else
     {
-      session$sendCustomMessage("handler_startLoader", c("input_loader", 10))
       session$sendCustomMessage("handler_disableAllButtons", "uploadSeuratRdsConfirm")
       
       tryCatch({
-        showModal(modalDialog(div('Analysis in Progress. This operation may take several minutes, please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
-        session$sendCustomMessage("handler_startLoader", c("input_loader", 20))
-        seurat_object <<- readRDS(input$uploadRdsFile$datapath)
-        init_seurat_object <<- readRDS(input$uploadRdsFile$datapath)
+        showModal(modalDialog(div('Data upload in progress. Please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
+        #seurat_object <<- readRDS(input$uploadRdsFile$datapath)
+        #init_seurat_object <<- readRDS(input$uploadRdsFile$datapath)
+        userId <- session$token
+        user_dir <<- paste0("./usr_temp/", userId, gsub(pattern = "[ ]|[:]", replacement = "_", x = paste0("_", Sys.time()))) 
+        dir.create(user_dir)
+        file.copy(from = input$uploadRdsFile$datapath, to = paste0(user_dir, "/init_seurat_object.RDS"), overwrite = TRUE)
+        
+        seurat_object <<- readRDS(paste0(user_dir, "/init_seurat_object.RDS"))
+        init_seurat_object <<- readRDS(paste0(user_dir, "/init_seurat_object.RDS"))
         organism <<- input$uploadRdsRadioSpecies
         
         print(seurat_object)
@@ -306,7 +278,6 @@ server <- function(input, output, session) {
           print("Metadata table is missing")
         else
         {
-          session$sendCustomMessage("handler_startLoader", c("input_loader", 40))
           disableTabsATAC()
           updateMetadata()
           updateSelInpColor()
@@ -315,9 +286,7 @@ server <- function(input, output, session) {
           updateMaxHVGs()
           updatePCs_selection(10)
           updateUtilitiesAssays()
-          updateSignatures()
           updateRegressOut()
-          session$sendCustomMessage("handler_startLoader", c("input_loader", 70))
           #CHECK percent.mt
           if(is.null(seurat_object@meta.data$percent.mt))
           {
@@ -453,38 +422,35 @@ server <- function(input, output, session) {
           }
           
           #CHECK $seurat_clusters
-          if( !is.null(seurat_object$seurat_clusters) )
+          if( !is.null(seurat_object@meta.data$seurat_clusters) )
           {
             updateInputLRclusters()
             session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " CLUSTERING", " MARKERS' IDENTIFICATION", " CELL CYCLE PHASE ANALYSIS", " DOUBLETS' DETECTION",
                                                               " LIGAND - RECEPTOR\nANALYSIS"))
             #--print cluster table
-            #cluster_df <- as.data.frame(table(seurat_object$seurat_clusters))
-            #colnames(cluster_df)[1] <- "Cluster"
-            #colnames(cluster_df)[2] <- "Number of cells"
-            #cluster_df$`% of cells per cluster` <- cluster_df$`Number of cells`/length(seurat_object@meta.data$orig.ident)*100
-            #output$clusterTable <- renderDataTable(cluster_df, options = list(pageLength = 10), rownames = F)
-            #export_clustertable_RNA <<- cluster_df
             updateClusterTab()
             #--
             
             if(!is.null(seurat_object@reductions$umap))
               session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " TRAJECTORY ANALYSIS"))
-            
-            if(!is.null(seurat_object@misc$markers))
-              session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " FUNCTIONAL/MOTIF\nENRICHMENT ANALYSIS"))
           }
           
-          session$sendCustomMessage("handler_startLoader", c("input_loader", 90))
+          #CHECK Seurat@misc$markers
+          if( !is.null(seurat_object@misc$markers) )
+          {
+            seurat_object@misc$markers <- seurat_object@misc$markers[, c(7, 6, 1:5)]
+            output$findMarkersTable <- renderDataTable(seurat_object@misc$markers, options = list(pageLength = 20), filter = 'top', rownames = FALSE)
+            markers_logFCBase <<- colnames(seurat_object@misc$markers)[grep(pattern = "avg_log", x = colnames(seurat_object@misc$markers))]
+            export_markerGenes_RNA <<- seurat_object@misc$markers
+            session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " FUNCTIONAL/MOTIF\nENRICHMENT ANALYSIS"))
+          }
         }
       }, error = function(e) {
           print(paste("Error :  ", e))
           session$sendCustomMessage("handler_alert", "Data Input error. Please, refer to the help pages for input format.")
       }, finally = { # with or without error
           removeModal()
-          session$sendCustomMessage("handler_startLoader", c("input_loader", 100))
-          Sys.sleep(1) # giving some time for renderer for smoother transition
-          session$sendCustomMessage("handler_finishLoader", "input_loader")
+          Sys.sleep(1) # giving some time for rendering for smoother transition
           session$sendCustomMessage("handler_enableAllButtons", "uploadSeuratRdsConfirm")
         }
       )
@@ -492,7 +458,6 @@ server <- function(input, output, session) {
   })
   
   observeEvent(input$upload10xATACConfirm, {
-    #options(shiny.maxRequestSize=2*1024^3) #2 GB
     if(!is.null(proj_default) | !is.null(seurat_object))
     {
       showModal(modal_confirm)
@@ -500,11 +465,9 @@ server <- function(input, output, session) {
     else
     {
       session$sendCustomMessage("handler_disableTabs", "sidebarMenu") # disable all tab panels (except Data Input) until files are uploaded
-      session$sendCustomMessage("handler_startLoader", c("input_loader", 10))
       session$sendCustomMessage("handler_disableAllButtons", "upload10xATACConfirm")
       tryCatch({
-        showModal(modalDialog(div('Analysis in Progress. This operation may take several minutes, please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
-        session$sendCustomMessage("handler_startLoader", c("input_loader", 25))
+        showModal(modalDialog(div('Data upload in progress. Please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
         
         #user dir creation
         projectNameATAC <<- input$uploadATACprojectID
@@ -532,14 +495,11 @@ server <- function(input, output, session) {
         proj_default <<- ArchRProject(
           ArrowFiles = paste0(user_dir, "/arrowFile.arrow"),
           outputDirectory = paste0(user_dir, "/default"),
-          copyArrows = FALSE #This is recommened so that if you modify the Arrow files you have an original copy for later usage.
+          copyArrows = FALSE #This is recommended so that if you modify the Arrow files you have an original copy for later usage.
         )
         
         saveArchRProject(proj_default)
         print("Project saved")
-        
-        session$sendCustomMessage("handler_startLoader", c("input_loader", 50))
-        session$sendCustomMessage("handler_startLoader", c("input_loader", 75))
         
         updateMetadataATAC()
         
@@ -553,9 +513,7 @@ server <- function(input, output, session) {
         session$sendCustomMessage("handler_alert", "Data Input error. Please, refer to the help pages for input format.")
       }, finally = { # with or without error
         removeModal()
-        session$sendCustomMessage("handler_startLoader", c("input_loader", 100))
-        Sys.sleep(1) # giving some time for renderer for smoother transition
-        session$sendCustomMessage("handler_finishLoader", "input_loader")
+        Sys.sleep(1) # giving some time for rendering for smoother transition
         session$sendCustomMessage("handler_enableAllButtons", "upload10xATACConfirm")
       })
     }
@@ -569,11 +527,9 @@ server <- function(input, output, session) {
     else
     {
       session$sendCustomMessage("handler_disableTabs", "sidebarMenu") # disable all tab panels (except Data Input) until files are uploaded
-      session$sendCustomMessage("handler_startLoader", c("input_loader", 10))
       session$sendCustomMessage("handler_disableAllButtons", "upload10xExampleATACConfirm")
       tryCatch({
-        showModal(modalDialog(div('Analysis in Progress. This operation may take several minutes, please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
-        session$sendCustomMessage("handler_startLoader", c("input_loader", 25))
+        showModal(modalDialog(div('Data upload in progress. Please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
         
         #user dir creation
         projectNameATAC <<- "example"
@@ -585,23 +541,22 @@ server <- function(input, output, session) {
         #select genome version and organism
         addArchRGenome("hg19")
         
-        #set number of threads, TODO set to 1 in server version
+        
+        #set number of threads
         addArchRThreads(threads = as.numeric(input$upload10xATACThreads)) 
         
         ########################################
         ######### Create Arch Project ##########
         ########################################
         proj_default <<- ArchRProject(
-          ArrowFiles = "exampleATAC/arrowFile.arrow",
-          outputDirectory = paste0(user_dir, "/default"),
-          copyArrows = FALSE #This is recommened so that if you modify the Arrow files you have an original copy for later usage.
+         ArrowFiles = "exampleATAC/arrowFile.arrow",
+         outputDirectory = paste0(user_dir, "/default"),
+         copyArrows = FALSE #This is recommended so that if you modify the Arrow files you have an original copy for later usage.
         )
         
         saveArchRProject(proj_default)
-        print("Project saved")
         
-        session$sendCustomMessage("handler_startLoader", c("input_loader", 50))
-        session$sendCustomMessage("handler_startLoader", c("input_loader", 75))
+        print("Project saved")
         
         updateMetadataATAC()
         
@@ -615,9 +570,7 @@ server <- function(input, output, session) {
         session$sendCustomMessage("handler_alert", "Data Input error. Please, refer to the help pages for input format.")
       }, finally = { # with or without error
         removeModal()
-        session$sendCustomMessage("handler_startLoader", c("input_loader", 100))
-        Sys.sleep(1) # giving some time for renderer for smoother transition
-        session$sendCustomMessage("handler_finishLoader", "input_loader")
+        Sys.sleep(1) # giving some time for rendering for smoother transition
         session$sendCustomMessage("handler_enableAllButtons", "upload10xExampleATACConfirm")
       })
     }
@@ -683,24 +636,70 @@ server <- function(input, output, session) {
   
   #change active clusters
   observeEvent(input$utilitiesConfirmChangeCluster, {
+    tryCatch({
     seurat_object$seurat_clusters <<- seurat_object@meta.data[, input$utilitiesActiveClusters]
     Idents(seurat_object) <<- seurat_object$seurat_clusters
     
     updateInputLRclusters()
     updateMetadata()
     updateClusterTab()
+    shinyalert(title = "Active clustering column changed succesfully!", type = "success")
+    }, error = function(e) {
+      print(paste("Error :  ", e))
+      shinyalert(title = "There was an error with changing the clustering column.", type = "error")
+    }, finally = {
+      
+    })
   })
   
   #change active assay 
   observeEvent(input$utilitiesConfirmChangeAssay, {
-    DefaultAssay(seurat_object) <<- input$utilitiesActiveAssay
-    print("def assay")
-    print(DefaultAssay(seurat_object))
+    tryCatch({
+      DefaultAssay(seurat_object) <<- input$utilitiesActiveAssay
+      updateGeneSearchFP()
+      shinyalert(title = "Default assay was changed succesfully!", type = "success")
+    }, error = function(e) {
+      print(paste("Error :  ", e))
+      shinyalert(title = "There was an error with changing the default assay.", type = "error")
+    }, finally = {
+      
+    })
+    #print("def assay")
+    #print(DefaultAssay(seurat_object))
+  })
+  
+  observeEvent(input$utilitiesPlotCommands, {
+    if(!is.null(seurat_object))
+    {
+      if(length(seurat_object@commands) > 0)
+      {
+        output$history <- renderPrint(
+          {
+            for(i in 1:length(seurat_object@commands))
+            {
+              print(seurat_object@commands[[i]])
+              print("-------------------------------------------------------------")
+            }
+          })
+      }
+      else
+      {
+        Sys.sleep(1)
+        shinyalert("Error. No command history was found.", type = "error")
+      }
+    }
+    else
+    {
+      Sys.sleep(1)
+      shinyalert("Error. No project is loaded.", type = "error")
+    }
   })
   
   #------------------Quality Control tab--------------------------------
   observeEvent(input$qcDisplay, {
-    session$sendCustomMessage("handler_startLoader", c("qc_loader", 10))
+    start.time <- Sys.time()
+    print(paste0("!!!!-----DisplayQC_start-----", start.time))
+    
     session$sendCustomMessage("handler_disableAllButtons", "qcDisplay")
     tryCatch({
       if (identical(init_seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
@@ -710,11 +709,12 @@ server <- function(input, output, session) {
         shinyjs::show("mitoViolin_loader")
         shinyjs::show("genesCounts_loader")
         shinyjs::show("mtCounts_loader")
-        showModal(modalDialog(div('Analysis in Progress. This operation may take several minutes, please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
+        showModal(modalDialog(div('Quality control in progress. This operation may take a few minutes for large datasets. Please wait...', style='color:#ffffff; background-color:#222d32;'), 
+                              footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
         
         output$nFeatureViolin <- renderPlotly(
           {
-            p <- VlnPlot(init_seurat_object, features = c("nFeature_RNA"), pt.size = 0.5, group.by = "orig.ident",
+            p <- VlnPlot(init_seurat_object, features = c("nFeature_RNA"), pt.size = 0, group.by = "orig.ident",
                          cols = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(init_seurat_object@meta.data[, 'orig.ident'])))) + 
               theme_bw() + 
               geom_hline(yintercept=c(as.numeric(input$minUniqueGenes), as.numeric(input$maxUniqueGenes)), linetype="dashed", color = "red", size=1) + 
@@ -724,7 +724,7 @@ server <- function(input, output, session) {
                 legend.position = "none") +
               labs(title = "", y="Genes detected/cell")
             
-            p_temp <- VlnPlot(init_seurat_object, features = c("nFeature_RNA"), pt.size = 0.5, group.by = "orig.ident",
+            p_temp <- VlnPlot(init_seurat_object, features = c("nFeature_RNA"), pt.size = 0, group.by = "orig.ident",
                               cols = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(init_seurat_object@meta.data[, 'orig.ident'])))) + 
               theme_bw() + 
               geom_hline(yintercept=c(as.numeric(input$minUniqueGenes), as.numeric(input$maxUniqueGenes)), linetype="dashed", color = "red", size=1) + 
@@ -737,11 +737,10 @@ server <- function(input, output, session) {
             plotly::ggplotly(p + ylim(min(init_seurat_object$nFeature_RNA)-1, max(init_seurat_object$nFeature_RNA)+2), tooltip = c("x", "y")) 
           }
         )
-        session$sendCustomMessage("handler_startLoader", c("qc_loader", 25))
         
         output$totalCountsViolin <- renderPlotly(
           {
-            p <- VlnPlot(init_seurat_object, features = c("nCount_RNA"), pt.size = 0.5, group.by = "orig.ident",
+            p <- VlnPlot(init_seurat_object, features = c("nCount_RNA"), pt.size = 0, group.by = "orig.ident",
                          cols = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(init_seurat_object@meta.data[, 'orig.ident'])))) + 
               theme_bw() + 
               theme(
@@ -752,11 +751,10 @@ server <- function(input, output, session) {
             plotly::ggplotly(p, tooltip = c("x", "y")) 
           }
         )
-        session$sendCustomMessage("handler_startLoader", c("qc_loader", 35))
         
         output$mitoViolin <- renderPlotly(
           {
-            p <- VlnPlot(init_seurat_object, features = c("percent.mt"), pt.size = 0.5, group.by = "orig.ident",
+            p <- VlnPlot(init_seurat_object, features = c("percent.mt"), pt.size = 0, group.by = "orig.ident",
                          cols = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(init_seurat_object@meta.data[, 'orig.ident'])))) + 
               theme_bw() + 
               #scale_y_continuous(labels = number_format(accuracy = 0.001)) +
@@ -770,17 +768,15 @@ server <- function(input, output, session) {
               #layout(yaxis = list(hoverformat = ".2f"))
           }
         )
-        session$sendCustomMessage("handler_startLoader", c("qc_loader", 50))
         
         output$mtCounts <- renderPlotly(
           {
-            p <- FeatureScatter(init_seurat_object, feature1 = "nCount_RNA", feature2 = "percent.mt", group.by = "orig.ident", 
+            p <- FeatureScatter(init_seurat_object, feature1 = "nCount_RNA", feature2 = "percent.mt", group.by = "orig.ident", raster = F,
                                 cols = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(init_seurat_object@meta.data[, 'orig.ident']))))
             gp <- plotly::ggplotly(p)
             print(gp)
           }
         )
-        session$sendCustomMessage("handler_startLoader", c("qc_loader", 60))
         
         output$genesCounts <- renderPlotly(
           {
@@ -790,7 +786,6 @@ server <- function(input, output, session) {
             print(gp)
           }
         )
-        session$sendCustomMessage("handler_startLoader", c("qc_loader", 75))
         
         output$cellStats <- renderPrint(
           {
@@ -803,15 +798,20 @@ server <- function(input, output, session) {
       session$sendCustomMessage("handler_alert", "The selected Quality Control arguments cannot produce meaningful visualizations.")
     }, finally = {
       removeModal()
-      session$sendCustomMessage("handler_startLoader", c("qc_loader", 100))
+      
+      end.time <- Sys.time()
+      time.taken <- as.numeric (end.time - start.time, units = "mins")
+      print(paste0("!!!!-----DisplayQC_end_Mins_taken-----", time.taken))
+      
       Sys.sleep(1)
-      session$sendCustomMessage("handler_finishLoader", "qc_loader")
       session$sendCustomMessage("handler_enableAllButtons", "qcDisplay")
     })
   })
   
   observeEvent(input$qcConfirm, {
-    session$sendCustomMessage("handler_startLoader", c("qc_loader2", 10))
+    start.time <- Sys.time()
+    print(paste0("!!!!-----QCFiltering_start-----", start.time))
+    
     session$sendCustomMessage("handler_disableAllButtons", "qcConfirm")
     tryCatch({
       if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
@@ -828,13 +828,11 @@ server <- function(input, output, session) {
         qc_maxFeatures <<- input$maxUniqueGenes
         qc_maxMtPercent <<- input$maxMtReads
         
-        session$sendCustomMessage("handler_startLoader", c("qc_loader2", 50))
         seurat_object <<- subset(init_seurat_object, subset = nFeature_RNA > as.numeric(qc_minFeatures) & nFeature_RNA < as.numeric(qc_maxFeatures) & percent.mt < as.double(qc_maxMtPercent)) #filter object
         
-        session$sendCustomMessage("handler_startLoader", c("qc_loader2", 75))
         output$filteredNFeatureViolin <- renderPlotly(
           {
-            p <- VlnPlot(seurat_object, features = c("nFeature_RNA"), pt.size = 0.5, group.by = input$qcColorBy,
+            p <- VlnPlot(seurat_object, features = c("nFeature_RNA"), pt.size = 0, group.by = input$qcColorBy,
                          cols = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(seurat_object@meta.data[, input$qcColorBy])))) + 
               theme_bw() + 
               theme(
@@ -847,7 +845,7 @@ server <- function(input, output, session) {
         )
         output$filteredTotalCountsViolin <- renderPlotly(
           {
-            p <- VlnPlot(seurat_object, features = c("nCount_RNA"), pt.size = 0.5, group.by = input$qcColorBy,
+            p <- VlnPlot(seurat_object, features = c("nCount_RNA"), pt.size = 0, group.by = input$qcColorBy,
                          cols = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(seurat_object@meta.data[, input$qcColorBy])))) + 
               theme_bw() + 
               theme(
@@ -860,7 +858,7 @@ server <- function(input, output, session) {
         )
         output$filteredMitoViolin <- renderPlotly(
           {
-            p <- VlnPlot(seurat_object, features = c("percent.mt"), pt.size = 0.5, group.by = input$qcColorBy,
+            p <- VlnPlot(seurat_object, features = c("percent.mt"), pt.size = 0, group.by = input$qcColorBy,
                          cols = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(seurat_object@meta.data[, input$qcColorBy])))) + 
               theme_bw() + 
               theme(
@@ -902,22 +900,26 @@ server <- function(input, output, session) {
       print(paste("Error :  ", e))
       session$sendCustomMessage("handler_alert", "The selected Quality Control arguments cannot produce meaningful visualizations.")
     }, finally = {
+      end.time <- Sys.time()
+      time.taken <- as.numeric (end.time - start.time, units = "mins")
+      print(paste0("!!!!-----QCfilter_end_Mins_taken-----", time.taken))
+      
       removeModal()
-      session$sendCustomMessage("handler_startLoader", c("qc_loade2r", 100))
       Sys.sleep(1)
-      session$sendCustomMessage("handler_finishLoader", "qc_loader2")
       session$sendCustomMessage("handler_enableAllButtons", "qcConfirm")
     })
   })
   
   #ATAC qc
   observeEvent(input$qcDisplayATAC, {
-    session$sendCustomMessage("handler_startLoader", c("qc_loader3", 10))
+    start.time <- Sys.time()
+    print(paste0("!!!!-----DisplayQC_start-----", start.time))
+    
     session$sendCustomMessage("handler_disableAllButtons", "qcDisplayATAC")
     tryCatch({
       if (identical(proj_default, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else{
-        showModal(modalDialog(div('Analysis in Progress. This operation may take several minutes, please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
+        showModal(modalDialog(div('Quality control metrics are prepared. Rendering mighr take several minutes for large datasets. Please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
         shinyjs::show("TSS_plot_loader")
         shinyjs::show("nFrag_plot_loader")
         shinyjs::show("TSS_nFrag_plot_loader")
@@ -932,8 +934,6 @@ server <- function(input, output, session) {
     )
     output$TSS_plot <- renderPlotly( expr =  ggplot(p1$data, aes(x=x, y=y, fill=x)) + geom_violin() + theme_bw() + labs(y="TSS Enrichment"))
     
-    session$sendCustomMessage("handler_startLoader", c("qc_loader3", 50))
-    
     #nFrags plot
     p2 <- plotGroups(
       ArchRProj = proj_default,
@@ -944,8 +944,6 @@ server <- function(input, output, session) {
     output$nFrag_plot <- renderPlot( expr = ggplot(p2$data, aes(y=x, x=y, fill=x)) + geom_density_ridges() + theme_bw() + scale_y_discrete(expand = c(0, 0)) + labs(x="log10(nFrags)"), 
                                              width = 500, height = 500
                                           )
-    
-    session$sendCustomMessage("handler_startLoader", c("qc_loader3", 75))
     
     #nFrags-TSS plot
     df <- getCellColData(proj_default, select = c("log10(nFrags)", "TSSEnrichment"))
@@ -978,36 +976,40 @@ server <- function(input, output, session) {
       print(paste("Error :  ", e))
       session$sendCustomMessage("handler_alert", "The selected Quality Control arguments cannot produce meaningful visualizations.")
     }, finally = {
+      end.time <- Sys.time()
+      time.taken <- as.numeric (end.time - start.time, units = "mins")
+      print(paste0("!!!!-----DisplayQC_end_Mins_taken-----", time.taken))
+      
       removeModal()
-      session$sendCustomMessage("handler_startLoader", c("qc_loader3", 100))
       Sys.sleep(1)
-      session$sendCustomMessage("handler_finishLoader", "qc_loader3")
       session$sendCustomMessage("handler_enableAllButtons", "qcDisplayATAC")
     })
   })
   
   #------------------Normalization tab--------------------------------
   observeEvent(input$normalizeConfirm, {
+    start.time <- Sys.time()
+    print(paste0("!!!!-----Scaling_start-----", start.time))
+    
     session$sendCustomMessage("handler_log", " ### Starting normalization procedure ###")
-    session$sendCustomMessage("handler_startLoader", c("normalize_loader", 10))
     session$sendCustomMessage("handler_disableAllButtons", "normalizeConfirm")
     tryCatch({
       if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else{
         shinyjs::show("hvgScatter_loader")
-        showModal(modalDialog(div('Analysis in Progress. This operation may take several minutes, please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
+        showModal(modalDialog(div('Normalization and scaling in progress. This operation will be dramatically slowed down if all genes are selected.
+                                  Please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 
+                                'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
         normalize_normMethod <- "LogNormalize"
         normalize_normScaleFactor <- input$normScaleFactor
         seurat_object <<- NormalizeData(seurat_object, normalization.method = normalize_normMethod, scale.factor = as.numeric(normalize_normScaleFactor))
         session$sendCustomMessage("handler_log", "Finished performing log-normalization.")
-        session$sendCustomMessage("handler_startLoader", c("normalize_loader", 25))
         
         normalize_hvgMethod <<- input$radioHVG
         normalize_hvgNGenes <<- input$nHVGs
 
         seurat_object <<- FindVariableFeatures(seurat_object, selection.method = normalize_hvgMethod, nfeatures = as.numeric(normalize_hvgNGenes))
         session$sendCustomMessage("handler_log", "Finished calculating gene and feature variances of standardized and clipped values.")
-        session$sendCustomMessage("handler_startLoader", c("normalize_loader", 50))
         
         normalize_scaleRegressOut <- input$normalizeRegressColumns
         
@@ -1022,8 +1024,6 @@ server <- function(input, output, session) {
         else seurat_object <<- ScaleData(seurat_object, vars.to.regress=normalize_scaleRegressOut, features = all.genes)
         
         session$sendCustomMessage("handler_log", "Finished centering and scaling data matrix.")
-        session$sendCustomMessage("handler_startLoader", c("normalize_loader", 75))
-        updateSignatures()
         
         # Rendering
         output$hvgScatter <- renderPlotly({ # tooltip
@@ -1074,10 +1074,12 @@ server <- function(input, output, session) {
       print(paste("Error :  ", e))
       session$sendCustomMessage("handler_alert", "The selected Normalization arguments cannot produce meaningful visualizations.")
     }, finally = {
+      end.time <- Sys.time()
+      time.taken <- as.numeric (end.time - start.time, units = "mins")
+      print(paste0("!!!!-----Scaling_end_Mins_taken-----", time.taken))
+      
       removeModal()
-      session$sendCustomMessage("handler_startLoader", c("normalize_loader", 100))
       Sys.sleep(1)
-      session$sendCustomMessage("handler_finishLoader", "normalize_loader")
       session$sendCustomMessage("handler_enableAllButtons", "normalizeConfirm")
       session$sendCustomMessage("handler_log", " ### Finished normalization procedure ###")
     })
@@ -1085,14 +1087,17 @@ server <- function(input, output, session) {
   
   #------------------PCA tab------------------------------------------
   observeEvent(input$PCrunPCA, {
+    start.time <- Sys.time()
+    print(paste0("!!!!-----PCA_start-----", start.time))
+    
     session$sendCustomMessage("handler_log", " ### Starting PCA Analysis ###")
-    session$sendCustomMessage("handler_startLoader", c("PCA1_loader", 10))
     session$sendCustomMessage("handler_disableAllButtons", "PCrunPCA")
     tryCatch({
       if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else if (!"ScaleData.RNA" %in% names(seurat_object@commands)) session$sendCustomMessage("handler_alert", "Data need to be scaled first. Please, execute the previous step in DATA NORMALIZATION & SCALING.")
       else {
-        showModal(modalDialog(div('Analysis in Progress. This operation may take several minutes, please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
+        showModal(modalDialog(div('PCA analysis in progress. Automatic optimum value calculation will increase the runtime of this step
+                                  dramatically. Please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
         shinyjs::show("elbowPlotPCA_loader")
         shinyjs::show("PCAscatter_loader")
         
@@ -1141,7 +1146,6 @@ server <- function(input, output, session) {
           }
         )
         
-        session$sendCustomMessage("handler_startLoader", c("PCA1_loader", 50))
         output$PCAscatter <- renderPlotly(
           {
             #prepare metadata
@@ -1182,10 +1186,12 @@ server <- function(input, output, session) {
       print(paste("Error :  ", e))
       session$sendCustomMessage("handler_alert", "There was an error with the PCA analysis.")
     }, finally = {
+      end.time <- Sys.time()
+      time.taken <- as.numeric (end.time - start.time, units = "mins")
+      print(paste0("!!!!-----PCA_end_Mins_taken-----", time.taken))
+      
       removeModal()
-      session$sendCustomMessage("handler_startLoader", c("PCA1_loader", 75))
       Sys.sleep(1)
-      session$sendCustomMessage("handler_finishLoader", "PCA1_loader")
       session$sendCustomMessage("handler_enableAllButtons", "PCrunPCA")
       session$sendCustomMessage("handler_log", " ### Finished PCA Analysis ###")
     })
@@ -1193,7 +1199,6 @@ server <- function(input, output, session) {
   
   observeEvent(input$PCconfirm, {
     session$sendCustomMessage("handler_log", " ### Starting PC Exploration ###")
-    session$sendCustomMessage("handler_startLoader", c("PCA2_loader", 10))
     session$sendCustomMessage("handler_disableAllButtons", "PCconfirm")
     tryCatch({
       if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
@@ -1201,7 +1206,8 @@ server <- function(input, output, session) {
       else {
         shinyjs::show("PCAloadings_loader")
         shinyjs::show("PCAheatmap_loader")
-        showModal(modalDialog(div('Analysis in Progress. This operation may take several minutes, please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
+        showModal(modalDialog(div('Rendering in progress, please wait...', style='color:#ffffff; background-color:#222d32;'), 
+                              footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
         
         activePC <- as.numeric(input$PCin)
         
@@ -1227,7 +1233,6 @@ server <- function(input, output, session) {
           }
         )
         
-        session$sendCustomMessage("handler_startLoader", c("PCA2_loader", 75))
         output$PCAheatmap <- renderPlotly(
           {
             p <- DimHeatmap(seurat_object, dims = activePC, cells = 500, balanced = TRUE, fast = F)
@@ -1238,12 +1243,10 @@ server <- function(input, output, session) {
       }
     }, error = function(e) {
       print(paste("Error :  ", e))
-      session$sendCustomMessage("handler_alert", "There was an error with the PCA analysis.")
+      session$sendCustomMessage("handler_alert", "There was an error with the visualization of PCA analysis.")
     }, finally = {
       removeModal()
-      session$sendCustomMessage("handler_startLoader", c("PCA2_loader", 100))
       Sys.sleep(1)
-      session$sendCustomMessage("handler_finishLoader", "PCA2_loader")
       session$sendCustomMessage("handler_enableAllButtons", "PCconfirm")
       session$sendCustomMessage("handler_log", " ### Finished PC Exploration ###")
     })
@@ -1259,21 +1262,22 @@ server <- function(input, output, session) {
   
   #ATAC LSI
   observeEvent(input$lsiConfirm, {
-    session$sendCustomMessage("handler_log", " ### Starting PC Exploration ###")
-    session$sendCustomMessage("handler_startLoader", c("lsi_loader", 10))
+    start.time <- Sys.time()
+    print(paste0("!!!!-----LSI_start-----", start.time))
+    
+    session$sendCustomMessage("handler_log", " ### Starting LSI ###")
     session$sendCustomMessage("handler_disableAllButtons", "lsiConfirm")
     tryCatch({
       if (identical(proj_default, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else
       {
-        showModal(modalDialog(div('Analysis in Progress. This operation may take several minutes, please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
-        session$sendCustomMessage("handler_startLoader", c("lsi_loader", 25))
+        showModal(modalDialog(div('LSI Analysis in progress. High number of iterations increase the runtime of the process dramatically. 
+                                  Please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
         proj_default <<- addIterativeLSI(ArchRProj = proj_default, useMatrix = "TileMatrix", name = "IterativeLSI", force = T,
                                          iterations = as.numeric(input$lsiIterations), varFeatures = as.numeric(input$lsiVarFeatures),
                                          clusterParams = list( resolution = as.numeric(input$lsiResolution), sampleCells = 10000, n.start = 10),dimsToUse=1:as.numeric(input$lsiDmensions), 
                                          logFile = paste0(user_dir, "/LSI_file.log"))
         saveArchRProject(proj_default)
-        session$sendCustomMessage("handler_startLoader", c("lsi_loader", 75))
         output$lsiOutput <- renderPrint(
           {
             cat(paste0("LSI executed successfully."))
@@ -1285,10 +1289,12 @@ server <- function(input, output, session) {
       print(paste("Error :  ", e))
       session$sendCustomMessage("handler_alert", "There was an error with the LSI analysis.")
     }, finally = {
+      end.time <- Sys.time()
+      time.taken <- as.numeric (end.time - start.time, units = "mins")
+      print(paste0("!!!!-----LSI_end_Mins_taken-----", time.taken))
+      
       removeModal()
-      session$sendCustomMessage("handler_startLoader", c("lsi_loader", 100))
       Sys.sleep(1)
-      session$sendCustomMessage("handler_finishLoader", "lsi_loader")
       session$sendCustomMessage("handler_enableAllButtons", "lsiConfirm")
       session$sendCustomMessage("handler_log", " ### Finished LSI ###")
     })
@@ -1296,13 +1302,15 @@ server <- function(input, output, session) {
   
   #------------------Clustering tab------------------------------------------
   observeEvent(input$snnConfirm, {
-    session$sendCustomMessage("handler_startLoader", c("clust1_loader", 10))
+    start.time <- Sys.time()
+    print(paste0("!!!!-----Clustering_start-----", start.time))
+    
     session$sendCustomMessage("handler_disableAllButtons", "snnConfirm")
     tryCatch({
       if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else if (!"pca" %in% names(seurat_object)) session$sendCustomMessage("handler_alert", "Please, first execute PRINCIPAL COMPONENT ANALYSIS.")
       else {
-        showModal(modalDialog(div('Analysis in Progress. This operation may take several minutes, please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
+        showModal(modalDialog(div('Clustering cells in progress. Please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
         snn_dims <<- input$snnPCs
         snn_k <<- input$snnK
         cluster_res <<- input$clusterRes
@@ -1311,19 +1319,7 @@ server <- function(input, output, session) {
         seurat_object <<- FindNeighbors(seurat_object, k.param = as.numeric(snn_k), dims = 1:as.numeric(snn_dims), reduction = "pca", nn.method="annoy")
         seurat_object <<- FindClusters(seurat_object, resolution = as.numeric(cluster_res))
         
-        session$sendCustomMessage("handler_startLoader", c("clust1_loader", 25))
-        #cluster_df <- as.data.frame(table(seurat_object$seurat_clusters)) #as.data.frame(table(Idents(seurat_object)))
-        #colnames(cluster_df)[1] <- "Cluster"
-        #colnames(cluster_df)[2] <- "Number of cells"
-        #cluster_df$`% of cells per cluster` <- cluster_df$`Number of cells`/length(seurat_object@meta.data$orig.ident)*100
-        
-        session$sendCustomMessage("handler_startLoader", c("clust1_loader", 50))
-        #output$clusterTable <- renderDataTable(cluster_df, options = list(pageLength = 10), rownames = F)
-        #export_clustertable_RNA <<- cluster_df
         updateClusterTab()
-        
-        session$sendCustomMessage("handler_startLoader", c("clust1_loader", 70))
-        session$sendCustomMessage("handler_startLoader", c("clust1_loader", 80))
         updateSelInpColor()
         updateInputLRclusters()
         updateMetadata()
@@ -1332,24 +1328,25 @@ server <- function(input, output, session) {
       }
     }, error = function(e) {
       print(paste("Error :  ", e))
-      session$sendCustomMessage("handler_alert", "There was an error with the Clustering procedure.")
+      session$sendCustomMessage("handler_alert", "There was an error with the clustering procedure.")
     }, finally = {
+      end.time <- Sys.time()
+      time.taken <- as.numeric (end.time - start.time, units = "mins")
+      print(paste0("!!!!-----Clustering_end_Mins_taken-----", time.taken))
+      
       removeModal()
-      session$sendCustomMessage("handler_startLoader", c("clust1_loader", 100))
       Sys.sleep(1)
-      session$sendCustomMessage("handler_finishLoader", "clust1_loader")
       session$sendCustomMessage("handler_enableAllButtons", "snnConfirm")
     })
   })
   
   observeEvent(input$clusterBarplotConfirm, {
-    session$sendCustomMessage("handler_startLoader", c("clust2_loader", 10))
     session$sendCustomMessage("handler_disableAllButtons", "clusterBarplotConfirm")
     tryCatch({
       if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else if (identical(seurat_object@meta.data$seurat_clusters, NULL)) session$sendCustomMessage("handler_alert", "Please, execute CLUSTERING first.")
       else {
-        showModal(modalDialog(div('Analysis in Progress. This operation may take several minutes, please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
+        showModal(modalDialog(div('Rendering in progress. Please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
         shinyjs::show("clusterBarplot_loader")
         
         if(input$clusterGroupBy == "seurat_clusters")
@@ -1363,7 +1360,6 @@ server <- function(input, output, session) {
           colnames(clusterTable)[2] <-  "Cells"
           colnames(clusterTable)[3] <- "Percentage"
           cols = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(clusterTable$Cluster)))
-          session$sendCustomMessage("handler_startLoader", c("clust2_loader", 25))
           
           p <- ggplot(clusterTable) + theme_bw() +
             geom_bar( mapping = aes(x = Cluster, y = Percentage, fill=Cluster), stat = "identity" ) +
@@ -1376,10 +1372,8 @@ server <- function(input, output, session) {
                   axis.line = element_line(colour = "black")) +
             labs(x="", y="Percent of cells", fill="Clusters")
           gp <- plotly::ggplotly(p, tooltip = c("x", "y"))
-          session$sendCustomMessage("handler_startLoader", c("clust2_loader", 50))
           
           output$clusterBarplot <- renderPlotly({print(gp)})
-          session$sendCustomMessage("handler_startLoader", c("clust2_loader", 75))
         }
         else
         {
@@ -1393,39 +1387,33 @@ server <- function(input, output, session) {
                   axis.title.x = element_text(face = "bold", color = "black", size = 12),
                   panel.background = element_blank(),
                   axis.line = element_line(colour = "black")) 
-          session$sendCustomMessage("handler_startLoader", c("clust2_loader", 25))
           
           gp <- plotly::ggplotly(p, tooltip = c("x", "y"))
-          session$sendCustomMessage("handler_startLoader", c("clust2_loader", 50))
           
           output$clusterBarplot <- renderPlotly({print(gp)})
-          session$sendCustomMessage("handler_startLoader", c("clust2_loader", 75))
         }
       }
     }, error = function(e) {
       print(paste("Error :  ", e))
-      session$sendCustomMessage("handler_alert", "There was an error with the Clustering procedure.")
+      session$sendCustomMessage("handler_alert", "There was an error during plotting the barplot.")
     }, finally = {
       removeModal()
-      session$sendCustomMessage("handler_startLoader", c("clust2_loader", 100))
       Sys.sleep(1)
-      session$sendCustomMessage("handler_finishLoader", "clust2_loader")
       session$sendCustomMessage("handler_enableAllButtons", "clusterBarplotConfirm")
     })
   })
   
   observeEvent(input$snnDisplayConfirm, {
-    session$sendCustomMessage("handler_startLoader", c("clust3_loader", 10))
+    start.time <- Sys.time()
+    print(paste0("!!!!-----SNN_start-----", start.time))
+    
     session$sendCustomMessage("handler_disableAllButtons", "snnDisplayConfirm")
     tryCatch({
       if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else{
-        showModal(modalDialog(div('Analysis in Progress. This operation may take several minutes, please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
+        showModal(modalDialog(div('SNN graph visualization in progress. This a slow operation for large datasets. Please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
         shinyjs::show("snnSNN_loader")
         
-        session$sendCustomMessage("handler_startLoader", c("clust3_loader", 20))
-        session$sendCustomMessage("handler_startLoader", c("clust3_loader", 50))
-        session$sendCustomMessage("handler_startLoader", c("clust3_loader", 70))
         output$snnSNN <- renderVisNetwork(
           {
             if(!is.null(seurat_object@graphs$RNA_snn))
@@ -1457,24 +1445,28 @@ server <- function(input, output, session) {
       }
     }, error = function(e) {
       print(paste("Error :  ", e))
-      session$sendCustomMessage("handler_alert", "The selected Quality Control arguments cannot produce meaningful visualizations.")
+      session$sendCustomMessage("handler_alert", "There was a problem in drawing the SNN graph.")
     }, finally = {
+      end.time <- Sys.time()
+      time.taken <- as.numeric (end.time - start.time, units = "mins")
+      print(paste0("!!!!-----SNN_end_Mins_taken-----", time.taken))
+      
       removeModal()
-      session$sendCustomMessage("handler_startLoader", c("clust3_loader", 100))
       Sys.sleep(1)
-      session$sendCustomMessage("handler_finishLoader", "clust3_loader")
       session$sendCustomMessage("handler_enableAllButtons", "snnDisplayConfirm")
     })
   }) 
   
   #ATAC clustering
   observeEvent(input$clusterConfirmATAC, {
-    session$sendCustomMessage("handler_startLoader", c("clust4_loader", 10))
+    start.time <- Sys.time()
+    print(paste0("!!!!-----Clustering_start-----", start.time))
+    
     session$sendCustomMessage("handler_disableAllButtons", "clusterConfirmATAC")
     tryCatch({
       if (identical(proj_default, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else {
-        showModal(modalDialog(div('Analysis in Progress. This operation may take several minutes, please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
+        showModal(modalDialog(div('Cell clustering in progress. Please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
         shinyjs::show("clusterBarplotATAC_loader")
     #Run clustering
     proj_default <<- addClusters(input = proj_default, reducedDims = "IterativeLSI", method = "Seurat", name = "Clusters", 
@@ -1508,23 +1500,23 @@ server <- function(input, output, session) {
             axis.line = element_line(colour = "black")) +
       labs(x="", y="Percent of cells", fill="Clusters")
     gp <- plotly::ggplotly(p, tooltip = c("x", "y"))
-    session$sendCustomMessage("handler_startLoader", c("clust4_loader", 50))
-    session$sendCustomMessage("handler_startLoader", c("clust4_loader", 75))
     
     output$clusterBarplotATAC <- renderPlotly({print(gp)})
     updateMetadataATAC()
     updateSelInpColorATAC()
-    #updateInpuTrajectoryClustersATAC()
     session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " ADDITIONAL DIMENSIONALITY\nREDUCTION METHODS", " TRAJECTORY ANALYSIS", 
                                                       " MARKERS' IDENTIFICATION"))
     session$sendCustomMessage("handler_disableAllButtons", "umapConfirmATAC")
     }
       }, error = function(e) {
         print(paste("Error :  ", e))
-        session$sendCustomMessage("handler_alert", "There was an error with the Clustering procedure.")
+        session$sendCustomMessage("handler_alert", "There was an error with the clustering procedure.")
       }, finally = {
+        end.time <- Sys.time()
+        time.taken <- as.numeric (end.time - start.time, units = "mins")
+        print(paste0("!!!!-----Clustering_end_Mins_taken-----", time.taken))
+        
         removeModal()
-        session$sendCustomMessage("handler_startLoader", c("clust4_loader", 100))
         Sys.sleep(1)
         session$sendCustomMessage("handler_finishLoader", "clust4_loader")
         session$sendCustomMessage("handler_enableAllButtons", "clusterConfirmATAC")
@@ -1549,12 +1541,15 @@ server <- function(input, output, session) {
   
   #------------------Umap/tSNE/DFM tab---------------------------------------
   observeEvent(input$umapRunUmapTsneATAC, {
-    session$sendCustomMessage("handler_startLoader", c("dim_red3_loader", 10))
+    start.time <- Sys.time()
+    print(paste0("!!!!-----UMAP/tsne_start-----", start.time))
+    
+    
     session$sendCustomMessage("handler_disableAllButtons", "umapRunUmapTsneATAC")
     tryCatch({
       if (identical(proj_default, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else {
-        
+        showModal(modalDialog(div('UMAP and tSNE calculation. Please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;'))
         ## Dimensionality Reduction ##
         proj_default <<- addUMAP(ArchRProj = proj_default, reducedDims = "IterativeLSI", name = "umap", nNeighbors = 30, minDist = 0.5, metric = "cosine", seed = 4,
                                  force = T, n_components = as.numeric(input$umapOutComponentsATAC), dimsToUse = 1:as.numeric(input$umapDimensionsATAC))
@@ -1566,11 +1561,9 @@ server <- function(input, output, session) {
         df_2d <- proj_default@embeddings$UMAP$df[, 1:2]
         proj_default@embeddings$UMAP$df <- df_2d
         
-        session$sendCustomMessage("handler_startLoader", c("dim_red3_loader", 50))
         proj_default <<- addTSNE(ArchRProj = proj_default, reducedDims = "IterativeLSI", name = "tsne", perplexity = 30, force = T, 
                                  n_components = as.numeric(input$umapOutComponentsATAC), dimsToUse = 1:as.numeric(input$umapDimensionsATAC))
         
-        session$sendCustomMessage("handler_startLoader", c("dim_red3_loader", 75))
         saveArchRProject(proj_default)
         updateReductionATAC()
         session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " DOUBLETS' DETECTION", " FEATURE INSPECTION", " CLUSTERS' ANNOTATION"))
@@ -1579,21 +1572,22 @@ server <- function(input, output, session) {
         print(paste("Error :  ", e))
         session$sendCustomMessage("handler_alert", "There was an error with the generation of UMAP or tSNE.")
       }, finally = {
-        session$sendCustomMessage("handler_startLoader", c("dim_red3_loader", 100))
+        end.time <- Sys.time()
+        time.taken <- as.numeric (end.time - start.time, units = "mins")
+        print(paste0("!!!!-----Umap/tsne_end_Mins_taken-----", time.taken))
+        
+        removeModal()
         Sys.sleep(1)
-        session$sendCustomMessage("handler_finishLoader", "dim_red3_loader")
         session$sendCustomMessage("handler_enableAllButtons", "umapRunUmapTsneATAC")
       })
   })
   
   updateReductionATAC <- function()
   {
-    session$sendCustomMessage("handler_startLoader", c("dim_red4_loader", 10))
     session$sendCustomMessage("handler_disableAllButtons", "umapConfirmATAC")
     tryCatch({
       if (identical(proj_default, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else {
-        showModal(modalDialog(div('Analysis in Progress. This operation may take several minutes, please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
         shinyjs::show("umapPlotATAC_loader")
         #get input
         dims <- as.numeric(input$umapDimensionsPlotATAC)
@@ -1614,11 +1608,10 @@ server <- function(input, output, session) {
         reduc_data <- left_join(archr_object_reduc, meta)
         print(head(reduc_data))
         
-        session$sendCustomMessage("handler_startLoader", c("dim_red4_loader", 50))
         colnames(reduc_data) <- gsub("IterativeLSI#", "", colnames(reduc_data))
         colnames(reduc_data) <- gsub("Dimension_", "", colnames(reduc_data))
         
-        if(type == "umap" & dims == 2)
+        if(type == "umap" & dims == 2 & dims <= ncol(archr_object_reduc)-1 )
         {
           p <- ggplot(data=reduc_data, aes_string(x="UMAP_1", y="UMAP_2", fill=input$umapColorByATAC)) +
             geom_point(size= as.numeric(input$umapDotSizeATAC), shape=21, alpha= as.numeric(input$umapDotOpacityATAC), stroke=as.numeric(input$umapDotBorderATAC))+
@@ -1636,7 +1629,7 @@ server <- function(input, output, session) {
             labs(x="UMAP 1", y="UMAP 2", color="Cell type", title = "", fill="Color")
           output$umapPlotATAC <- renderPlotly({plotly::ggplotly(p)})
         }
-        else if(type == "umap" & dims == 3)
+        else if(type == "umap" & dims == 3 & dims <= ncol(archr_object_reduc)-1)
         {
           p <- plot_ly(reduc_data, x=~UMAP_1, y=~UMAP_2, z=~UMAP_3, type="scatter3d", alpha = as.numeric(input$umapDotOpacityATAC), mode="markers", color=as.formula(paste0('~', input$umapColorByATAC)),
                        marker = list(size = as.numeric(input$umapDotSizeATAC), 
@@ -1646,7 +1639,7 @@ server <- function(input, output, session) {
           
           output$umapPlotATAC <- renderPlotly({print(p)})
         }
-        else if(type == "tsne" & dims == 2)
+        else if(type == "tsne" & dims == 2 & dims <= ncol(archr_object_reduc)-1)
         {
           p <- ggplot(data=reduc_data, aes_string(x="TSNE_1", y="TSNE_2", fill=input$umapColorByATAC)) +
             geom_point(size= as.numeric(input$umapDotSizeATAC), shape=21, alpha= as.numeric(input$umapDotOpacityATAC), stroke=as.numeric(input$umapDotBorderATAC)) +
@@ -1664,7 +1657,7 @@ server <- function(input, output, session) {
             labs(x="tSNE 1", y="tSNE 2", color="Cell type", title = "", fill="Color")
           output$umapPlotATAC <- renderPlotly({plotly::ggplotly(p)})  
         }
-        else if(type == "tsne" & dims == 3)
+        else if(type == "tsne" & dims == 3 & dims <= ncol(archr_object_reduc)-1)
         {
           p <- plot_ly(reduc_data, x=~TSNE_1, y=~TSNE_2, z=~TSNE_3, type="scatter3d", mode="markers", alpha = as.numeric(input$umapDotOpacityATAC), color=as.formula(paste0('~', input$umapColorByATAC)), 
                        marker = list(size = as.numeric(input$umapDotSizeATAC), 
@@ -1673,15 +1666,16 @@ server <- function(input, output, session) {
                        colors = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(meta[, input$umapColorByATAC]))) ) 
           output$umapPlotATAC <- renderPlotly({print(p)})
         }
+        else
+        {
+          session$sendCustomMessage("handler_alert", "There was an error with the number of dimensions of the plot. Please set Dimensions to 2D and update the plot.")
+        }
       }
     }, error = function(e) {
       print(paste("Error :  ", e))
       session$sendCustomMessage("handler_alert", "There was an error during of UMAP or tSNE plotting.")
     }, finally = {
-      removeModal()
-      session$sendCustomMessage("handler_startLoader", c("dim_red4_loader", 100))
       Sys.sleep(1)
-      session$sendCustomMessage("handler_finishLoader", "dim_red4_loader")
       session$sendCustomMessage("handler_enableAllButtons", "umapConfirmATAC")
     })
   }
@@ -1691,7 +1685,9 @@ server <- function(input, output, session) {
   })
   
   observeEvent(input$umapRunUmap, {
-    session$sendCustomMessage("handler_startLoader", c("dim_red1_loader", 10))
+    start.time <- Sys.time()
+    print(paste0("!!!!-----UMAP_start-----", start.time))
+    
     session$sendCustomMessage("handler_disableAllButtons", "umapRunUmap")
     session$sendCustomMessage("handler_disableAllButtons", "umapRunTsne")
     session$sendCustomMessage("handler_disableAllButtons", "umapRunDFM")
@@ -1700,21 +1696,22 @@ server <- function(input, output, session) {
       if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else if (!"pca" %in% names(seurat_object)) session$sendCustomMessage("handler_alert", "Please, first execute PRINCIPAL COMPONENT ANALYSIS.")
       else {
-        showModal(modalDialog(div('Analysis in Progress. This operation may take several minutes, please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
-        session$sendCustomMessage("handler_startLoader", c("dim_red1_loader", 25))
-        seurat_object <<- RunUMAP(seurat_object, dims = 1:as.numeric(input$umapPCs), seed.use = as.numeric(input$umapSeed), n.components = as.numeric(input$umapOutComponents), reduction = "pca") 
+        showModal(modalDialog(div('UMAP reduction is calculated! Please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
+        seurat_object <<- RunUMAP(seurat_object, dims = 1:as.numeric(input$umapPCs), seed.use = as.numeric(input$umapSeed), n.components = as.numeric(input$umapOutComponents), reduction = "pca")
         session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " TRAJECTORY ANALYSIS", " GENE REGULATORY NETWORK\nANALYSIS"))
         updateUmapTypeChoices("umap")
         updateReduction2("umap")
       }
     }, error = function(e) {
       print(paste("Error :  ", e))
-      session$sendCustomMessage("handler_alert", "There was an error with the UMAP procedure.")
+      session$sendCustomMessage("handler_alert", "There was an error with the UMAP calculation.")
     }, finally = {
+      end.time <- Sys.time()
+      time.taken <- as.numeric (end.time - start.time, units = "mins")
+      print(paste0("!!!!-----UMAP_end_Mins_taken-----", time.taken))
+
       removeModal()
-      session$sendCustomMessage("handler_startLoader", c("dim_red1_loader", 100))
       Sys.sleep(1)
-      session$sendCustomMessage("handler_finishLoader", "dim_red1_loader")
       session$sendCustomMessage("handler_enableAllButtons", "umapRunUmap")
       session$sendCustomMessage("handler_enableAllButtons", "umapRunTsne")
       session$sendCustomMessage("handler_enableAllButtons", "umapRunDFM")
@@ -1723,7 +1720,6 @@ server <- function(input, output, session) {
   })
   
   observeEvent(input$umapRunTsne, {
-    session$sendCustomMessage("handler_startLoader", c("dim_red1_loader", 10))
     session$sendCustomMessage("handler_disableAllButtons", "umapRunUmap")
     session$sendCustomMessage("handler_disableAllButtons", "umapRunTsne")
     session$sendCustomMessage("handler_disableAllButtons", "umapRunDFM")
@@ -1732,8 +1728,7 @@ server <- function(input, output, session) {
       if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else if (!"pca" %in% names(seurat_object)) session$sendCustomMessage("handler_alert", "Please, first execute PRINCIPAL COMPONENT ANALYSIS.")
       else {
-        showModal(modalDialog(div('Analysis in Progress. This operation may take several minutes, please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
-        session$sendCustomMessage("handler_startLoader", c("dim_red1_loader", 25))
+        showModal(modalDialog(div('tSNE reduction is calculated! Please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
         if(as.numeric(input$umapOutComponents) == 2)
           seurat_object <<- RunTSNE(seurat_object, dims = 1:as.numeric(input$umapPCs), seed.use = as.numeric(input$umapSeed), dim.embed = 2, reduction = "pca", verbose = T)
         else
@@ -1745,12 +1740,10 @@ server <- function(input, output, session) {
       }
     }, error = function(e) {
       print(paste("Error :  ", e))
-      session$sendCustomMessage("handler_alert", "There was an error with the tSNE procedure.")
+      session$sendCustomMessage("handler_alert", "There was an error with the tSNE calculation.")
     }, finally = {
       removeModal()
-      session$sendCustomMessage("handler_startLoader", c("dim_red1_loader", 100))
       Sys.sleep(1)
-      session$sendCustomMessage("handler_finishLoader", "dim_red1_loader")
       session$sendCustomMessage("handler_enableAllButtons", "umapRunUmap")
       session$sendCustomMessage("handler_enableAllButtons", "umapRunTsne")
       session$sendCustomMessage("handler_enableAllButtons", "umapRunDFM")
@@ -1759,7 +1752,6 @@ server <- function(input, output, session) {
   })
   
   observeEvent(input$umapRunDFM, {
-    session$sendCustomMessage("handler_startLoader", c("dim_red1_loader", 10))
     session$sendCustomMessage("handler_disableAllButtons", "umapRunUmap")
     session$sendCustomMessage("handler_disableAllButtons", "umapRunTsne")
     session$sendCustomMessage("handler_disableAllButtons", "umapRunDFM")
@@ -1768,8 +1760,7 @@ server <- function(input, output, session) {
       if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else if (!"pca" %in% names(seurat_object)) session$sendCustomMessage("handler_alert", "Please, first execute PRINCIPAL COMPONENT ANALYSIS.")
       else {
-        showModal(modalDialog(div('Analysis in Progress. This operation may take several minutes, please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
-        session$sendCustomMessage("handler_startLoader", c("dim_red1_loader", 25))
+        showModal(modalDialog(div('Diffusion map reduction is calculated! Please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
         #prepare input
         dfm_in <- as.data.frame(seurat_object@reductions[['pca']]@cell.embeddings)
         dfm_in$Cell_id <- rownames(dfm_in)
@@ -1788,12 +1779,10 @@ server <- function(input, output, session) {
       }
     }, error = function(e) {
       print(paste("Error :  ", e))
-      session$sendCustomMessage("handler_alert", "There was an error with the Diffusion Map procedure.")
+      session$sendCustomMessage("handler_alert", "There was an error with the Diffusion Map calculation.")
     }, finally = {
       removeModal()
-      session$sendCustomMessage("handler_startLoader", c("dim_red1_loader", 100))
       Sys.sleep(1)
-      session$sendCustomMessage("handler_finishLoader", "dim_red1_loader")
       session$sendCustomMessage("handler_enableAllButtons", "umapRunUmap")
       session$sendCustomMessage("handler_enableAllButtons", "umapRunTsne")
       session$sendCustomMessage("handler_enableAllButtons", "umapRunDFM")
@@ -1802,7 +1791,9 @@ server <- function(input, output, session) {
   })
   
   observeEvent(input$umapRunPhate, {
-    session$sendCustomMessage("handler_startLoader", c("dim_red1_loader", 10))
+    start.time <- Sys.time()
+    print(paste0("!!!!-----Phate_start-----", start.time))
+    
     session$sendCustomMessage("handler_disableAllButtons", "umapRunUmap")
     session$sendCustomMessage("handler_disableAllButtons", "umapRunTsne")
     session$sendCustomMessage("handler_disableAllButtons", "umapRunDFM")
@@ -1811,8 +1802,7 @@ server <- function(input, output, session) {
       if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else if (!"pca" %in% names(seurat_object)) session$sendCustomMessage("handler_alert", "Please, first execute PRINCIPAL COMPONENT ANALYSIS.")
       else {
-        showModal(modalDialog(div('Analysis in Progress. This operation may take several minutes, please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
-        session$sendCustomMessage("handler_startLoader", c("dim_red1_loader", 25))
+        showModal(modalDialog(div('PHATE reduction is calculated! This is slow procedure, please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
         seurat_object <<- RunPHATE(seurat_object, dims = 1:as.numeric(input$umapPCs), n.components = as.numeric(input$umapOutComponents), reduction = "pca", seed.use = as.numeric(input$umapSeed))
         session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " TRAJECTORY ANALYSIS"))
         updateUmapTypeChoices("phate")
@@ -1820,12 +1810,14 @@ server <- function(input, output, session) {
       }
     }, error = function(e) {
       print(paste("Error :  ", e))
-      session$sendCustomMessage("handler_alert", "There was an error with the Phate procedure.")
+      session$sendCustomMessage("handler_alert", "There was an error with the Phate calculation.")
     }, finally = {
+      end.time <- Sys.time()
+      time.taken <- as.numeric (end.time - start.time, units = "mins")
+      print(paste0("!!!!-----Phate_end_Mins_taken-----", time.taken))
+      
       removeModal()
-      session$sendCustomMessage("handler_startLoader", c("dim_red1_loader", 100))
       Sys.sleep(1)
-      session$sendCustomMessage("handler_finishLoader", "dim_red1_loader")
       session$sendCustomMessage("handler_enableAllButtons", "umapRunUmap")
       session$sendCustomMessage("handler_enableAllButtons", "umapRunTsne")
       session$sendCustomMessage("handler_enableAllButtons", "umapRunDFM")
@@ -1839,12 +1831,14 @@ server <- function(input, output, session) {
   })
   
   #------------------DEA tab-----------------------------------------------
-  observeEvent(input$findMarkersConfirm, { 
-    session$sendCustomMessage("handler_startLoader", c("DEA1_loader", 10))
+  observeEvent(input$findMarkersConfirm, {
+    start.time <- Sys.time()
+    print(paste0("!!!!-----DEA_start-----", start.time))
+    
     session$sendCustomMessage("handler_disableAllButtons", "findMarkersConfirm")
     tryCatch({
       if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
-      else if (identical(seurat_object@meta.data$seurat_clusters, NULL)) session$sendCustomMessage("handler_alert", "Please, execute CLUSTERING first and then re-run UMAP or tSNE or Diffusion Map above.")
+      else if (identical(seurat_object@meta.data$seurat_clusters, NULL)) session$sendCustomMessage("handler_alert", "Please, execute CLUSTERING first and then proceed with Marker Gene identification.")
       else {
         showModal(modalDialog(div('Analysis in Progress. This operation may take several minutes, please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
         markers_logFCBase <<- input$findMarkersLogBase
@@ -1865,35 +1859,36 @@ server <- function(input, output, session) {
           {
             if (!is.null(seurat_object@misc$markers))
             {
+              seurat_object@misc$markers <<- seurat_object@misc$markers[, c(7, 6, 1:5)]
               output$findMarkersTable <- renderDataTable(seurat_object@misc$markers, options = list(pageLength = 20), filter = 'top', rownames = FALSE)  
               export_markerGenes_RNA <<- seurat_object@misc$markers
             }
           }
         )
-        session$sendCustomMessage("handler_startLoader", c("DEA1_loader", 75))
+
         session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " FUNCTIONAL/MOTIF\nENRICHMENT ANALYSIS", " CLUSTERS' ANNOTATION"))
       }
     }, error = function(e) {
       print(paste("Error :  ", e))
       session$sendCustomMessage("handler_alert", "There was an error with the DE Analysis")
     }, finally = {
+      end.time <- Sys.time()
+      time.taken <- as.numeric (end.time - start.time, units = "mins")
+      print(paste0("!!!!-----DEA_end_Mins_taken-----", time.taken))
+      
       removeModal()
-      session$sendCustomMessage("handler_startLoader", c("DEA1_loader", 100))
       Sys.sleep(1)
-      session$sendCustomMessage("handler_finishLoader", c("DEA1_loader"))
       session$sendCustomMessage("handler_enableAllButtons", "findMarkersConfirm")
     })
   })
 
   observeEvent(input$findMarkersTop10HeatmapConfirm, {
     #DEA output rendering
-    
-    session$sendCustomMessage("handler_startLoader", c("DEA2_loader", 10))
     session$sendCustomMessage("handler_disableAllButtons", "findMarkersTop10HeatmapConfirm")
     tryCatch({
       if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else{
-        showModal(modalDialog(div('Analysis in Progress. This operation may take several minutes, please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
+        showModal(modalDialog(div('Rendering in progress. Please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
         shinyjs::show("findMarkersHeatmap_loader")
         
         top10 <- seurat_object@misc$markers %>% group_by(cluster) %>% top_n(n = 10, wt = eval(parse(text=markers_logFCBase))) 
@@ -1905,14 +1900,12 @@ server <- function(input, output, session) {
           downsampled <- subset(seurat_object, cells = sample(Cells(seurat_object), 1500))  
         }
         
-        session$sendCustomMessage("handler_startLoader", c("DEA2_loader", 30))
         scaled_tabe <- as.data.frame(downsampled@assays$RNA@scale.data)
         scaled_tabe$gene <- rownames(scaled_tabe)
         scaled_tabe_order <- as.data.frame(top10$gene)
         colnames(scaled_tabe_order)[1] <- "gene"
         scaled_tabe_final <- left_join(scaled_tabe_order, scaled_tabe)
         scaled_tabe_final <- na.omit(scaled_tabe_final)
-        session$sendCustomMessage("handler_startLoader", c("DEA2_loader", 50))
         tableCl <- downsampled@meta.data[, ]
         tableCl$Cell_id <- rownames(tableCl)
         tableCl <- tableCl[, c('Cell_id', 'seurat_clusters')]
@@ -1923,13 +1916,13 @@ server <- function(input, output, session) {
           x[x>max]<-max; 
           x
         }
-        session$sendCustomMessage("handler_startLoader", c("DEA2_loader", 70))
+
         final_mat <- scaled_tabe_final[, -1]
         final_mat <- final_mat[, tableCl$Cell_id]
         
         cols <- colorRampPalette(brewer.pal(12, "Paired"))(length(unique(tableCl$seurat_clusters)))
         names(cols) <- unique(tableCl$seurat_clusters)
-        session$sendCustomMessage("handler_startLoader", c("DEA2_loader", 90))
+        
         output$findMarkersHeatmap <- renderPlotly({
           heatmaply(clip(final_mat), Rowv = F, Colv = F, colors = rev(RdBu(256)), showticklabels = c(F, T), labRow  = scaled_tabe_final$gene, 
                     col_side_colors = tableCl$seurat_clusters, col_side_palette =  cols)
@@ -1937,24 +1930,21 @@ server <- function(input, output, session) {
       }
     }, error = function(e) {
       print(paste("Error :  ", e))
-      session$sendCustomMessage("handler_alert", "The selected Quality Control arguments cannot produce meaningful visualizations.")
+      session$sendCustomMessage("handler_alert", "There was an error with the visualization of the plot.")
     }, finally = {
       removeModal()
-      session$sendCustomMessage("handler_startLoader", c("DEA2_loader", 100))
       Sys.sleep(1)
-      session$sendCustomMessage("handler_finishLoader", "DEA2_loader")
       session$sendCustomMessage("handler_enableAllButtons", "findMarkersTop10HeatmapConfirm")
     })  
       
   })
   
   observeEvent(input$findMarkersTop10DotplotConfirm, {
-    session$sendCustomMessage("handler_startLoader", c("DEA3_loader", 10))
     session$sendCustomMessage("handler_disableAllButtons", "findMarkersTop10DotplotConfirm")
     tryCatch({
       if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else{
-        showModal(modalDialog(div('Analysis in Progress. This operation may take several minutes, please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
+        showModal(modalDialog(div('Rendering in progress. Please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
         shinyjs::show("findMarkersDotplot_loader")
         output$findMarkersDotplot <- renderPlotly(
           {
@@ -1967,24 +1957,23 @@ server <- function(input, output, session) {
       }
     }, error = function(e) {
       print(paste("Error :  ", e))
-      session$sendCustomMessage("handler_alert", "The selected Quality Control arguments cannot produce meaningful visualizations.")
+      session$sendCustomMessage("handler_alert", "There was an error with the visualization of the plot.")
     }, finally = {
       removeModal()
-      session$sendCustomMessage("handler_startLoader", c("DEA3_loader", 100))
       Sys.sleep(1)
-      session$sendCustomMessage("handler_finishLoader", "DEA3_loader")
       session$sendCustomMessage("handler_enableAllButtons", "findMarkersTop10DotplotConfirm")
     })
   })
   
   observeEvent(input$findMarkersSignatureAdd, {
-    session$sendCustomMessage("handler_startLoader", c("DEA4_loader", 10))
+    start.time <- Sys.time()
+    print(paste0("!!!!-----Signature_start-----", start.time))
+    
     session$sendCustomMessage("handler_disableAllButtons", "findMarkersSignatureAdd")
     tryCatch({
       if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else{
-        showModal(modalDialog(div('Analysis in Progress. This operation may take several minutes, please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
-        session$sendCustomMessage("handler_startLoader", c("DEA4_loader", 50))
+        showModal(modalDialog(div('Gene signature addition in progress. Please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
         markers <- list()
         varTextarea <- input$findMarkersSignatureMembers
         markers2 <- as.vector(unlist(strsplit(varTextarea, "\\n"))) 
@@ -1995,7 +1984,6 @@ server <- function(input, output, session) {
         sig_name <- input$findMarkersSignatureName
         print(sig_name)
         names(markers)[1] <- sig_name
-        session$sendCustomMessage("handler_startLoader", c("DEA4_loader", 70))
         
         genesFound <- markers2[(which(markers2 %in% rownames(seurat_object)))]
         print(genesFound)
@@ -2003,12 +1991,12 @@ server <- function(input, output, session) {
         if(length(genesFound) == 0)
         {
           print("inside all zero")
-          session$sendCustomMessage("handler_alert", "None of the selected genes were found in the dataset.The signature could not be calculated.")
+          session$sendCustomMessage("handler_alert", "None of the selected genes were found in the dataset.The signature scores could not be calculated.")
         }
         else
         {
           seurat_object <<- AddModuleScore_UCell(seurat_object, features = markers)
-          updateSignatures()
+          updateGeneSearchFP()
           updateMetadata()
           if(length(genesFound) != length(markers2))
           {
@@ -2016,41 +2004,33 @@ server <- function(input, output, session) {
             session$sendCustomMessage("handler_alert", "Some of the selected genes were not found in the dataset and are excluded from the signature's calculation.")
           }
         }
-        session$sendCustomMessage("handler_startLoader", c("DEA4_loader", 90))
-        
       }
     }, error = function(e) {
       print(paste("Error :  ", e))
       session$sendCustomMessage("handler_alert", "The signature could not be added.")
     }, finally = {
+      end.time <- Sys.time()
+      time.taken <- as.numeric (end.time - start.time, units = "mins")
+      print(paste0("!!!!-----Signature_end_Mins_taken-----", time.taken))
+      
       removeModal()
-      session$sendCustomMessage("handler_startLoader", c("DEA4_loader", 100))
       Sys.sleep(1)
-      session$sendCustomMessage("handler_finishLoader", "DEA4_loader")
       session$sendCustomMessage("handler_enableAllButtons", "findMarkersSignatureAdd")
     })
   })
     
 observeEvent(input$findMarkersFPConfirm, {
-  session$sendCustomMessage("handler_startLoader", c("DEA4_loader", 10))
   session$sendCustomMessage("handler_disableAllButtons", "findMarkersFPConfirm")
   tryCatch({
     if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
     else{
-      showModal(modalDialog(div('Analysis in Progress. This operation may take several minutes, please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
+      showModal(modalDialog(div('Rendering in progress. Please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
       shinyjs::show("findMarkersFeaturePlot_loader")
       
       if(input$findMarkersReductionType != "-")
       {
-        geneS <- ""
-        if(input$findMarkersFeatureSignature == "signature")
-        {
-          geneS <- input$findMarkersSignatureSelect
-        }
-        else
-        {
-          geneS <- input$findMarkersGeneSelect
-        }
+        geneS <- input$findMarkersGeneSelect
+        
         label_x <- ""
         label_y <- ""
         show_label <- as.logical(input$findMarkersLabels)
@@ -2083,7 +2063,7 @@ observeEvent(input$findMarkersFPConfirm, {
           label_x <- "PHATE_1"
           label_y <- "PHATE_2"
         }
-        session$sendCustomMessage("handler_startLoader", c("DEA4_loader", 50))
+        
         plot_temp <- FeaturePlot(seurat_object, features = geneS, pt.size = 1.5, label = show_label, label.size = 5, cols = c("lightgrey", "red"), 
                             order = order_exp, reduction = input$findMarkersReductionType, max.cutoff = maxq, min.cutoff = minq)
         
@@ -2101,7 +2081,6 @@ observeEvent(input$findMarkersFPConfirm, {
                 title = element_text(face = "bold", color = "black", size = 25, angle = 0)) +
           labs(x=label_x, y=label_y, title = geneS, color="")
         gp <- plotly::ggplotly(plot, tooltip = c("x", "y", geneS))
-        session$sendCustomMessage("handler_startLoader", c("DEA4_loader", 90))
         output$findMarkersFeaturePlot <- renderPlotly({
           gp
         })
@@ -2113,20 +2092,17 @@ observeEvent(input$findMarkersFPConfirm, {
     session$sendCustomMessage("handler_alert", "There was a problem with the generation of the plot.")
   }, finally = {
     removeModal()
-    session$sendCustomMessage("handler_startLoader", c("DEA4_loader", 100))
     Sys.sleep(1)
-    session$sendCustomMessage("handler_finishLoader", "DEA4_loader")
     session$sendCustomMessage("handler_enableAllButtons", "findMarkersFPConfirm")
   })
 })
 
 observeEvent(input$findMarkersFeaturePairConfirm, {
-  session$sendCustomMessage("handler_startLoader", c("DEA5_loader", 10))
   session$sendCustomMessage("handler_disableAllButtons", "findMarkersFeaturePairConfirm")
   tryCatch({
     if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
     else{
-      showModal(modalDialog(div('Analysis in Progress. This operation may take several minutes, please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
+      showModal(modalDialog(div('Rendering in progress. Please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
       shinyjs::show("findMarkersFPfeature1_loader")
       shinyjs::show("findMarkersFPfeature2_loader")
       shinyjs::show("findMarkersFPfeature1_2_loader")
@@ -2139,34 +2115,23 @@ observeEvent(input$findMarkersFeaturePairConfirm, {
     session$sendCustomMessage("handler_alert", "There was a problem with the generation of the plot.")
   }, finally = {
     removeModal()
-    session$sendCustomMessage("handler_startLoader", c("DEA5_loader", 100))
     Sys.sleep(1)
-    session$sendCustomMessage("handler_finishLoader", "DEA5_loader")
     session$sendCustomMessage("handler_enableAllButtons", "findMarkersFeaturePairConfirm")
   })
 })
 
 observeEvent(input$findMarkersViolinConfirm, {
-  session$sendCustomMessage("handler_startLoader", c("DEA6_loader", 10))
   session$sendCustomMessage("handler_disableAllButtons", "findMarkersViolinConfirm")
   tryCatch({
     if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
     else{
-      showModal(modalDialog(div('Analysis in Progress. This operation may take several minutes, please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
+      showModal(modalDialog(div('Rendering in progress. Please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
       shinyjs::show("findMarkersViolinPlot_loader")
-      if ((input$findMarkersViolinFeaturesSignature == "gene" & !identical(input$findMarkersGeneSelect2, NULL))
-          | (input$findMarkersViolinFeaturesSignature == "signature" & input$findMarkersViolinSignatureSelect != "-")){
+      if (!identical(input$findMarkersGeneSelect2, NULL)){
         output$findMarkersViolinPlot <- renderPlotly(
           {
-            geneS <- ""
-            if(input$findMarkersViolinFeaturesSignature == "gene")
-            {
-              geneS <- input$findMarkersGeneSelect2
-            }
-            else
-            {
-              geneS <- input$findMarkersViolinSignatureSelect
-            }
+            
+            geneS <- input$findMarkersGeneSelect2
             print(geneS)
             plot <- VlnPlot(seurat_object, features = geneS, pt.size = 0,
                             cols = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(seurat_object@meta.data[, 'seurat_clusters'])))) +
@@ -2190,20 +2155,17 @@ observeEvent(input$findMarkersViolinConfirm, {
     session$sendCustomMessage("handler_alert", "There was a problem with the generation of the plot.")
   }, finally = {
     removeModal()
-    session$sendCustomMessage("handler_startLoader", c("DEA6_loader", 100))
     Sys.sleep(1)
-    session$sendCustomMessage("handler_finishLoader", "DEA6_loader")
     session$sendCustomMessage("handler_enableAllButtons", "findMarkersViolinConfirm")
   })
 })
 
 observeEvent(input$findMarkersVolcanoConfirm, {
-  session$sendCustomMessage("handler_startLoader", c("DEA7_loader", 10))
   session$sendCustomMessage("handler_disableAllButtons", "findMarkersVolcanoConfirm")
   tryCatch({
     if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
     else{
-      showModal(modalDialog(div('Analysis in Progress. This operation may take several minutes, please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
+      showModal(modalDialog(div('Rendering in progress. Please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
       shinyjs::show("findMarkersVolcanoPlot_loader")
       diff_exp_genes <- seurat_object@misc$markers
       cluster_degs <- diff_exp_genes[which(diff_exp_genes$cluster == input$findMarkersClusterSelect), ]
@@ -2243,24 +2205,23 @@ observeEvent(input$findMarkersVolcanoConfirm, {
     session$sendCustomMessage("handler_alert", "There was a problem with the generation of the plot.")
   }, finally = {
     removeModal()
-    session$sendCustomMessage("handler_startLoader", c("DEA7_loader", 100))
     Sys.sleep(1)
-    session$sendCustomMessage("handler_finishLoader", "DEA7_loader")
     session$sendCustomMessage("handler_enableAllButtons", "findMarkersVolcanoConfirm")
   })
 })
 
 #ATAC   
-observeEvent(input$findMarkersConfirmATAC, { #ADD loading bar
-  session$sendCustomMessage("handler_startLoader", c("DEA8_loader", 10))
+observeEvent(input$findMarkersConfirmATAC, {
+  start.time <- Sys.time()
+  print(paste0("!!!!-----MarkerGenes_start-----", start.time))
+  
   session$sendCustomMessage("handler_disableAllButtons", "findMarkersConfirmATAC")
   tryCatch({
     if (identical(proj_default, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
     else {
-      showModal(modalDialog(div('Analysis in Progress. This operation may take several minutes, please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
+      showModal(modalDialog(div('Marker genes identification in progress. This operation may take several minutes, please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
       shinyjs::show("findMarkersGenesHeatmapATAC_loader")
       shinyjs::show("findMarkersGenesATACTable_loader")
-      session$sendCustomMessage("handler_startLoader", c("DEA8_loader", 10))
       markers_cluster <- getMarkerFeatures(
         ArchRProj = proj_default,
         useMatrix = "GeneScoreMatrix",
@@ -2270,15 +2231,11 @@ observeEvent(input$findMarkersConfirmATAC, { #ADD loading bar
         logFile =paste0(user_dir, "/Marker_Genes_file.log")
       )
       
-      session$sendCustomMessage("handler_startLoader", c("DEA8_loader", 50))
-      
       markers_clusterList <- getMarkers(markers_cluster, cutOff = paste0("FDR <= ",input$findMarkersFDRATAC," & Log2FC >= ",input$findMarkersLogFCATAC))
       markers_clusters_all <- as.data.frame(unlist(markers_clusterList))
       markers_clusters_all$Clusters <- rownames(markers_clusters_all)
       markers_clusters_all$Clusters <- gsub(pattern = "[.][0-9]+", replacement = "", x = markers_clusters_all$Clusters)
       rownames(markers_clusters_all) <- NULL
-      
-      session$sendCustomMessage("handler_startLoader", c("DEA8_loader", 80))
       
       output$findMarkersGenesTableATAC <- renderDataTable(expr = markers_clusters_all, filter = 'top', rownames = FALSE, options = list(pageLength = 10))
       export_markerGenes_ATAC <<- markers_clusters_all
@@ -2290,7 +2247,7 @@ observeEvent(input$findMarkersConfirmATAC, { #ADD loading bar
         cutOff = paste0("FDR <= ",input$findMarkersFDRATAC," & Log2FC >= ",input$findMarkersLogFCATAC),
         labelMarkers = NULL,
         transpose = TRUE,
-        returnMatrix = TRUE, #plotLog2FC = 
+        returnMatrix = TRUE,
         logFile =paste0(user_dir, "/Marker_Heatmap_file.log")
       )
       output$findMarkersGenesHeatmapATAC <- renderPlotly(expr = heatmaply(heatmap_matrix[, markers_clusterList10$name], colors=paletteContinuous(set = "blueYellow", n = 100))) 
@@ -2301,29 +2258,32 @@ observeEvent(input$findMarkersConfirmATAC, { #ADD loading bar
     print(paste("Error :  ", e))
     session$sendCustomMessage("handler_alert", "There was an error with the the detection of marker genes.")
   }, finally = {
+    end.time <- Sys.time()
+    time.taken <- as.numeric (end.time - start.time, units = "mins")
+    print(paste0("!!!!-----MarkerGenes_end_Mins_taken-----", time.taken))
+    
     removeModal()
-    session$sendCustomMessage("handler_startLoader", c("DEA8_loader", 100))
     Sys.sleep(1)
-    session$sendCustomMessage("handler_finishLoader", "DEA8_loader")
     session$sendCustomMessage("handler_enableAllButtons", "findMarkersConfirmATAC")
   })	
 })
 
 observeEvent(input$findMarkersPeaksConfirmATAC, {
-  session$sendCustomMessage("handler_startLoader", c("DEA9_loader", 10))
+  start.time <- Sys.time()
+  print(paste0("!!!!-----MarkerPeaks_start-----", start.time))
+  
+  
   session$sendCustomMessage("handler_disableAllButtons", "findMarkersPeaksConfirmATAC")
   tryCatch({
     if (identical(proj_default, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
     else {
-      showModal(modalDialog(div('Analysis in Progress. This operation may take several minutes, please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
+      showModal(modalDialog(div('Marker peaks identification in progress. Please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
       updateTabsetPanel(session, inputId = "ATAC_markers_tabs", selected = "Marker peaks (ATAC)")
       shinyjs::show("findMarkersPeaksHeatmapATAC_loader")
       shinyjs::show("findMarkersPeaksATACTable_loader")
       source("Peaks_ArchR_windows.R")
       
       #addArchRThreads(threads = as.numeric(input$upload10xATACThreads))
-      
-      session$sendCustomMessage("handler_startLoader", c("DEA9_loader", 20))
       
       # if(.Platform$OS.type == "windows")
       # {
@@ -2354,7 +2314,6 @@ observeEvent(input$findMarkersPeaksConfirmATAC, {
       # }
       
       #----custom peaks from BED
-      
       tile_matrix<-getMatrixFromProject(proj_default,"TileMatrix",binarize = TRUE, 
                                         logFile =paste0(user_dir, "/get_Matrix_From_Project_file.log"))
       valid_chromosomes<-unique(rowData(tile_matrix)$seqnames)
@@ -2363,7 +2322,8 @@ observeEvent(input$findMarkersPeaksConfirmATAC, {
       proj_default_peaks<-read.delim(paste0(user_dir, "/bedFile.bed") ,header=F)
       proj_default_peaks<-proj_default_peaks[,c(1:3)]
       if(substr(proj_default_peaks[1,1], 1, 3) != "chr" || !is.numeric(proj_default_peaks[1,2]) || !is.numeric(proj_default_peaks[1,3])){
-        stop("Invalid bed file!! Check UCSC specifications in order to provide a valid bed file. Chromosome names should start with chr and start and end positions should be numeric integers. No header should be provided.")
+        stop("Invalid bed file!! Check UCSC specifications in order to provide a valid bed file. Chromosome names should start with chr and start and end positions 
+             should be numeric integers. No header should be provided.")
       }
       temp<-proj_default_peaks[,3]-proj_default_peaks[,2]
       if(all(temp<0)){
@@ -2379,16 +2339,9 @@ observeEvent(input$findMarkersPeaksConfirmATAC, {
       proj_default <<- addPeakSet(proj_default, peakSet = proj_default_peaks_gr, force=TRUE)
       proj_default <<- addPeakMatrix(proj_default, 
                                      logFile =paste0(user_dir, "/Peak_Matrix_file.log"))
-      #----
-      
-      session$sendCustomMessage("handler_startLoader", c("DEA9_loader", 40))
-      
-      #proj_default <<- addPeakMatrix(proj_default, force = TRUE, 
-      #                               logFile =paste0(user_dir, "/Peak_Matrix_file.log"))
+
       print(getPeakSet(proj_default))
       saveArchRProject(proj_default)
-      
-      session$sendCustomMessage("handler_startLoader", c("DEA9_loader", 60))
       
       markersPeaks <- getMarkerFeatures(
         ArchRProj = proj_default,
@@ -2399,14 +2352,11 @@ observeEvent(input$findMarkersPeaksConfirmATAC, {
         logFile =paste0(user_dir, "/Marker_Peaks_file.log")
       )
       
-      session$sendCustomMessage("handler_startLoader", c("DEA9_loader", 80))
-      
       markersPeaks_clusterList <- getMarkers(markersPeaks, cutOff = paste0("FDR <= ",input$findMarkersPeaksFDRATAC," & Log2FC >= ",input$findMarkersPeaksLogFCATAC))
       markersPeaks_clusters_all <- as.data.frame(unlist(markersPeaks_clusterList))
       markersPeaks_clusters_all$Clusters <- rownames(markersPeaks_clusters_all)
       markersPeaks_clusters_all$Clusters <- gsub(pattern = "[.][0-9]+", replacement = "", x = markersPeaks_clusters_all$Clusters)
       rownames(markersPeaks_clusters_all) <- NULL
-      session$sendCustomMessage("handler_startLoader", c("DEA9_loader", 95))
       output$findMarkersPeaksTableATAC <- renderDataTable(expr = markersPeaks_clusters_all, filter = 'top', rownames = FALSE, options = list(pageLength = 10))
       export_markerPeaks_ATAC <<- markersPeaks_clusters_all
       
@@ -2428,23 +2378,24 @@ observeEvent(input$findMarkersPeaksConfirmATAC, {
     }
   }, error = function(e) {
     print(paste("Error :  ", e))
-    session$sendCustomMessage("handler_alert", "There was an error with the the detection of marker genes.")
+    session$sendCustomMessage("handler_alert", "There was an error with the the detection of marker peaks.")
   }, finally = {
+    end.time <- Sys.time()
+    time.taken <- as.numeric (end.time - start.time, units = "mins")
+    print(paste0("!!!!-----MarkerPeaks_end_Mins_taken-----", time.taken))
+    
     removeModal()
-    session$sendCustomMessage("handler_startLoader", c("DEA9_loader", 100))
     Sys.sleep(1)
-    session$sendCustomMessage("handler_finishLoader", "DEA9_loader")
     session$sendCustomMessage("handler_enableAllButtons", "findMarkersPeaksConfirmATAC")
   })	
 })
 
 observeEvent(input$findMarkersFPConfirmATAC, {
-  session$sendCustomMessage("handler_startLoader", c("DEA10_loader", 10))
   session$sendCustomMessage("handler_disableAllButtons", "findMarkersFPConfirmATAC")
   tryCatch({
     if (identical(proj_default, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
     else {
-      showModal(modalDialog(div('Analysis in Progress. This operation may take several minutes, please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
+      showModal(modalDialog(div('Rendering in progress. Please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
       shinyjs::show("findMarkersFeaturePlotATAC_loader")
       
       p <- plotEmbedding(
@@ -2463,9 +2414,7 @@ observeEvent(input$findMarkersFPConfirmATAC, {
     session$sendCustomMessage("handler_alert", "There was an error with the the detection of marker genes.")
   }, finally = {
     removeModal()
-    session$sendCustomMessage("handler_startLoader", c("DEA10_loader", 100))
     Sys.sleep(1)
-    session$sendCustomMessage("handler_finishLoader", "DEA10_loader")
     session$sendCustomMessage("handler_enableAllButtons", "findMarkersFPConfirmATAC")
   })
 })
@@ -2496,18 +2445,27 @@ output$findMarkersPeaksATACExport <- downloadHandler(
   
 #------------------Doublet detection------------------------------------------
 observeEvent(input$doubletsConfirm, {
-  session$sendCustomMessage("handler_startLoader", c("doubletRNA_loader1", 10))
+  start.time <- Sys.time()
+  print(paste0("!!!!-----Doublets_start-----", start.time))
+  
   session$sendCustomMessage("handler_disableAllButtons", "doubletsConfirm")
   tryCatch({
     if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
     else
     {
-      showModal(modalDialog(div('Analysis in Progress. This operation may take several minutes, please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
+      showModal(modalDialog(div('Doublet detection in progress. Please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
+      
+      #delete previous results of doublet detection
+      for_delete <- grep("DF.classifications_|pANN_", colnames(seurat_object@meta.data))
+      if(length(for_delete) != 0)
+      {
+        seurat_object@meta.data <<- seurat_object@meta.data[, -for_delete]
+      }
+      
       homotypic.prop.seurat_object <- modelHomotypic(seurat_object@meta.data$seurat_clusters) 
       nExp_poi.seurat_object <- round( as.numeric(input$doubletsNExp) * nrow(seurat_object@meta.data) )  ## Assuming x% doublet formation rate
       nExp_poi.adj.seurat_object <- round(nExp_poi.seurat_object * (1-homotypic.prop.seurat_object) )
       pK_choose <- 0.09
-      session$sendCustomMessage("handler_startLoader", c("doubletRNA_loader1", 30))
       if(input$doubletsPKRadio == "auto")
       {
         #auto pK estimation
@@ -2522,7 +2480,7 @@ observeEvent(input$doubletsConfirm, {
       {
         pK_choose <- input$doubletsPK
       }
-      session$sendCustomMessage("handler_startLoader", c("doubletRNA_loader1", 60))
+      
       seurat_object <<- doubletFinder_v3(seurat_object, PCs = 1:as.numeric(input$doubletsPCs), pN = as.numeric(input$doubletsPN), pK = as.numeric(pK_choose), nExp = nExp_poi.seurat_object, reuse.pANN = FALSE, sct = FALSE)
       seurat_object <<- doubletFinder_v3(seurat_object, PCs = 1:as.numeric(input$doubletsPCs), pN = as.numeric(input$doubletsPN), pK = as.numeric(pK_choose), nExp = nExp_poi.adj.seurat_object, sct = FALSE)
       
@@ -2533,7 +2491,6 @@ observeEvent(input$doubletsConfirm, {
       #output 
       column_total_name <- paste0("DF.classifications_", as.numeric(input$doubletsPN), "_", pK_choose, "_", nExp_poi.seurat_object)
       column_not_homotypic_name <- paste0("DF.classifications_", as.numeric(input$doubletsPN), "_", pK_choose, "_", nExp_poi.adj.seurat_object) 
-      session$sendCustomMessage("handler_startLoader", c("doubletRNA_loader1", 80))
       df_total <- (table(seurat_object@meta.data[, column_total_name]))
       df_not_homotypic <- (table(seurat_object@meta.data[, column_not_homotypic_name]))
       print(head(seurat_object@meta.data))
@@ -2547,31 +2504,116 @@ observeEvent(input$doubletsConfirm, {
           cat(paste0("Total number of cells: ", nrow(seurat_object@meta.data), "\nTotal number of doublets: ", df_total["Doublet"], "\nHomotypic doublets:", df_total["Doublet"]-df_not_homotypic["Doublet"],
                      "\nNon-homotypic doublets:", df_not_homotypic["Doublet"]))
         })
+      
+      output$doubletPCAplot <- renderPlotly(
+        {
+          if(!is.null(seurat_object) & input$doubletsReduction != "-")
+          {
+            meta <- seurat_object@meta.data
+            meta$Cell_id <- rownames(meta)
+            label_x <- "PC_1"
+            label_y <- "PC_2"
+            selected_Reduction <- input$doubletsReduction
+            
+            if(selected_Reduction == "umap")
+            {
+              label_x <- "UMAP_1"
+              label_y <- "UMAP_2"
+            }
+            else if(selected_Reduction == "tsne")
+            {
+              label_x <- "tSNE_1"
+              label_y <- "tSNE_2"
+            }
+            else if(selected_Reduction == "dfm")
+            {
+              label_x <- "DC_1"
+              label_y <- "DC_2"
+            }
+            else if(selected_Reduction == "phate")
+            {
+              label_x <- "PHATE_1"
+              label_y <- "PHATE_2"
+            }
+            
+            plot1 <- DimPlot(seurat_object, reduction = selected_Reduction)
+            plot1_data <- plot1$data
+            plot1_data$Cell_id <- rownames(plot1_data)
+            plot1_data <- left_join(plot1_data, meta)
+            
+            p <- ggplot(plot1_data, aes_string(x=label_x, y=label_y, color=column_total_name))+
+              geom_point() +
+              theme_bw() +
+              labs(x=label_x, y=label_y)+
+              theme(legend.position = "right")
+            
+            gp <- plotly::ggplotly(p, tooltip = c("x", "y"))
+            print(gp)
+          }
+        }
+      )
     }
   }, error = function(e) 
   {
     print(paste("Error :  ", e))
-    session$sendCustomMessage("handler_alert", "There was an error with drawing the resutls.")
+    session$sendCustomMessage("handler_alert", "There was an error during doublets' detection.")
   }, finally = 
     {
+      end.time <- Sys.time()
+      time.taken <- as.numeric (end.time - start.time, units = "mins")
+      print(paste0("!!!!-----Doublets_end_Mins_taken-----", time.taken))
+      
       removeModal()
-      session$sendCustomMessage("handler_startLoader", c("doubletRNA_loader1", 100))
       Sys.sleep(1)
-      session$sendCustomMessage("handler_finishLoader", "doubletRNA_loader1")
       session$sendCustomMessage("handler_enableAllButtons", "doubletsConfirm")
     }
   )
 })
 
+observeEvent(input$doubletsRemove, { 
+  session$sendCustomMessage("handler_disableAllButtons", "doubletsRemove")
+  tryCatch({
+    if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
+    else
+    {
+      ident_to_remove <- "Doublet"
+      if(input$doubletsCellRemoval == "all")
+      {
+        Idents(seurat_object) <<- seurat_object@meta.data[, grep(x = colnames(seurat_object@meta.data), pattern = "DF.classifications")[1]]
+      }
+      else
+      {
+        Idents(seurat_object) <<- seurat_object@meta.data[, grep(x = colnames(seurat_object@meta.data), pattern = "DF.classifications")[2]]
+      }
+  
+      seurat_object <<- subset(seurat_object, idents = ident_to_remove, invert = TRUE)
+      Idents(seurat_object) <<- seurat_object$seurat_clusters
+      updateInputLRclusters()
+      updateMetadata()
+      shinyalert("Doublets were removed successfully.", type = "success")
+    }
+    }, error = function(e) 
+      {
+        print(paste("Error :  ", e))
+        shinyalert("There was an error during doublets removal. Maybe doublet detection is not completed?", type = "error")
+      }, finally = 
+      {
+        session$sendCustomMessage("handler_enableAllButtons", "doubletsRemove")
+      }
+  )
+})
+
 #ATAC 
 observeEvent(input$doubletsATACConfirm, {
-  session$sendCustomMessage("handler_startLoader", c("doubletATAC_loader2", 10))
+  start.time <- Sys.time()
+  print(paste0("!!!!-----Doublets_start-----", start.time))
+  
   session$sendCustomMessage("handler_disableAllButtons", "doubletsATACConfirm")
   tryCatch({
     if (identical(proj_default, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
     else
     {
-      showModal(modalDialog(div('Analysis in Progress. This operation may take several minutes, please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
+      showModal(modalDialog(div('Doublet detection in progress. Please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
       shinyjs::show("doubletATAC_loader3")
       shinyjs::show("doubletATAC_loader4")
       
@@ -2579,10 +2621,12 @@ observeEvent(input$doubletsATACConfirm, {
         input = proj_default,
         k = as.numeric(input$doubletsATACk), #Refers to how many cells near a "pseudo-doublet" to count.
         knnMethod = "umap", #Refers to the embedding to use for nearest neighbor search with doublet projection.
-        LSIMethod = as.numeric(input$doubletsATACLSI)
+        LSIMethod = as.numeric(input$doubletsATACLSI),
+        logFile =paste0(user_dir, "/Doublet_Scores_file.log")
       )
-      session$sendCustomMessage("handler_startLoader", c("doubletATAC_loader2", 30))
-      #plot1
+      
+      updateMetadataATAC()
+      #plot1 Doublet Score
       pal <- c("grey", "#FB8861FF", "#B63679FF", "#51127CFF", "#000004FF") #grey_magma
       df<-proj_default@embeddings$umap$df
       df$score<-proj_default$DoubletScore
@@ -2591,7 +2635,6 @@ observeEvent(input$doubletsATACConfirm, {
       xlim <- range(df[,1]) %>% extendrange(f = 0.05)
       ylim <- range(df[,2]) %>% extendrange(f = 0.05)
       
-      #Plot Doublet Score
       pscore <- ggPoint(
         x = df[,1],
         y = df[,2],
@@ -2609,8 +2652,8 @@ observeEvent(input$doubletsATACConfirm, {
         baseSize = 20
       ) + theme(axis.text.x = element_blank(), axis.ticks.x = element_blank(), 
                 axis.text.y = element_blank(), axis.ticks.y = element_blank())
-      session$sendCustomMessage("handler_startLoader", c("doubletATAC_loader2", 50))
-      #plot2
+      
+      #plot2 Doublet enrichment
       penrich <- ggPoint(
         x = df[,1],
         y = df[,2],
@@ -2629,7 +2672,6 @@ observeEvent(input$doubletsATACConfirm, {
       ) + theme(axis.text.x = element_blank(), axis.ticks.x = element_blank(), 
                 axis.text.y = element_blank(), axis.ticks.y = element_blank())
       
-      session$sendCustomMessage("handler_startLoader", c("doubletATAC_loader2", 70))
       output$doubletsScoreATAC <- renderPlot( {pscore} )
       
       output$doubletEnrichmentATAC <- renderPlot( {penrich} )
@@ -2640,25 +2682,49 @@ observeEvent(input$doubletsATACConfirm, {
     session$sendCustomMessage("handler_alert", "There was an error with drawing the resutls.")
   }, finally = 
     {
+      end.time <- Sys.time()
+      time.taken <- as.numeric (end.time - start.time, units = "mins")
+      print(paste0("!!!!-----Doublets_end_Mins_taken-----", time.taken))
+      
       removeModal()
-      session$sendCustomMessage("handler_startLoader", c("doubletATAC_loader2", 100))
       Sys.sleep(1)
-      session$sendCustomMessage("handler_finishLoader", "doubletATAC_loader2")
       session$sendCustomMessage("handler_enableAllButtons", "doubletsATACConfirm")
+    }
+  )
+})
+
+observeEvent(input$doubletsATACDelete, {
+  session$sendCustomMessage("handler_disableAllButtons", "doubletsATACDelete")
+  tryCatch({
+    if (identical(proj_default, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
+    else
+    {
+      proj_default <<- filterDoublets(proj_default, filterRatio = as.numeric(input$doubletsATACfilterRatio))
+      updateMetadataATAC()
+      shinyalert("Doublets were removed successfully.", type = "success")
+    }
+  }, error = function(e) 
+  {
+    print(paste("Error :  ", e))
+    shinyalert("There was an error during doublets removal.", type = "error")
+  }, finally = 
+    {
+      session$sendCustomMessage("handler_enableAllButtons", "doubletsATACDelete")
     }
   )
 })
 
 #------------------Cell cycle tab---------------------------------------------
   observeEvent(input$cellCycleRun, { 
-    session$sendCustomMessage("handler_startLoader", c("CC1_loader", 10))
-    session$sendCustomMessage("handler_startLoader", c("CC2_loader", 10))
+    start.time <- Sys.time()
+    print(paste0("!!!!-----Cell_cycle_start-----", start.time))
+    
     session$sendCustomMessage("handler_disableAllButtons", "cellCycleRun")
     tryCatch({
       if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else if (!"pca" %in% names(seurat_object)) session$sendCustomMessage("handler_alert", "Please, first execute PRINCIPAL COMPONENT ANALYSIS.") 
       else {
-        showModal(modalDialog(div('Analysis in Progress. This operation may take several minutes, please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
+        showModal(modalDialog(div('Cell cycle phase analysis in progress. Please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
         shinyjs::show("cellCyclePCA_loader")
         shinyjs::show("cellCycleBarplot_loader")
         
@@ -2692,7 +2758,7 @@ observeEvent(input$doubletsATACConfirm, {
               label_x <- "PC_1"
               label_y <- "PC_2"
               selected_Reduction <- input$cellCycleReduction
-              #
+              
               if(selected_Reduction == "umap")
               {
                 label_x <- "UMAP_1"
@@ -2730,7 +2796,6 @@ observeEvent(input$doubletsATACConfirm, {
             }
           }
         )
-        session$sendCustomMessage("handler_startLoader", c("CC1_loader", 80))
         
         output$cellCycleBarplot <- renderPlotly(
           {
@@ -2768,32 +2833,32 @@ observeEvent(input$doubletsATACConfirm, {
             plotly::ggplotly(p)
           }
         )
-        session$sendCustomMessage("handler_startLoader", c("CC2_loader", 80))
       }
     }, error = function(e) {
       print(paste("Error :  ", e))
-      session$sendCustomMessage("handler_alert", "There was an error with drawing the resutls.")
+      session$sendCustomMessage("handler_alert", "There was an error with cell cycle phase analysis.")
     }, finally = {
+      end.time <- Sys.time()
+      time.taken <- as.numeric (end.time - start.time, units = "mins")
+      print(paste0("!!!!-----Cell_cycle_end_Mins_taken-----", time.taken))
+      
       removeModal()
-      session$sendCustomMessage("handler_startLoader", c("CC1_loader", 100))
-      session$sendCustomMessage("handler_startLoader", c("CC2_loader", 100))
       Sys.sleep(1)
-      session$sendCustomMessage("handler_finishLoader", "CC1_loader")
-      session$sendCustomMessage("handler_finishLoader", "CC2_loader")
       session$sendCustomMessage("handler_enableAllButtons", "cellCycleRun")
     })
   })
   
   #------------------gProfiler tab-----------------------------------------------
   observeEvent(input$gProfilerConfirm, {
-    session$sendCustomMessage("handler_startLoader", c("gprof1_loader", 10))
-    session$sendCustomMessage("handler_startLoader", c("gprof2_loader", 10))
+    start.time <- Sys.time()
+    print(paste0("!!!!-----gProfiler_start-----", start.time))
+    
     session$sendCustomMessage("handler_disableAllButtons", "gProfilerConfirm")
     tryCatch({
       if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else if (identical(seurat_object@misc$markers, NULL)) session$sendCustomMessage("handler_alert", "Please, execute the gene differential analysis at the MARKERS' IDENTIFICATION tab first.")
       else {
-        showModal(modalDialog(div('Analysis in Progress. This operation may take several minutes, please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
+        showModal(modalDialog(div('Functional enrichment analysis in progress. Please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
         shinyjs::show("gProfilerManhattan_loader")
         
         cluster_temp <- input$gProfilerList
@@ -2868,7 +2933,6 @@ observeEvent(input$doubletsATACConfirm, {
                                                                   seurat_object@misc$markers[, markers_logFCBase] <= (as.numeric(input$gProfilerSliderLogFC)*(-1)) &
                                                                   seurat_object@misc$markers[, input$gprofilerRadio] < as.numeric(input$gProfilerSliderSignificance)), 'gene']
           }
-          session$sendCustomMessage("handler_startLoader", c("gprof1_loader", 60))
           
           names(gene_lists) <- cluster_temp
           
@@ -2883,23 +2947,21 @@ observeEvent(input$doubletsATACConfirm, {
           
           temp_df <- gostres$result
           output$gProfilerManhattan <- renderPlotly({ print(gostplot(gostres, capped = TRUE, interactive = TRUE)) })
-          session$sendCustomMessage("handler_startLoader", c("gprof2_loader", 80))
         
-        session$sendCustomMessage("handler_startLoader", c("gprof1_loader", 80))
         
-        output$gProfilerTable <- renderDataTable(temp_df[, c(1, 3:6, 9:11, 16)], options = list(pageLength = 10), rownames = F)
-        export_enrichedTerms_RNA <<- temp_df[, c(1, 3:6, 9:11, 16)]
+        output$gProfilerTable <- renderDataTable(temp_df[, c(1, 11, 3:6, 9, 10, 16)], options = list(pageLength = 10), rownames = F)
+        export_enrichedTerms_RNA <<- temp_df[, c(1, 11, 3:6, 9, 10, 16)]
       }
     }, error = function(e) {
       print(paste("Error :  ", e))
       session$sendCustomMessage("handler_alert", "There was an error with the Enrichment Analysis.")
     }, finally = {
+      end.time <- Sys.time()
+      time.taken <- as.numeric (end.time - start.time, units = "mins")
+      print(paste0("!!!!-----gProfiler_end_Mins_taken-----", time.taken))
+      
       removeModal()
-      session$sendCustomMessage("handler_startLoader", c("gprof1_loader", 100))
-      session$sendCustomMessage("handler_startLoader", c("gprof2_loader", 100))
       Sys.sleep(1)
-      session$sendCustomMessage("handler_finishLoader", "gprof1_loader")
-      session$sendCustomMessage("handler_finishLoader", "gprof2_loader")
       session$sendCustomMessage("handler_enableAllButtons", "gProfilerConfirm")
     })
   })
@@ -2936,17 +2998,19 @@ observeEvent(input$sendToFlame, {
     }
   }, error = function(e) {
     print(paste("Error :  ", e))
-    session$sendCustomMessage("handler_alert", "There was an error with the Enrichment Analysis.")
+    session$sendCustomMessage("handler_alert", "There was an error during the process of sending the results to FLAME.")
   })
 })
 
 observeEvent(input$findMotifsConfirmATAC, {
-  session$sendCustomMessage("handler_startLoader", c("motif_loader", 10))
+  start.time <- Sys.time()
+  print(paste0("!!!!-----Motif_start-----", start.time))
+  
   session$sendCustomMessage("handler_disableAllButtons", "findMarkersFPConfirmATAC")
   tryCatch({
     if (identical(proj_default, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
     else {
-      showModal(modalDialog(div('Analysis in Progress. This operation may take several minutes, please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
+      showModal(modalDialog(div('Motif enrichment analysis in Progress. This operation may take several minutes. Please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
       shinyjs::show("findMotifsHeatmapATAC_loader")
       shinyjs::show("findMotifsATACTable_loader")
       
@@ -2958,7 +3022,7 @@ observeEvent(input$findMotifsConfirmATAC, {
         testMethod = input$findMarkersPeaksTestATAC,
         logFile =paste0(user_dir, "/Marker_Peaks_file.log")
       )
-      session$sendCustomMessage("handler_startLoader", c("motif_loader", 50))
+
       proj_default <<- addMotifAnnotations(ArchRProj = proj_default, motifSet = input$findMotifsSetATAC, name = "Motif", force = T,
                                            logFile =paste0(user_dir, "/Motif_Annotation_file.log"))
       print("afterAddMotifAnno")
@@ -2971,14 +3035,12 @@ observeEvent(input$findMotifsConfirmATAC, {
       )
       
       print("afterPeakAno")
-      session$sendCustomMessage("handler_startLoader", c("motif_loader", 70))
       heatmapEM <- plotEnrichHeatmap(enrichMotifs, n = 10, transpose = TRUE, returnMatrix = T,
                                      logFile =paste0(user_dir, "/Motif_Heatmap_file.log"))
       print(head(heatmapEM))
       full_motif_table <- t(plotEnrichHeatmap(enrichMotifs, transpose = TRUE, returnMatrix = T, 
                                               logFile =paste0(user_dir, "/Motif_Heatmap_file.log")))
       print(head(full_motif_table))
-      session$sendCustomMessage("handler_startLoader", c("motif_loader", 90))
       output$findMotifsTableATAC <- renderDataTable(expr = full_motif_table, filter = 'top', options = list(pageLength = 10))
       export_motifs_ATAC <<- full_motif_table
       
@@ -2989,10 +3051,12 @@ observeEvent(input$findMotifsConfirmATAC, {
     print(paste("Error :  ", e))
     session$sendCustomMessage("handler_alert", "There was an error with the the detection of eriched motifs.")
   }, finally = {
+    end.time <- Sys.time()
+    time.taken <- as.numeric (end.time - start.time, units = "mins")
+    print(paste0("!!!!-----Motif_end_Mins_taken-----", time.taken))
+    
     removeModal()
-    session$sendCustomMessage("handler_startLoader", c("motif_loader", 100))
     Sys.sleep(1)
-    session$sendCustomMessage("handler_finishLoader", "motif_loader")
     session$sendCustomMessage("handler_enableAllButtons", "findMarkersFPConfirmATAC")
   })	
   
@@ -3016,14 +3080,15 @@ output$findMotifsATACExport <- downloadHandler(
 
   #------------------CIPR tab-----------------------------------------------
   observeEvent(input$annotateClustersConfirm, {
-    session$sendCustomMessage("handler_startLoader", c("annot1_loader", 10))
-    session$sendCustomMessage("handler_startLoader", c("annot2_loader", 10))
+    start.time <- Sys.time()
+    print(paste0("!!!!-----CIPR_start-----", start.time))
+    
     session$sendCustomMessage("handler_disableAllButtons", "annotateClustersConfirm")
     tryCatch({
       if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else if (identical(seurat_object@misc$markers, NULL)) session$sendCustomMessage("handler_alert", "Please, execute the gene differential analysis at the MARKERS' IDENTIFICATION tab first.")
       else {
-        showModal(modalDialog(div('Analysis in Progress. This operation may take several minutes, please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
+        showModal(modalDialog(div('Cluster annotation in progress. Please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
         shinyjs::show("annotateClustersCIPRDotplot_loader")
         
         marker_genes <- seurat_object@misc$markers
@@ -3049,8 +3114,6 @@ output$findMotifsATACExport <- downloadHandler(
         CIPR_top_results$index <- as.character(CIPR_top_results$index)
         CIPR_top_results$index <- factor(CIPR_top_results$index, levels = as.character(seq(1:length(seurat_object$seurat_clusters))))
         cols = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(CIPR_top_results$cluster)))
-        session$sendCustomMessage("handler_startLoader", c("annot1_loader", 50))
-        session$sendCustomMessage("handler_startLoader", c("annot2_loader", 50))
         
         p <- ggplot(CIPR_top_results, aes(x=index, y=identity_score, fill = cluster, size=7)) +
           theme_bw() +
@@ -3062,23 +3125,21 @@ output$findMotifsATACExport <- downloadHandler(
           theme(legend.position="top",
                 axis.text.x = element_text(vjust=0.5, hjust=1, angle = 90))
         
-        session$sendCustomMessage("handler_startLoader", c("annot1_loader", 80))
         output$annotateClustersCIPRTable <- renderDataTable(CIPR_top_results[], options = list(pageLength = 20), rownames = F) #remove Description
         export_annotation_RNA <<- CIPR_top_results[]
         
-        session$sendCustomMessage("handler_startLoader", c("annot2_loader", 80))
         output$annotateClustersCIPRDotplot <- renderPlotly({ print(p)})
       }
     }, error = function(e) {
       print(paste("Error :  ", e))
-      session$sendCustomMessage("handler_alert", "There was an error with Cluster Annotation.")
+      session$sendCustomMessage("handler_alert", "There was an error with cluster annotation.")
     }, finally = {
+      end.time <- Sys.time()
+      time.taken <- as.numeric (end.time - start.time, units = "mins")
+      print(paste0("!!!!-----CIPR_end_Mins_taken-----", time.taken))
+      
       removeModal()
-      session$sendCustomMessage("handler_startLoader", c("annot1_loader", 100))
-      session$sendCustomMessage("handler_startLoader", c("annot2_loader", 100))
       Sys.sleep(1)
-      session$sendCustomMessage("handler_finishLoader", "annot1_loader")
-      session$sendCustomMessage("handler_finishLoader", "annot2_loader")
       session$sendCustomMessage("handler_enableAllButtons", "annotateClustersConfirm")
     })
   })
@@ -3093,11 +3154,14 @@ output$findMotifsATACExport <- downloadHandler(
   
   #scATAC
   observeEvent(input$annotateClustersConfirmATAC, {
+    start.time <- Sys.time()
+    print(paste0("!!!!-----Integration_start-----", start.time))
+    
     session$sendCustomMessage("handler_disableAllButtons", "annotateClustersConfirmATAC")
     tryCatch({
       if (identical(proj_default, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else {
-        showModal(modalDialog(div('Analysis in Progress. This operation may take several minutes, please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
+        showModal(modalDialog(div('scATAC - scRNA-seq integration in progress. This operation may take several minutes, please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
         shinyjs::show("annotateClustersUMAP_loader")
         
         #######################################################################################################
@@ -3110,7 +3174,9 @@ output$findMotifsATACExport <- downloadHandler(
         
         proj_default <<- addGeneIntegrationMatrix(ArchRProj = proj_default, useMatrix = "GeneScoreMatrix", matrixName = "GeneIntegrationMatrix", reducedDims = "IterativeLSI",
                                                   seRNA = seRNA, addToArrow = FALSE, groupRNA = "seurat_clusters", nameCell = "predictedCell_Un", nameGroup = "predictedGroup_Un",
-                                                  nameScore = "predictedScore_Un")
+                                                  nameScore = "predictedScore_Un",
+                                                  logFile =paste0(user_dir, "/GIM1_file.log")
+                                                  )
         
         cM <- as.matrix(confusionMatrix(proj_default$Clusters, proj_default$predictedGroup_Un))
         preClust <- colnames(cM)[apply(cM, 1 , which.max)]
@@ -3133,13 +3199,17 @@ output$findMotifsATACExport <- downloadHandler(
         
         proj_default <<- addGeneIntegrationMatrix(ArchRProj = proj_default, useMatrix = "GeneScoreMatrix", matrixName = "GeneIntegrationMatrix", reducedDims = "IterativeLSI",
                                                   seRNA = seRNA, addToArrow = FALSE, groupList = groupList, groupRNA = "seurat_clusters", nameCell = "predictedCell_Co",
-                                                  nameGroup = "predictedGroup_Co", nameScore = "predictedScore_Co",force = T)
+                                                  nameGroup = "predictedGroup_Co", nameScore = "predictedScore_Co",force = T,
+                                                  logFile =paste0(user_dir, "/GIM2_file.log")
+                                                  )
         
         pal <- paletteDiscrete(values = as.character(seRNA$seurat_clusters))
         
         proj_default <<- addGeneIntegrationMatrix(ArchRProj = proj_default, useMatrix = "GeneScoreMatrix", matrixName = "GeneIntegrationMatrix", reducedDims = "IterativeLSI",
                                                   seRNA = seRNA, addToArrow = TRUE, groupList = groupList, groupRNA = "seurat_clusters", nameCell = "predictedCell",
-                                                  nameGroup = "predictedGroup", nameScore = "predictedScore",force = T)
+                                                  nameGroup = "predictedGroup", nameScore = "predictedScore",force = T,
+                                                  logFile =paste0(user_dir, "/GIM3_file.log")
+                                                  )
         saveArchRProject(ArchRProj = proj_default)
         
         #p1 <- plotEmbedding(proj_default, colorBy = "cellColData", name = "predictedGroup_Un", pal = pal, embedding = "umap")
@@ -3186,6 +3256,10 @@ output$findMotifsATACExport <- downloadHandler(
       print(paste("Error :  ", e))
       session$sendCustomMessage("handler_alert", "There was an error with the the annotation of the dataset.")
     }, finally = {
+      end.time <- Sys.time()
+      time.taken <- as.numeric (end.time - start.time, units = "mins")
+      print(paste0("!!!!-----Integration_end_Mins_taken-----", time.taken))
+      
       removeModal()
       Sys.sleep(1)
       session$sendCustomMessage("handler_enableAllButtons", "annotateClustersConfirmATAC")
@@ -3194,16 +3268,16 @@ output$findMotifsATACExport <- downloadHandler(
 
   #--------------------trajectory tab----------------------------------------
   observeEvent(input$trajectoryConfirm, {
-
-    session$sendCustomMessage("handler_startLoader", c("traj1_loader", 10))
-    session$sendCustomMessage("handler_startLoader", c("traj2_loader", 10))
+    start.time <- Sys.time()
+    print(paste0("!!!!-----Trajectory_start-----", start.time))
+    
     session$sendCustomMessage("handler_disableAllButtons", "trajectoryConfirm")
     tryCatch({
       if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else if (identical(seurat_object@meta.data$seurat_clusters, NULL)) session$sendCustomMessage("handler_alert", "Please, execute CLUSTERING first and then run UMAP, in the NON LINEAR DIMENSIONALITY REDUCTION tab.")
       else if (identical(seurat_object$umap, NULL)) session$sendCustomMessage("handler_alert", "Please, calculate UMAP first, in the NON LINEAR DIMENSIONALITY REDUCTION tab.")
       else {
-        showModal(modalDialog(div('Analysis in Progress. This operation may take several minutes, please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
+        showModal(modalDialog(div('Trajectory analysis in progress. This operation may take several minutes, please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
         shinyjs::show("trajectoryPlot_loader")
         shinyjs::show("trajectoryPseudotimePlot_loader")
         
@@ -3216,52 +3290,55 @@ output$findMotifsATACExport <- downloadHandler(
         
         reduction <- Embeddings(seurat_object, input$trajectoryReduction)
         
-        sds <- slingshot(reduction[, 1:as.numeric(input$trajectorySliderDimensions)], clusterLabels = seurat_object$seurat_clusters, 
-                         start.clus = input$trajectoryStart, end.clus = input$trajectoryEnd, stretch = 0)
-        
-        metaD$all_lin <- slingLineages(sds)
-        pt <- slingPseudotime(sds)
-        
-        for(i in 1:ncol(pt))
+        if(ncol(reduction) >= as.numeric(input$trajectorySliderDimensions)) #Out of bounds in the else
         {
-          temp_lin <- pt[, i]
-          seurat_object <<- AddMetaData(
-            object = seurat_object,
-            metadata = temp_lin,
-            col.name = paste0("Lineage", i)
-          )
+          sds <- slingshot(reduction[, 1:as.numeric(input$trajectorySliderDimensions)], clusterLabels = seurat_object$seurat_clusters, 
+                           start.clus = input$trajectoryStart, end.clus = input$trajectoryEnd, stretch = 0)
+          
+          metaD$all_lin <- slingLineages(sds)
+          pt <- slingPseudotime(sds)
+          
+          for(i in 1:ncol(pt))
+          {
+            temp_lin <- pt[, i]
+            seurat_object <<- AddMetaData(
+              object = seurat_object,
+              metadata = temp_lin,
+              col.name = paste0("Lineage", i)
+            )
+          }
+          
+          updateInputLineageList(names(metaD$all_lin))
+          updateMetadata()
+          
+          plot_D <- dittoDimPlot(seurat_object, "seurat_clusters",
+                                 do.label = TRUE,
+                                 labels.repel = TRUE, 
+                                 reduction.use = "umap",
+                                 add.trajectory.lineages = slingLineages(sds),
+                                 trajectory.cluster.meta = "seurat_clusters",
+                                 color.panel = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(seurat_object@meta.data[, 'seurat_clusters']))),
+                                 data.out = F)
+          
+          output$trajectoryPlot <- renderPlot({ print(plot_D)})
+          
+          plot_P <- dittoDimPlot(seurat_object, var = "Lineage1",  
+                                 do.label = F,
+                                 labels.repel = F, 
+                                 reduction.use = "umap",
+                                 add.trajectory.lineages = list((metaD$all_lin[["Lineage1"]])),
+                                 trajectory.cluster.meta = "seurat_clusters",
+                                 size = 2,
+                                 data.out = F) + scale_colour_gradientn(colours = plasma(100), na.value = "grey90") +
+            labs(colour = "Pseudotime") 
+          
+          output$trajectoryPseudotimePlot <- renderPlot({ print(plot_P) })
+          output$trajectoryText <- renderPrint({print(metaD$all_lin)})
         }
-        
-        updateInputLineageList(names(metaD$all_lin))
-        updateMetadata()
-        session$sendCustomMessage("handler_startLoader", c("traj1_loader", 50))
-        session$sendCustomMessage("handler_startLoader", c("traj2_loader", 50))
-        
-        plot_D <- dittoDimPlot(seurat_object, "seurat_clusters",
-                               do.label = TRUE,
-                               labels.repel = TRUE, 
-                               reduction.use = "umap",
-                               add.trajectory.lineages = slingLineages(sds),
-                               trajectory.cluster.meta = "seurat_clusters",
-                               color.panel = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(seurat_object@meta.data[, 'seurat_clusters']))),
-                               data.out = F)
-        
-        session$sendCustomMessage("handler_startLoader", c("traj1_loader", 80))
-        output$trajectoryPlot <- renderPlot({ print(plot_D)})
-        
-        plot_P <- dittoDimPlot(seurat_object, var = "Lineage1",  
-                               do.label = F,
-                               labels.repel = F, 
-                               reduction.use = "umap",
-                               add.trajectory.lineages = list((metaD$all_lin[["Lineage1"]])),
-                               trajectory.cluster.meta = "seurat_clusters",
-                               size = 2,
-                               data.out = F) + scale_colour_gradientn(colours = plasma(100), na.value = "grey90") +
-          labs(colour = "Pseudotime") 
-        
-        session$sendCustomMessage("handler_startLoader", c("traj2_loader", 80))
-        output$trajectoryPseudotimePlot <- renderPlot({ print(plot_P) })
-        output$trajectoryText <- renderPrint({print(metaD$all_lin)})
+        else
+        {
+          session$sendCustomMessage("handler_alert", "Out of bounds exception. The number of dimensions selected exceed the dimensions of the chosen reduction.")
+        }
       }
     }, error = function(e) {
       print(paste("Error :  ", e))
@@ -3269,24 +3346,23 @@ output$findMotifsATACExport <- downloadHandler(
       shinyjs::hide("trajectoryPseudotimePlot_loader")
       session$sendCustomMessage("handler_alert", "There was an error with Trajectory Analysis.")
     }, finally = {
+      end.time <- Sys.time()
+      time.taken <- as.numeric (end.time - start.time, units = "mins")
+      print(paste0("!!!!-----Trajectory_end_Mins_taken-----", time.taken))
+      
       removeModal()
-      session$sendCustomMessage("handler_startLoader", c("traj1_loader", 100))
-      session$sendCustomMessage("handler_startLoader", c("traj2_loader", 100))
       Sys.sleep(1)
-      session$sendCustomMessage("handler_finishLoader", "traj1_loader")
-      session$sendCustomMessage("handler_finishLoader", "traj2_loader")
       session$sendCustomMessage("handler_enableAllButtons", "trajectoryConfirm")
     })
   })
   
   observeEvent(input$trajectoryConfirmLineage, {
-    session$sendCustomMessage("handler_startLoader", c("traj2_loader", 10))
     session$sendCustomMessage("handler_disableAllButtons", "trajectoryConfirmLineage")
     tryCatch({
       if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else {
         #Lineage view
-        showModal(modalDialog(div('Analysis in Progress. This operation may take several minutes, please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
+        showModal(modalDialog(div('Rendering in progress. Please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
         plot_P <- dittoDimPlot(seurat_object, var = input$trajectoryLineageSelect,
                                do.label = F,
                                labels.repel = F,
@@ -3297,37 +3373,36 @@ output$findMotifsATACExport <- downloadHandler(
                                rename.var.groups = "Pseudotime",
                                data.out = F) + scale_colour_gradientn(colours = plasma(100), na.value = "grey90") +
           labs(colour = "Pseudotime")
-        session$sendCustomMessage("handler_startLoader", c("traj2_loader", 80))
         
         output$trajectoryPseudotimePlot <- renderPlot({ print(plot_P) })
       }
     }, error = function(e) {
       print(paste("Error :  ", e))
-      session$sendCustomMessage("handler_alert", "There was an error with viewing Trajectory Lineage.")
+      session$sendCustomMessage("handler_alert", "There was an error with the visualization of the plot.")
     }, finally = {
       removeModal()
-      session$sendCustomMessage("handler_startLoader", c("traj2_loader", 100))
       Sys.sleep(1)
-      session$sendCustomMessage("handler_finishLoader", "traj2_loader")
       session$sendCustomMessage("handler_enableAllButtons", "trajectoryConfirmLineage")
     })
   })
   
   observeEvent(input$trajectoryConfirmATAC, {
-    session$sendCustomMessage("handler_startLoader", c("traj3_loader", 10))
+    start.time <- Sys.time()
+    print(paste0("!!!!-----Trajectory_start-----", start.time))
+    
     session$sendCustomMessage("handler_disableAllButtons", "trajectoryConfirmATAC")
     tryCatch({
       if (identical(proj_default, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else {
-        showModal(modalDialog(div('Analysis in Progress. This operation may take several minutes, please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
+        showModal(modalDialog(div('Trajectory analysis in Progress. This operation may take several minutes, please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
         cols_to_delete <- grep(pattern = "^Lineage", x = colnames(getCellColData(proj_default)))
         if(length(cols_to_delete) != 0)
         {
           metadata_copy <- getCellColData(proj_default)
           metadata_copy[cols_to_delete] <- NULL
-          proj_default@cellColData <- metadata_copy
+          proj_default@cellColData <<- metadata_copy
         }
-        session$sendCustomMessage("handler_startLoader", c("traj3_loader", 50))
+        
         #run slingshot
         rD <- getEmbedding(ArchRProj = proj_default, embedding = "umap")
         groups <- getCellColData(ArchRProj = proj_default, select = input$trajectoryGroupByATAC) #"Clusters", #predictedGroup_Co
@@ -3342,7 +3417,7 @@ output$findMotifsATACExport <- downloadHandler(
           start.clus = starCl, 
           end.clus = endCl
         )
-        session$sendCustomMessage("handler_startLoader", c("traj3_loader", 80))
+        
         #add lineages to the object
         for(i in 1:length(slingLineages(sds))) #sds@metadata$lineages
         {
@@ -3361,26 +3436,26 @@ output$findMotifsATACExport <- downloadHandler(
       }
     }, error = function(e) {
       print(paste("Error :  ", e))
-      session$sendCustomMessage("handler_alert", "There was an error with the the trajectory analysis.")
+      session$sendCustomMessage("handler_alert", "There was an error during the trajectory analysis.")
     }, finally = {
+      end.time <- Sys.time()
+      time.taken <- as.numeric (end.time - start.time, units = "mins")
+      print(paste0("!!!!-----Trajectory_end_Mins_taken-----", time.taken))
+      
       removeModal()
-      session$sendCustomMessage("handler_startLoader", c("traj3_loader", 100))
       Sys.sleep(1)
-      session$sendCustomMessage("handler_finishLoader", "traj3_loader")
       session$sendCustomMessage("handler_enableAllButtons", "trajectoryConfirmATAC")
     })
   }) 
   
   observeEvent(input$trajectoryConfirmLineageATAC, {
-    session$sendCustomMessage("handler_startLoader", c("traj4_loader", 10))
     session$sendCustomMessage("handler_disableAllButtons", "trajectoryConfirmATAC")
     tryCatch({
       if (identical(proj_default, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else {
-        showModal(modalDialog(div('Analysis in Progress. This operation may take several minutes, please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
+        showModal(modalDialog(div('Rendering in progress. This operation may take several minutes, please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
         shinyjs::show("trajectoryPseudotimePlotATAC_loader")
         
-        session$sendCustomMessage("handler_startLoader", c("traj4_loader", 50))
         p <- plotTrajectory(proj_default, trajectory = input$trajectoryLineageSelectATAC, colorBy = "cellColData", name = input$trajectoryLineageSelectATAC, embedding = "UMAP", 
                             logFile = paste0(user_dir, "/Plot_trajectory_file.log"))
         output$trajectoryPseudotimePlotATAC <- renderPlot({ plot(p[[1]]) })
@@ -3390,9 +3465,7 @@ output$findMotifsATACExport <- downloadHandler(
       session$sendCustomMessage("handler_alert", "There was an error with the the trajectory analysis.")
     }, finally = {
       removeModal()
-      session$sendCustomMessage("handler_startLoader", c("traj4_loader", 100))
       Sys.sleep(1)
-      session$sendCustomMessage("handler_finishLoader", "traj4_loader")
       session$sendCustomMessage("handler_enableAllButtons", "trajectoryConfirmATAC")
     })
   })
@@ -3414,13 +3487,15 @@ output$findMotifsATACExport <- downloadHandler(
   
   #--------------------Ligand Receptor tab---------------------------
   observeEvent(input$ligandReceptorConfirm, {
-    session$sendCustomMessage("handler_startLoader", c("lr_loader", 10))
+    start.time <- Sys.time()
+    print(paste0("!!!!-----LR_start-----", start.time))
+    
     session$sendCustomMessage("handler_disableAllButtons", "ligandReceptorConfirm")
     tryCatch({
       if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else if (identical(seurat_object@meta.data$seurat_clusters, NULL)) session$sendCustomMessage("handler_alert", "Please, execute CLUSTERING first.")
       else {
-        showModal(modalDialog(div('Analysis in Progress. This operation may take several minutes, please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
+        showModal(modalDialog(div('Ligand - receptor analysis in progress. Please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
         shinyjs::show("ligandReceptorFullHeatmap_loader")
         shinyjs::show("ligandReceptorCuratedHeatmap_loader")
         #load interactions
@@ -3439,7 +3514,6 @@ output$findMotifsATACExport <- downloadHandler(
           weighted_networks_lr = weighted_networks_lr %>% mutate(from = convert_human_to_mouse_symbols(from), to = convert_human_to_mouse_symbols(to)) %>% drop_na()
         }
         
-        session$sendCustomMessage("handler_startLoader", c("lr_loader", 40))
         #expressed genes
         ## receiver
         receiver = input$ligandReceptorReciever
@@ -3485,7 +3559,6 @@ output$findMotifsATACExport <- downloadHandler(
         p_ligand_receptor_network = vis_ligand_receptor_network %>% t() %>% make_heatmap_ggplot("Ligands","Receptors", color = "mediumvioletred", x_axis_position = "top",legend_title = "Prior interaction potential")
         #p_ligand_receptor_network
         
-        session$sendCustomMessage("handler_startLoader", c("lr_loader", 60))
         output$ligandReceptorFullHeatmap <- renderPlotly({ plotly::ggplotly(p_ligand_receptor_network) })
         
         #only curated interactions
@@ -3515,18 +3588,19 @@ output$findMotifsATACExport <- downloadHandler(
         colnames(vis_ligand_receptor_network_strict) = order_ligands_receptor %>% make.names()
         p_ligand_receptor_network_strict = vis_ligand_receptor_network_strict %>% t() %>% make_heatmap_ggplot("Ligands","Receptors", color = "brown", x_axis_position = "top",legend_title = "Prior interaction potential\n(bona fide)")
         # p_ligand_receptor_network_strict
-        session$sendCustomMessage("handler_startLoader", c("lr_loader", 80))
         
         output$ligandReceptorCuratedHeatmap <- renderPlotly({ plotly::ggplotly(p_ligand_receptor_network_strict) })
       }
     }, error = function(e) {
       print(paste("Error :  ", e))
-      session$sendCustomMessage("handler_alert", "There was an error with Ligand-Receptor Analysis.")
+      session$sendCustomMessage("handler_alert", "There was an error during ligand - receptor analysis.")
     }, finally = {
+      end.time <- Sys.time()
+      time.taken <- as.numeric (end.time - start.time, units = "mins")
+      print(paste0("!!!!-----LR_end_Mins_taken-----", time.taken))
+      
       removeModal()
-      session$sendCustomMessage("handler_startLoader", c("lr_loader", 100))
       Sys.sleep(1)
-      session$sendCustomMessage("handler_finishLoader", "lr_loader")
       session$sendCustomMessage("handler_enableAllButtons", "ligandReceptorConfirm")
     })
   })
@@ -3549,7 +3623,6 @@ output$findMotifsATACExport <- downloadHandler(
   
   #---------------------------GRN tab-------------------------------------------
   observeEvent(input$grnProduceLoom, {
-    session$sendCustomMessage("handler_startLoader", c("loom_production_loader", 10))
     session$sendCustomMessage("handler_disableAllButtons", "grnProduceLoom")
     tryCatch({
       if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
@@ -3619,7 +3692,6 @@ output$findMotifsATACExport <- downloadHandler(
         print(user_dir)
         file_name <- paste0(user_dir,"/", genome_info, "_seurat.loom")
         
-        session$sendCustomMessage("handler_startLoader", c("loom_production_loader", 50))
         loom <- build_loom(file.name= file_name,
                            dgem=exprMat_filtered2_seurat_object,
                            title="seurat_object",
@@ -3628,15 +3700,17 @@ output$findMotifsATACExport <- downloadHandler(
                            default.embedding.name="UMAP")
         finalize(loom=loom)
         print("Finalized loom")
+        removeModal()
+        Sys.sleep(1)
+        shinyalert(title = "Files for pyscenic run are ready for download!", type = "success")
       }
     }, error = function(e) {
       print(paste("Error :  ", e))
-      session$sendCustomMessage("handler_alert", "There was an error with generating pyscenic input files.")
-    }, finally = {
       removeModal()
-      session$sendCustomMessage("handler_startLoader", c("loom_production_loader", 100))
       Sys.sleep(1)
-      session$sendCustomMessage("handler_finishLoader", "loom_production_loader")
+      shinyalert(title = "An error has occured during the preparation of files.", type = "error")
+      #session$sendCustomMessage("handler_alert", "There was an error with generating pyscenic input files.")
+    }, finally = {
       session$sendCustomMessage("handler_enableAllButtons", "grnProduceLoom")
     })
   })
@@ -3659,9 +3733,16 @@ output$findMotifsATACExport <- downloadHandler(
       saveRDS(seurat_object, file)
     })
   
+  output$grnMatrixScenicRNAExport <- downloadHandler(
+    filename = function() { 
+      paste("ScenicAUCvaluesRNA-", Sys.Date(), ".txt", sep="")
+    },
+    content = function(file) {
+      write.table(export_scenicAUC_full_RNA, file, sep = "\t", quote = F, row.names = T)
+    })
+  
   #-----analysis
   observeEvent(input$grnLoomAnalysis, {
-    session$sendCustomMessage("handler_startLoader", c("loom_analysis_loader", 10))
     session$sendCustomMessage("handler_disableAllButtons", "grnLoomAnalysis")
     tryCatch({
       showModal(modalDialog(div('Analysis in Progress. This operation may take several minutes, please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
@@ -3689,7 +3770,6 @@ output$findMotifsATACExport <- downloadHandler(
         cellInfo.seurat_object <- get_cell_annotation(loom.seurat_object)
         
         close_loom(loom.seurat_object)
-        session$sendCustomMessage("handler_startLoader", c("loom_analysis_loader", 30))
         cells_rankings.seurat_object <- AUCell_buildRankings(as.matrix(exprMat.seurat_object), nCores=numOfCores)
         
         geneSets.seurat_object <- regulons.seurat_object
@@ -3713,7 +3793,6 @@ output$findMotifsATACExport <- downloadHandler(
         cells_AUC.seurat_object <- cells_AUC.seurat_object[cells_AUC.seurat_object.ordered,]
         getAUC(cells_AUC.seurat_object)
         write.table(getAUC(cells_AUC.seurat_object),paste0(user_dir_pyscenic, "/AUC_per_cell.txt"),quote=F,sep="\t",row.names=T,col.names=T)
-        session$sendCustomMessage("handler_startLoader", c("loom_analysis_loader", 50))
         cells_assignment.seurat_object <- AUCell_exploreThresholds(cells_AUC.seurat_object, plotHist=F, nCores=1, assign=TRUE)
         
         warningMsg.seurat_object <- sapply(cells_assignment.seurat_object, function(x) x$aucThr$comment)
@@ -3730,7 +3809,6 @@ output$findMotifsATACExport <- downloadHandler(
         assignmentMat.seurat_object <- table(assignmentTable.seurat_object[,"geneSet"], assignmentTable.seurat_object[,"cell"])
         
         library(stringr)
-        session$sendCustomMessage("handler_startLoader", c("loom_analysis_loader", 70))
         maxRows <- 20
         
         aucMatrix.seurat_object <- t(assignmentMat.seurat_object)
@@ -3783,20 +3861,21 @@ output$findMotifsATACExport <- downloadHandler(
         write.table(regulonActivity_byCellType_Scaled.seurat_object, paste0(user_dir_pyscenic, "/scaled_regulon_activity_by_cell_type_FULL_TABLE.txt"), sep = "\t", quote = F, col.names = T)
         write.table(rss.seurat_object, paste0(user_dir_pyscenic, "/rss_regulon_by_cell_type_FULL_TABLE.txt"), sep = "\t", quote = F, col.names = T)
         updateSliderInput(session, "grnTopRegulonsRNA", max = nrow(rss.seurat_object))
+        export_scenicAUC_full_RNA <<- regulonActivity_byCellType_Scaled.seurat_object
         print("All done!")
-      
+        removeModal()
+        Sys.sleep(1)
+        shinyalert(title = "Pyscenic files were analyzed successfully! You can now visualize the results!", type = "success")
     }, error = function(e) {
       print(paste("Error :  ", e))
-      session$sendCustomMessage("handler_alert", "There was an error with analyzing pyscenic results.")
-    }, finally = {
       removeModal()
-      session$sendCustomMessage("handler_startLoader", c("loom_analysis_loader", 100))
       Sys.sleep(1)
-      session$sendCustomMessage("handler_finishLoader", "loom_analysis_loader")
+      shinyalert(title = "An error has occured during the preparation of files.", type = "error")
+      #session$sendCustomMessage("handler_alert", "There was an error with analyzing pyscenic results.")
+    }, finally = {
       session$sendCustomMessage("handler_enableAllButtons", "grnLoomAnalysis")
     })
   })
-    
     
     observeEvent(input$grnConfirmVisualizationRNA, {
       session$sendCustomMessage("handler_disableAllButtons", "grnConfirmVisualizationRNA")
@@ -3826,7 +3905,9 @@ output$findMotifsATACExport <- downloadHandler(
         }
       }, error = function(e) {
         print(paste("Error :  ", e))
-        session$sendCustomMessage("handler_alert", "There was an error with visualizing pyscenic results.")
+        Sys.sleep(1)
+        shinyalert(title = "An error has occured during the visualization of results.", type = "error")
+        #session$sendCustomMessage("handler_alert", "There was an error with visualizing pyscenic results.")
       }, finally = {
         removeModal()
         Sys.sleep(1)
@@ -3834,13 +3915,135 @@ output$findMotifsATACExport <- downloadHandler(
       })
     })
   
+  observeEvent(input$grnRunDecoupler, {
+    start.time <- Sys.time()
+    print(paste0("!!!!-----GRN_start-----", start.time))
+    
+    session$sendCustomMessage("handler_disableAllButtons", "grnRunDecoupler")
+    tryCatch({
+      if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
+      else if (identical(seurat_object@meta.data$seurat_clusters, NULL)) session$sendCustomMessage("handler_alert", "Please, execute CLUSTERING first.")
+      else {
+        showModal(modalDialog(div('Analysis in Progress. This operation may take several minutes, please wait...', 
+                                  style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
+        complexes <- input$grnComplexes
+        if(complexes == "keep") # split complexes = false
+        {
+          if (organism == "human")
+            net <- read.delim("decoupleR_helper_files/collecTRI_human_complexes_false.txt")
+          else
+            net <- read.delim("decoupleR_helper_files/collecTRI_mouse_complexes_false.txt")
+        } else
+        {
+          if(organism == "human")
+            net <- read.delim("decoupleR_helper_files/collecTRI_human_complexes_true.txt")
+          else
+            net <- read.delim("decoupleR_helper_files/collecTRI_mouse_complexes_true.txt")
+        }
+        
+        # Extract the normalized log-transformed counts
+        mat <- as.matrix(seurat_object@assays$RNA@data)
+        
+        analysisMethod <- input$grnAnalysisMethod
+        
+        if(analysisMethod == "mlm")
+        {
+          # Run mlm
+          acts <- run_mlm(mat=mat, net=net, .source='source', .target='target',
+                          .mor='mor', minsize = 5)
+        } else if (analysisMethod == "ulm")
+        {
+          # Run ulm
+          acts <- run_ulm(mat=mat, net=net, .source='source', .target='target',
+                          .mor='mor', minsize = 5)
+        } else
+        {
+          # Run wsum
+          acts <- run_wsum(mat=mat, net=net, .source='source', .target='target',
+                           .mor='mor', minsize = 5)
+          acts <- acts %>% filter(statistic == "norm_wsum")
+        }
+        
+        # Extract ulm and store it in tfsulm in seurat object
+        seurat_object[['tfactivity']] <<- acts %>%
+          pivot_wider(id_cols = 'source', names_from = 'condition',
+                      values_from = 'score') %>%
+          column_to_rownames('source') %>%
+          Seurat::CreateAssayObject(.)
+        
+        # Scale the data
+        seurat_object <<- ScaleData(seurat_object, assay = "tfactivity")
+        seurat_object@assays$tfactivity@data <<- seurat_object@assays$tfactivity@scale.data
+        
+        n_tfs <- 50
+        # Extract activities from object as a long dataframe
+        df <- t(as.matrix(seurat_object@assays$tfactivity@data)) %>%
+          as.data.frame() %>%
+          mutate(cluster = seurat_object$seurat_clusters) %>%
+          pivot_longer(cols = -cluster, names_to = "source", values_to = "score") %>%
+          group_by(cluster, source) %>%
+          dplyr::summarise(mean=mean(score))
+        
+        # Get top tfs with more variable means across clusters
+        tfs <- df %>%
+          group_by(source) %>%
+          dplyr::summarise(std = sd(mean)) %>%
+          arrange(-abs(std)) %>%
+          head(n_tfs) %>%
+          pull(source)
+        
+        # Subset long data frame to top tfs and transform to wide matrix
+        top_acts_mat <- df %>%
+          filter(source %in% tfs) %>%
+          pivot_wider(id_cols = 'cluster', names_from = 'source',
+                      values_from = 'mean') %>%
+          column_to_rownames('cluster') %>%
+          as.matrix()
+        
+        #plot the full table
+        df_toPlot <- df
+        colnames(df_toPlot) <- c("cluster", "TF", "Mean activity(z-score)")
+        output$grnMatrixRNA_DecoupleR <- renderDataTable(df_toPlot, options = list(pageLength = 10), rownames = T)
+        export_decoupleRZscores_full_RNA <<- df_toPlot
+        
+        # Choose color palette
+        palette_length = 100
+        my_color = colorRampPalette(c("Darkblue", "white","red"))(palette_length)
+        
+        output$grnHeatmapRNA_DecoupleR <- renderPlotly(heatmaply(x = top_acts_mat, colors = my_color, limits=c(-3, 3)))
+        updateUtilitiesAssays()
+      }
+    }, error = function(e) {
+      print(paste("Error :  ", e))
+      session$sendCustomMessage("handler_alert", "There was an error with TF activity inference.")
+    }, finally = {
+      end.time <- Sys.time()
+      time.taken <- as.numeric (end.time - start.time, units = "mins")
+      print(paste0("!!!!-----GRN_end_Mins_taken-----", time.taken))
+      
+      removeModal()
+      Sys.sleep(1)
+      session$sendCustomMessage("handler_enableAllButtons", "grnRunDecoupler")
+    })
+  })  
+  
+  output$grnMatrixDecoupleRRNAExport <- downloadHandler(
+    filename = function() { 
+      paste("DecoupleRActivityZscoreRNA-", Sys.Date(), ".txt", sep="")
+    },
+    content = function(file) {
+      write.table(export_decoupleRZscores_full_RNA, file, sep = "\t", quote = F, row.names = F)
+    })
+    
   observeEvent(input$grnConfirmATAC, {
-    session$sendCustomMessage("handler_startLoader", c("grn2_loader", 10))
+    start.time <- Sys.time()
+    print(paste0("!!!!-----GRN_start-----", start.time))
+    
     session$sendCustomMessage("handler_disableAllButtons", "grnConfirmATAC")
     tryCatch({
       if (identical(proj_default, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else {
-        showModal(modalDialog(div('Analysis in Progress. This operation may take several minutes, please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
+        showModal(modalDialog(div('GRN analysis in progress. This operation may take several minutes, please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
         shinyjs::show("grnHeatmapATAC_loader")
         shinyjs::show("grnATACTable_loader")
         shinyjs::show("grnATACTable2_loader")
@@ -3861,7 +4064,6 @@ output$findMotifsATACExport <- downloadHandler(
         seGroupMotif_proj_default_condition <- getGroupSE(ArchRProj = proj_default, useMatrix = "MotifMatrix", groupBy = input$grnGroupByATAC,  #"Clusters", "predictedGroup_Co"
                                                           logFile =paste0(user_dir, "/GroupSE_file.log"))
         ## Keep z-scores or deviation scores ##
-        session$sendCustomMessage("handler_startLoader", c("grn2_loader", 30))
         seZ_proj_default_condition <- seGroupMotif_proj_default_condition[rowData(seGroupMotif_proj_default_condition)$seqnames=="z",]
         ## Maximum delta in z-score between all clusters ##
         rowData(seZ_proj_default_condition)$maxDelta <- lapply(seq_len(ncol(seZ_proj_default_condition)), function(x){
@@ -3875,7 +4077,6 @@ output$findMotifsATACExport <- downloadHandler(
           reducedDims = "IterativeLSI",
           logFile =paste0(user_dir, "/Correlation_file.log")
         )
-        session$sendCustomMessage("handler_startLoader", c("grn2_loader", 50))
         ## Add Maximum Delta Deviation to the Correlation Data Frame ##
         corGSM_MM_proj_default_condition<-corGSM_MM_proj_default
         corGSM_MM_proj_default_condition$maxDelta <- rowData(seZ_proj_default_condition)[match(corGSM_MM_proj_default_condition$MotifMatrix_name, rowData(seZ_proj_default_condition)$name), "maxDelta"]
@@ -3898,7 +4099,6 @@ output$findMotifsATACExport <- downloadHandler(
         seZ_proj_default_condition_df_positive_regulators_GSM_MM_condition<-seZ_proj_default_condition_df[which(sub("_.*", "", rownames(seZ_proj_default_condition_df)) %in% positive_regulators_GSM_MM_proj_default_condition),]
         
         ### P2G links ###
-        session$sendCustomMessage("handler_startLoader", c("grn2_loader", 70))
         proj_default <<- addCoAccessibility(ArchRProj = proj_default, reducedDims = "IterativeLSI", 
                                            logFile =paste0(user_dir, "/Coaccessibility_file.log"))
         proj_default <<- addPeak2GeneLinks(ArchRProj = proj_default,reducedDims = "IterativeLSI", useMatrix = "GeneScoreMatrix", 
@@ -3907,7 +4107,6 @@ output$findMotifsATACExport <- downloadHandler(
                                   returnMatrices = T, corCutOff = corr_lim, FDRCutOff = fdr_lim, 
                                   logFile =paste0(user_dir, "/P2Gheatmap_file.log"))
         p2g_table <- as.data.frame(p$Peak2GeneLinks)
-        session$sendCustomMessage("handler_startLoader", c("grn2_loader", 90))
         
         output$grnMatrixATAC <- renderDataTable(seZ_proj_default_condition_df_positive_regulators_GSM_MM_condition, options = list(pageLength = 10), rownames = T)
         export_positiveRegulators_ATAC <<- seZ_proj_default_condition_df_positive_regulators_GSM_MM_condition
@@ -3924,10 +4123,9 @@ output$findMotifsATACExport <- downloadHandler(
         pos_reg_htable[pos_reg_htable>2] <- 2
         pos_reg_htable[pos_reg_htable< -2] <- -2
         
-        #heatmaply(pos_reg_htable, colors=viridis(n = 100, option = "plasma"))
         output$grnHeatmapATAC <- renderPlotly(heatmaply(pos_reg_htable, colors=viridis(n = 100, option = "plasma")))
-        #output$grnHeatmapATAC <- renderPlotly(heatmaply(seZ_proj_default_condition_df_positive_regulators_GSM_MM_condition, colors=viridis(n = 256, option = "plasma")))
         
+        p2g_table <- p2g_table[, c(1, 2, 7, 8, 3:6)]
         output$grnP2GlinksTable <- renderDataTable(p2g_table, options = list(pageLength = 10), rownames = T)
         export_peakToGenelinks_ATAC <<- p2g_table
         
@@ -3941,10 +4139,12 @@ output$findMotifsATACExport <- downloadHandler(
       print(paste("Error :  ", e))
       session$sendCustomMessage("handler_alert", "There was an error with the the GRN analysis.")
     }, finally = {
+      end.time <- Sys.time()
+      time.taken <- as.numeric (end.time - start.time, units = "mins")
+      print(paste0("!!!!-----GRN_end_Mins_taken-----", time.taken))
+      
       removeModal()
-      session$sendCustomMessage("handler_startLoader", c("grn2_loader", 100))
       Sys.sleep(1)
-      session$sendCustomMessage("handler_finishLoader", "grn2_loader")
       session$sendCustomMessage("handler_enableAllButtons", "grnConfirmATAC")
     })
   })
@@ -3975,12 +4175,11 @@ output$findMotifsATACExport <- downloadHandler(
   
   #---------------------------Tracks tab----------------------------------------
   observeEvent(input$visualizeTracksConfirm, {
-    session$sendCustomMessage("handler_startLoader", c("tracks_loader", 10))
     session$sendCustomMessage("handler_disableAllButtons", "visualizeTracksConfirm")
     tryCatch({
       if (identical(proj_default, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
       else {
-        showModal(modalDialog(div('Analysis in Progress. This operation may take several minutes, please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
+        showModal(modalDialog(div('Rendering in progress. Please wait...', style='color:#ffffff; background-color:#222d32;'), footer = NULL, style = 'font-size:20px; text-align:center;position:absolute;')) #position:absolute;top:50%;left:50%
         shinyjs::show("visualizeTracksOutput_loader")
         
         p <- plotBrowserTrack(
@@ -4001,9 +4200,7 @@ output$findMotifsATACExport <- downloadHandler(
       session$sendCustomMessage("handler_alert", "There was an error with the generation of tracks.")
     }, finally = {
       removeModal()
-      session$sendCustomMessage("handler_startLoader", c("tracks_loader", 100))
       Sys.sleep(1)
-      session$sendCustomMessage("handler_finishLoader", "tracks_loader")
       session$sendCustomMessage("handler_enableAllButtons", "visualizeTracksConfirm")
     })
   })
@@ -4022,7 +4219,6 @@ output$findMotifsATACExport <- downloadHandler(
   
   updateReduction <- function()
   {
-    session$sendCustomMessage("handler_startLoader", c("dim_red2_loader", 10))
     session$sendCustomMessage("handler_disableAllButtons", "umapConfirm")
     tryCatch({
       if (identical(seurat_object, NULL)) session$sendCustomMessage("handler_alert", "Please, upload some data via the DATA INPUT tab first.")
@@ -4050,9 +4246,7 @@ output$findMotifsATACExport <- downloadHandler(
         seurat_object_reduc$Cell_id <- rownames(seurat_object_reduc)
         reduc_data <- left_join(seurat_object_reduc, meta)
         
-        session$sendCustomMessage("handler_startLoader", c("dim_red2_loader", 50))
-        
-        if(type == "umap" & dims == 2)
+        if(type == "umap" & dims == 2 & dims <= ncol(seurat_object_reduc)-1)
         {
           p <- ggplot(data=reduc_data, aes_string(x="UMAP_1", y="UMAP_2", fill=input$umapColorBy)) +
             geom_point(size= as.numeric(input$umapDotSize), shape=21, alpha= as.numeric(input$umapDotOpacity), stroke=as.numeric(input$umapDotBorder))+
@@ -4070,7 +4264,7 @@ output$findMotifsATACExport <- downloadHandler(
             labs(x="UMAP 1", y="UMAP 2", color="Cell type", title = "", fill="Color")
           output$umapPlot <- renderPlotly({plotly::ggplotly(p)})
         }
-        else if(type == "umap" & dims == 3)
+        else if(type == "umap" & dims == 3 & dims <= ncol(seurat_object_reduc)-1)
         {
           p <- plot_ly(reduc_data, x=~UMAP_1, y=~UMAP_2, z=~UMAP_3, type="scatter3d", alpha = as.numeric(input$umapDotOpacity), mode="markers", color=as.formula(paste0('~', input$umapColorBy)),
                        marker = list(size = as.numeric(input$umapDotSize), 
@@ -4080,7 +4274,7 @@ output$findMotifsATACExport <- downloadHandler(
           
           output$umapPlot <- renderPlotly({print(p)})
         }
-        else if(type == "tsne" & dims == 2)
+        else if(type == "tsne" & dims == 2 & dims <= ncol(seurat_object_reduc)-1)
         {
           p <- ggplot(data=reduc_data, aes_string(x="tSNE_1", y="tSNE_2", fill=input$umapColorBy)) +
             geom_point(size= as.numeric(input$umapDotSize), shape=21, alpha= as.numeric(input$umapDotOpacity), stroke=as.numeric(input$umapDotBorder)) +
@@ -4098,7 +4292,7 @@ output$findMotifsATACExport <- downloadHandler(
             labs(x="tSNE 1", y="tSNE 2", color="Cell type", title = "", fill="Color")
           output$umapPlot <- renderPlotly({plotly::ggplotly(p)})  
         }
-        else if(type == "tsne" & dims == 3)
+        else if(type == "tsne" & dims == 3 & dims <= ncol(seurat_object_reduc)-1)
         {
           p <- plot_ly(reduc_data, x=~tSNE_1, y=~tSNE_2, z=~tSNE_3, type="scatter3d", mode="markers", alpha = as.numeric(input$umapDotOpacity), color=as.formula(paste0('~', input$umapColorBy)), 
                        marker = list(size = as.numeric(input$umapDotSize), 
@@ -4107,7 +4301,7 @@ output$findMotifsATACExport <- downloadHandler(
                        colors = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(meta[, input$umapColorBy]))) ) 
           output$umapPlot <- renderPlotly({print(p)})
         }
-        else if(type == "dfm" & dims == 2)
+        else if(type == "dfm" & dims == 2 & dims <= ncol(seurat_object_reduc)-1)
         {
           p <- ggplot(data=reduc_data, aes_string(x="DC_1", y="DC_2", fill=input$umapColorBy)) +
             geom_point(size= as.numeric(input$umapDotSize), shape=21, alpha= as.numeric(input$umapDotOpacity), stroke=as.numeric(input$umapDotBorder)) +
@@ -4125,7 +4319,7 @@ output$findMotifsATACExport <- downloadHandler(
             labs(x="DC 1", y="DC 2", color="Cell type", title = "", fill="Color")
           output$umapPlot <- renderPlotly({plotly::ggplotly(p)})  
         }
-        else if(type == "dfm" & dims == 3)
+        else if(type == "dfm" & dims == 3 & dims <= ncol(seurat_object_reduc)-1)
         {
           p <- plot_ly(reduc_data, x=~DC_1, y=~DC_2, z=~DC_3, type="scatter3d", mode="markers", alpha = as.numeric(input$umapDotOpacity), color=as.formula(paste0('~', input$umapColorBy)), 
                        marker = list(size = as.numeric(input$umapDotSize), 
@@ -4134,7 +4328,7 @@ output$findMotifsATACExport <- downloadHandler(
                        colors = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(meta[, input$umapColorBy]))) ) 
           output$umapPlot <- renderPlotly({print(p)})
         }
-        else if(type == "pca" & dims == 2)
+        else if(type == "pca" & dims == 2 & dims <= ncol(seurat_object_reduc)-1)
         {
           p <- ggplot(data=reduc_data, aes_string(x="PC_1", y="PC_2", fill=input$umapColorBy)) +
             geom_point(size= as.numeric(input$umapDotSize), shape=21, alpha= as.numeric(input$umapDotOpacity), stroke=as.numeric(input$umapDotBorder)) +
@@ -4152,7 +4346,7 @@ output$findMotifsATACExport <- downloadHandler(
             labs(x="PC 1", y="PC 2", color="Cell type", title = "", fill="Color")
           output$umapPlot <- renderPlotly({plotly::ggplotly(p)})  
         }
-        else if(type == "pca" & dims == 3)
+        else if(type == "pca" & dims == 3 & dims <= ncol(seurat_object_reduc)-1)
         {
           p <- plot_ly(reduc_data, x=~PC_1, y=~PC_2, z=~PC_3, type="scatter3d", mode="markers", alpha = as.numeric(input$umapDotOpacity), color=as.formula(paste0('~', input$umapColorBy)), 
                        marker = list(size = as.numeric(input$umapDotSize), 
@@ -4161,7 +4355,7 @@ output$findMotifsATACExport <- downloadHandler(
                        colors = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(meta[, input$umapColorBy]))) ) 
           output$umapPlot <- renderPlotly({print(p)})
         }
-        else if(type == "phate" & dims == 2)
+        else if(type == "phate" & dims == 2 & dims <= ncol(seurat_object_reduc)-1)
         {
           p <- ggplot(data=reduc_data, aes_string(x="PHATE_1", y="PHATE_2", fill=input$umapColorBy)) +
             geom_point(size= as.numeric(input$umapDotSize), shape=21, alpha= as.numeric(input$umapDotOpacity), stroke=as.numeric(input$umapDotBorder)) +
@@ -4179,7 +4373,7 @@ output$findMotifsATACExport <- downloadHandler(
             labs(x="PHATE 1", y="PHATE 2", color="Cell type", title = "", fill="Color")
           output$umapPlot <- renderPlotly({plotly::ggplotly(p)})  
         }
-        else if(type == "phate" & dims == 3)
+        else if(type == "phate" & dims == 3 & dims <= ncol(seurat_object_reduc)-1)
         {
           p <- plot_ly(reduc_data, x=~PHATE_1, y=~PHATE_2, z=~PHATE_3, type="scatter3d", mode="markers", alpha = as.numeric(input$umapDotOpacity), color=as.formula(paste0('~', input$umapColorBy)), 
                        marker = list(size = as.numeric(input$umapDotSize), 
@@ -4188,15 +4382,17 @@ output$findMotifsATACExport <- downloadHandler(
                        colors = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(meta[, input$umapColorBy]))) ) 
           output$umapPlot <- renderPlotly({print(p)})
         }
+        else
+        {
+          session$sendCustomMessage("handler_alert", "There was an error with the number of dimensions of the plot. Please set Dimensions to 2D and update the plot.")
+        }
       }
     }, error = function(e) {
       print(paste("Error :  ", e))
       session$sendCustomMessage("handler_alert", "There was an error with drawing the resutls.")
     }, finally = {
       removeModal()
-      session$sendCustomMessage("handler_startLoader", c("dim_red2_loader", 100))
       Sys.sleep(1)
-      session$sendCustomMessage("handler_finishLoader", "dim_red2_loader")
       session$sendCustomMessage("handler_enableAllButtons", "umapConfirm")
     })
   }
@@ -4231,7 +4427,7 @@ output$findMotifsATACExport <- downloadHandler(
         reduc_data <- left_join(seurat_object_reduc, meta)
         print(head(reduc_data)) 
         
-        if(type == "umap" & dims == 2)
+        if(type == "umap" & dims == 2 & dims <= ncol(seurat_object_reduc)-1)
         {
           p <- ggplot(data=reduc_data, aes_string(x="UMAP_1", y="UMAP_2", fill=input$umapColorBy)) +
             geom_point(size= as.numeric(input$umapDotSize), shape=21, alpha= as.numeric(input$umapDotOpacity), stroke=as.numeric(input$umapDotBorder))+
@@ -4249,7 +4445,7 @@ output$findMotifsATACExport <- downloadHandler(
             labs(x="UMAP 1", y="UMAP 2", color="Cell type", title = "", fill="Color")
           output$umapPlot <- renderPlotly({plotly::ggplotly(p)})
         }
-        else if(type == "umap" & dims == 3)
+        else if(type == "umap" & dims == 3 & dims <= ncol(seurat_object_reduc)-1)
         {
           p <- plot_ly(reduc_data, x=~UMAP_1, y=~UMAP_2, z=~UMAP_3, type="scatter3d", alpha = as.numeric(input$umapDotOpacity), mode="markers", color=as.formula(paste0('~', input$umapColorBy)),
                        marker = list(size = as.numeric(input$umapDotSize), 
@@ -4259,7 +4455,7 @@ output$findMotifsATACExport <- downloadHandler(
           
           output$umapPlot <- renderPlotly({print(p)})
         }
-        else if(type == "tsne" & dims == 2)
+        else if(type == "tsne" & dims == 2 & dims <= ncol(seurat_object_reduc)-1)
         {
           p <- ggplot(data=reduc_data, aes_string(x="tSNE_1", y="tSNE_2", fill=input$umapColorBy)) +
             geom_point(size= as.numeric(input$umapDotSize), shape=21, alpha= as.numeric(input$umapDotOpacity), stroke=as.numeric(input$umapDotBorder)) +
@@ -4277,7 +4473,7 @@ output$findMotifsATACExport <- downloadHandler(
             labs(x="tSNE 1", y="tSNE 2", color="Cell type", title = "", fill="Color")
           output$umapPlot <- renderPlotly({plotly::ggplotly(p)})  
         }
-        else if(type == "tsne" & dims == 3)
+        else if(type == "tsne" & dims == 3 & dims <= ncol(seurat_object_reduc)-1)
         {
           p <- plot_ly(reduc_data, x=~tSNE_1, y=~tSNE_2, z=~tSNE_3, type="scatter3d", mode="markers", alpha = as.numeric(input$umapDotOpacity), color=as.formula(paste0('~', input$umapColorBy)), 
                        marker = list(size = as.numeric(input$umapDotSize), 
@@ -4286,7 +4482,7 @@ output$findMotifsATACExport <- downloadHandler(
                        colors = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(meta[, input$umapColorBy]))) ) 
           output$umapPlot <- renderPlotly({print(p)})
         }
-        else if(type == "dfm" & dims == 2)
+        else if(type == "dfm" & dims == 2 & dims <= ncol(seurat_object_reduc)-1)
         {
           p <- ggplot(data=reduc_data, aes_string(x="DC_1", y="DC_2", fill=input$umapColorBy)) +
             geom_point(size= as.numeric(input$umapDotSize), shape=21, alpha= as.numeric(input$umapDotOpacity), stroke=as.numeric(input$umapDotBorder)) +
@@ -4304,7 +4500,7 @@ output$findMotifsATACExport <- downloadHandler(
             labs(x="DC 1", y="DC 2", color="Cell type", title = "", fill="Color")
           output$umapPlot <- renderPlotly({plotly::ggplotly(p)})  
         }
-        else if(type == "dfm" & dims == 3)
+        else if(type == "dfm" & dims == 3 & dims <= ncol(seurat_object_reduc)-1)
         {
           p <- plot_ly(reduc_data, x=~DC_1, y=~DC_2, z=~DC_3, type="scatter3d", mode="markers", alpha = as.numeric(input$umapDotOpacity), color=as.formula(paste0('~', input$umapColorBy)), 
                        marker = list(size = as.numeric(input$umapDotSize), 
@@ -4313,7 +4509,7 @@ output$findMotifsATACExport <- downloadHandler(
                        colors = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(meta[, input$umapColorBy]))) ) 
           output$umapPlot <- renderPlotly({print(p)})
         }
-        else if(type == "pca" & dims == 2)
+        else if(type == "pca" & dims == 2 & dims <= ncol(seurat_object_reduc)-1)
         {
           p <- ggplot(data=reduc_data, aes_string(x="PC_1", y="PC_2", fill=input$umapColorBy)) +
             geom_point(size= as.numeric(input$umapDotSize), shape=21, alpha= as.numeric(input$umapDotOpacity), stroke=as.numeric(input$umapDotBorder)) +
@@ -4331,7 +4527,7 @@ output$findMotifsATACExport <- downloadHandler(
             labs(x="PC 1", y="PC 2", color="Cell type", title = "", fill="Color")
           output$umapPlot <- renderPlotly({plotly::ggplotly(p)})  
         }
-        else if(type == "pca" & dims == 3)
+        else if(type == "pca" & dims == 3 & dims <= ncol(seurat_object_reduc)-1)
         {
           p <- plot_ly(reduc_data, x=~PC_1, y=~PC_2, z=~PC_3, type="scatter3d", mode="markers", alpha = as.numeric(input$umapDotOpacity), color=as.formula(paste0('~', input$umapColorBy)), 
                        marker = list(size = as.numeric(input$umapDotSize), 
@@ -4340,7 +4536,7 @@ output$findMotifsATACExport <- downloadHandler(
                        colors = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(meta[, input$umapColorBy]))) ) 
           output$umapPlot <- renderPlotly({print(p)})
         }
-        else if(type == "phate" & dims == 2)
+        else if(type == "phate" & dims == 2 & dims <= ncol(seurat_object_reduc)-1)
         {
           p <- ggplot(data=reduc_data, aes_string(x="PHATE_1", y="PHATE_2", fill=input$umapColorBy)) +
             geom_point(size= as.numeric(input$umapDotSize), shape=21, alpha= as.numeric(input$umapDotOpacity), stroke=as.numeric(input$umapDotBorder)) +
@@ -4358,7 +4554,7 @@ output$findMotifsATACExport <- downloadHandler(
             labs(x="PHATE 1", y="PHATE 2", color="Cell type", title = "", fill="Color")
           output$umapPlot <- renderPlotly({plotly::ggplotly(p)})  
         }
-        else if(type == "phate" & dims == 3)
+        else if(type == "phate" & dims == 3 & dims <= ncol(seurat_object_reduc)-1)
         {
           p <- plot_ly(reduc_data, x=~PHATE_1, y=~PHATE_2, z=~PHATE_3, type="scatter3d", mode="markers", alpha = as.numeric(input$umapDotOpacity), color=as.formula(paste0('~', input$umapColorBy)), 
                        marker = list(size = as.numeric(input$umapDotSize), 
@@ -4366,6 +4562,10 @@ output$findMotifsATACExport <- downloadHandler(
                        ),
                        colors = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(meta[, input$umapColorBy]))) ) 
           output$umapPlot <- renderPlotly({print(p)})
+        }
+        else
+        {
+          session$sendCustomMessage("handler_alert", "There was an error with the number of dimensions of the plot. Please set Dimensions to 2D and update the plot.")
         }
       }
     }, error = function(e) {
@@ -4475,21 +4675,12 @@ output$findMotifsATACExport <- downloadHandler(
   updateUmapTypeChoices <- function(type)
   {
     reductions_choices <<- c(reductions_choices, type)
-    updateSelectInput(session, "umapType", choices = reductions_choices, selected = type)  #umapType, findMarkersReductionType, cellCycleReduction, trajectoryReduction
+    updateSelectInput(session, "umapType", choices = reductions_choices, selected = type)  
     updateSelectInput(session, "findMarkersReductionType", choices = reductions_choices, selected = type)
     updateSelectInput(session, "findMarkersFeaturePairReductionType", choices = reductions_choices, selected = type)
+    updateSelectInput(session, "doubletsReduction", choices = reductions_choices, selected = type)
     updateSelectInput(session, "cellCycleReduction", choices = reductions_choices, selected = type)
     updateSelectInput(session, "trajectoryReduction", choices = reductions_choices, selected = type)
-  }
-  
-  updateSignatures <- function()
-  {
-    colnames(seurat_object@meta.data)
-    tableMeta <- seurat_object@meta.data
-    f <- sapply(tableMeta, is.numeric)
-    sig_names <- colnames(tableMeta[, f])
-    updateSelectInput(session, "findMarkersSignatureSelect", choices = sig_names)
-    updateSelectInput(session, "findMarkersViolinSignatureSelect", choices = sig_names) 
   }
   
   #function update selectInput
@@ -4513,9 +4704,21 @@ output$findMotifsATACExport <- downloadHandler(
   
   updateGeneSearchFP <- function()
   {
-    total_genes <- rownames(seurat_object@assays$RNA@counts)
-    updateSelectizeInput(session, 'findMarkersGeneSelect', choices = total_genes, server = TRUE) # server-side selectize drastically improves performance
-    updateSelectizeInput(session, 'findMarkersGeneSelect2', choices = total_genes, server = TRUE)
+    if(DefaultAssay(seurat_object) == "RNA")
+      total_genes <- rownames(seurat_object@assays$RNA@counts)
+    else if(DefaultAssay(seurat_object) == "tfactivity")
+      total_genes <- rownames(seurat_object@assays$tfactivity@counts)
+    else if(DefaultAssay(seurat_object) == "integrated")
+      total_genes <- rownames(seurat_object@assays$integrated@counts)
+    
+    #get signature names or numeric columns
+    colnames(seurat_object@meta.data)
+    tableMeta <- seurat_object@meta.data
+    f <- sapply(tableMeta, is.numeric)
+    sig_names <- colnames(tableMeta[, f])
+      
+    updateSelectizeInput(session, 'findMarkersGeneSelect', choices = c(total_genes, sig_names), server = TRUE) # server-side selectize drastically improves performance
+    updateSelectizeInput(session, 'findMarkersGeneSelect2', choices = c(total_genes, sig_names), server = TRUE)
     updateSelectizeInput(session, 'findMarkersFeaturePair1', choices = total_genes, server = TRUE)
     updateSelectizeInput(session, 'findMarkersFeaturePair2', choices = total_genes, server = TRUE)
   }
@@ -4539,91 +4742,11 @@ output$findMotifsATACExport <- downloadHandler(
     updateSelectInput(session, "utilitiesRenameOldName", choices = all_cluster_names)
   }
   
-  #*******To be called after changes in the clusters of the dataset*************
-  cleanModesAfterClusterEdits <- function(utilitiesType) #hide loader
-  {
-    output$gProfilerManhattan <- NULL
-    output$annotateClustersCIPRDotplot <- NULL
-    output$ligandReceptorFullHeatmap <- NULL
-    output$ligandReceptorCuratedHeatmap <- NULL
-    output$cellCyclePCA <- NULL
-    output$cellCycleBarplot <- NULL
-    output$clusterBarplot <- NULL
-    shinyjs::hide("clusterBarplot_loader")
-    output$findMarkersHeatmap <- NULL
-    output$findMarkersDotplot <- NULL
-    output$findMarkersFeaturePlot <- NULL
-    output$findMarkersFPcolorbox <- NULL
-    output$findMarkersFPfeature1_2 <- NULL
-    output$findMarkersFPfeature1 <- NULL
-    output$findMarkersFPfeature2 <- NULL
-    output$findMarkersViolinPlot <- NULL
-    output$findMarkersVolcanoPlot <- NULL
-    
-    # renderPlot
-    output$trajectoryPlot <- NULL
-    output$trajectoryPseudotimePlot <- NULL
-    
-    # renderDataTable
-    #cluster_df <- as.data.frame(table(seurat_object$seurat_clusters)) #as.data.frame(table(Idents(seurat_object)))
-    #colnames(cluster_df)[1] <- "Cluster"
-    #colnames(cluster_df)[2] <- "Number of cells"
-    #cluster_df$`% of cells per cluster` <- cluster_df$`Number of cells`/length(seurat_object@meta.data$orig.ident)*100
-    #output$clusterTable <- renderDataTable(cluster_df, options = list(pageLength = 10), rownames = F)
-    #export_clustertable_RNA <<- cluster_df
-    updateClusterTab()
-    
-    output$gProfilerTable <- NULL
-    output$annotateClustersCIPRTable <- NULL
-    output$findMarkersTable <- NULL
-    
-    # renderPrint
-    output$trajectoryText <- NULL
-    
-    # dittoDimPlot
-    plot_D <- NULL
-    plot_P <- NULL
-    
-    #reset export table values
-    export_metadata_RNA <<- ""
-    export_markerGenes_RNA <<- ""
-    export_enrichedTerms_RNA <<- ""
-    export_annotation_RNA <<- ""
-    export_ligandReceptor_full_RNA <<- ""
-    export_ligandReceptor_short_RNA <<- "" 
-    
-    if(utilitiesType == "delete")
-    {
-      #qc
-      updateFilteredQCplots()
-      
-      #normalization+pca
-      output$hvgScatter <- NULL
-      output$hvgTop10Stats <- NULL
-      output$elbowPlotPCA <- NULL
-      output$PCAscatter <- NULL
-      output$PCAloadings <- NULL
-      output$PCAheatmap <- NULL
-      export_loadingScoresTable_RNA <<- ""
-      
-      #metadata update
-      for_delete1 <- grep("Lineage", colnames(seurat_object@meta.data)) #trajectories
-      for_delete2 <- grep(".Score|Phase|CC.Difference", colnames(seurat_object@meta.data)) #cell cycle
-      for_delete3 <- grep("UCell", colnames(seurat_object@meta.data)) #signatures
-      for_delete <- c(for_delete1, for_delete2, for_delete3)
-      
-      if(length(for_delete) != 0)
-      {
-        seurat_object@meta.data <<- seurat_object@meta.data[, -for_delete]
-      }
-    }
-  }
-  
   updateFilteredQCplots <- function()
   {
     output$filteredNFeatureViolin <- renderPlotly(
       {
-        p <- VlnPlot(seurat_object, features = c("nFeature_RNA"), pt.size = 0.5, group.by = "orig.ident",
+        p <- VlnPlot(seurat_object, features = c("nFeature_RNA"), pt.size = 0, group.by = "orig.ident",
                      cols = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(seurat_object@meta.data[, 'orig.ident'])))) + 
           theme_bw() + 
           geom_hline(yintercept=c(as.numeric(input$minUniqueGenes), as.numeric(input$maxUniqueGenes)), linetype="dashed", color = "red", size=1) + 
@@ -4638,7 +4761,7 @@ output$findMotifsATACExport <- downloadHandler(
     
     output$filteredTotalCountsViolin <- renderPlotly(
       {
-        p <- VlnPlot(seurat_object, features = c("nCount_RNA"), pt.size = 0.5, group.by = "orig.ident",
+        p <- VlnPlot(seurat_object, features = c("nCount_RNA"), pt.size = 0, group.by = "orig.ident",
                      cols = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(seurat_object@meta.data[, 'orig.ident'])))) + 
           theme_bw() + 
           theme(
@@ -4652,7 +4775,7 @@ output$findMotifsATACExport <- downloadHandler(
     
     output$filteredMitoViolin <- renderPlotly(
       {
-        p <- VlnPlot(seurat_object, features = c("percent.mt"), pt.size = 0.5, group.by = "orig.ident",
+        p <- VlnPlot(seurat_object, features = c("percent.mt"), pt.size = 0, group.by = "orig.ident",
                      cols = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(seurat_object@meta.data[, 'orig.ident'])))) + 
           theme_bw() + 
           geom_hline(yintercept= as.numeric(input$maxMtReads), linetype="dashed", color = "red", size=1) +
@@ -4693,7 +4816,6 @@ output$findMotifsATACExport <- downloadHandler(
   # Helper Functions ####
   
   sendToAPI <- function(apiLink, jsonBody) {
-    # ,verbose() to print info
     response <- httr::POST(apiLink, body = jsonBody, encode = "json")
     urlFromResponse <- httr::content(response, as = "parsed")$url
     session$sendCustomMessage("handler_browseUrl", urlFromResponse)
@@ -4746,6 +4868,9 @@ output$findMotifsATACExport <- downloadHandler(
     output$findMarkersFPfeature2 <- NULL
     output$findMarkersViolinPlot <- NULL
     output$findMarkersVolcanoPlot <- NULL
+    output$grnHeatmapRNA <- NULL
+    output$grnHeatmapRNA_DecoupleR <- NULL
+    
     # renderPlot
     output$trajectoryPlot <- NULL
     output$trajectoryPseudotimePlot <- NULL
@@ -4755,6 +4880,8 @@ output$findMotifsATACExport <- downloadHandler(
     output$gProfilerTable <- NULL
     output$annotateClustersCIPRTable <- NULL
     output$findMarkersTable <- NULL
+    output$grnMatrixRNA_DecoupleR <- NULL
+    output$grnMatrixRNA <- NULL
     
     # renderPrint
     if (fromDataInput) output$cellStats <- NULL
@@ -4765,9 +4892,10 @@ output$findMotifsATACExport <- downloadHandler(
     plot_P <- NULL
     
     reductions_choices <<- c("-")
-    updateSelectInput(session, "umapType", choices = reductions_choices)  #umapType, findMarkersReductionType, cellCycleReduction, trajectoryReduction
+    updateSelectInput(session, "umapType", choices = reductions_choices)
     updateSelectInput(session, "findMarkersReductionType", choices = reductions_choices)
     updateSelectInput(session, "findMarkersFeaturePairReductionType", choices = reductions_choices)
+    updateSelectInput(session, "doubletsReduction", choices = reductions_choices)
     updateSelectInput(session, "cellCycleReduction", choices = reductions_choices)
     updateSelectInput(session, "trajectoryReduction", choices = reductions_choices)
     
@@ -4780,6 +4908,8 @@ output$findMotifsATACExport <- downloadHandler(
     export_annotation_RNA <<- ""
     export_ligandReceptor_full_RNA <<- ""
     export_ligandReceptor_short_RNA <<- ""
+    export_scenicAUC_full_RNA <<- ""
+    export_decoupleRZscores_full_RNA <- ""
   }
   
   cleanAllPlotsATAC <- function()
@@ -4842,7 +4972,6 @@ output$findMotifsATACExport <- downloadHandler(
     output$metadataTable <- renderDataTable(seurat_object@meta.data, options = list(pageLength = 10), rownames = F)
     export_metadata_RNA <<- seurat_object@meta.data
     updateRegressOut()
-    #df$col <- sprintf("%.3f", df$col)
   }
   
   updateMetadataATAC <- function()
@@ -5064,8 +5193,8 @@ output$findMotifsATACExport <- downloadHandler(
     cleanAllPlotsATAC()
     
     hideAllLoaders()
-    
-    showNotification("Project removed succesfully. You can now upload a new project.", type = "message", closeButton = T)
+    Sys.sleep(1)
+    shinyalert(title = "Project removed succesfully! You can now upload a new project.", type = "success")
     removeModal()
   })
   
@@ -5091,9 +5220,8 @@ output$findMotifsATACExport <- downloadHandler(
     Idents(seurat_object) <<- seurat_object$seurat_clusters
     updateInputLRclusters()
     updateMetadata()
-    cleanModesAfterClusterEdits("rename")
-    
-    showNotification("Successful operation.", type = "message", closeButton = T)
+    #showNotification("Successful operation.", type = "message", closeButton = T)
+    shinyalert(title = "Cluster rename operation completed succesfully!", type = "success")
     removeModal()
   })
   
@@ -5102,7 +5230,9 @@ output$findMotifsATACExport <- downloadHandler(
   })
   
   modal_confirm_utilities_rename <- modalDialog(
-    "By renaming a cluster, you will need to repeat various steps of the analysis and/or update existing plots. Do you want to proceed?",
+    "By renaming a cluster, you will need to update existing plots that have already been produced with the previous clustering scheme. 
+    By changing the name of a cluster to an already existing cluster name will lead to merging of the two clusters. 
+    Do you want to proceed?",
     title = "Cluster rename",
     footer = tagList(
       actionButton(inputId="confirmUtilitiesRename", label="Yes"),
@@ -5117,11 +5247,8 @@ output$findMotifsATACExport <- downloadHandler(
     seurat_object$seurat_clusters <<- Idents(seurat_object)
     updateInputLRclusters()
     updateMetadata()
-    cleanModesAfterClusterEdits("delete")
-    session$sendCustomMessage("handler_disableTabs", "sidebarMenu")
-    session$sendCustomMessage("handler_enableTabs", c("sidebarMenu", " QUALITY CONTROL", " DATA NORMALIZATION\n& SCALING", " UTILITY OPTIONS"))
-    
-    showNotification("Successful operation.", type = "message", closeButton = T)
+    #showNotification("Successful operation.", type = "message", closeButton = T)
+    shinyalert(title = "Cluster deletion operation completed succesfully!", type = "success")
     removeModal()
   })
   
@@ -5130,7 +5257,10 @@ output$findMotifsATACExport <- downloadHandler(
   })
   
   modal_confirm_utilities_delete <- modalDialog(
-    "By deleting a cluster, you will need to repeat various steps of the analysis and/or update existing plots. Do you want to proceed?",
+    "By deleting a cluster, the user is advised to repeat various steps of the analysis and/or update existing plots. 
+    In more detail, the scaled expression values calculated in the tab \"DATA NORMALIZATION & SCALING\" should be recalculated as the
+    final number of cell has changed.
+    Do you want to proceed?",
     title = "Cluster deletion",
     footer = tagList(
       actionButton(inputId="confirmUtilitiesDelete", label="Yes"),

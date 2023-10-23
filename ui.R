@@ -28,8 +28,8 @@ ui <- dashboardPage(
       menuItem(tags$div("ADDITIONAL DIMENSIONALITY",
                         tags$br(),
                         "REDUCTION METHODS", class = "menu_item_div"), tabName = "umap", icon = icon("draw-polygon")),
-      menuItem(text = "FEATURE INSPECTION", tabName = "features", icon = icon("braille")),
       menuItem(text = "MARKERS' IDENTIFICATION", tabName = "findMarkers", icon = icon("map-marker-alt")),
+      menuItem(text = "FEATURE INSPECTION", tabName = "features", icon = icon("braille")),
       menuItem(text = "DOUBLETS' DETECTION", tabName = "doubletDetection", icon = icon("check-double")),
       menuItem(text = "CELL CYCLE PHASE ANALYSIS", tabName = "cellCycle", icon = icon("circle-notch")),
       tags$hr(),
@@ -73,6 +73,18 @@ ui <- dashboardPage(
       
       #Upload tab
       tabItem(tabName = "upload",
+              bsCollapse(id = 'countMatrixRNA_collapse', multiple = T,
+                         bsCollapsePanel('Do you need help with the upload of count matrix?', ih_inputCountMatrix_rna, style = 'warning')
+              ),
+              bsCollapse(id = '10xRNA_collapse', multiple = T,
+                         bsCollapsePanel('Do you need help with the upload of 10x files?', ih_input10x_rna, style = 'warning')
+              ),
+              bsCollapse(id = 'rdsRNA_collapse', multiple = T,
+                         bsCollapsePanel('Do you need help with the upload of an RDS file?', ih_inputRDS_rna, style = 'warning')
+              ),
+              bsCollapse(id = 'arrowATAC_collapse', multiple = T,
+                         bsCollapsePanel('Do you need help with the upload of an arrow file?', ih_inputArrow_atac, style = 'warning')
+              ),
               fluidRow(
                 box(
                   width = 3, status = "info", solidHeader = TRUE,
@@ -82,6 +94,8 @@ ui <- dashboardPage(
                                        tags$h3("Load PBMC 10x dataset (example scRNA-seq)", class="h3-example"),
                                        tags$hr(class="hr-example"),
                                        actionButton(inputId = "upload10xExampleRNACountMatrixConfirm", label = "Load example", class="btn-example"),
+                                       tags$br(),
+                                       tags$h3("OR"),
                                        tags$h3("Upload your file"),
                                        tags$hr(),
                                        textInput(inputId = "uploadCountMatrixprojectID", label = "Project name : ", value = "Project1"),
@@ -93,7 +107,7 @@ ui <- dashboardPage(
                                                                    "Homo sapiens (Human)" = "human"
                                                     ), 
                                                     selected = "mouse"),
-                                       actionButton(inputId = "uploadCountMatrixConfirm", label = "Submit"),
+                                       actionButton(inputId = "uploadCountMatrixConfirm", label = "Submit", class="btn-run", icon = icon("check-circle")),
                                        tags$h3("Export working object as .RDS file"),
                                        tags$hr(),
                                        downloadButton(outputId = "utilitiesConfirmExport1", label = "Export .RDS"),
@@ -102,6 +116,8 @@ ui <- dashboardPage(
                                        tags$h3("Load PBMC 10x dataset (example scRNA-seq)", class="h3-example"),
                                        tags$hr(class="hr-example"),
                                        actionButton(inputId = "upload10xExampleRNA10xFilesConfirm", label = "Load example", class="btn-example"),
+                                       tags$br(),
+                                       tags$h3("OR"),
                                        tags$h3("Upload your files"),
                                        tags$hr(),
                                        textInput(inputId = "upload10xRNAprojectID", label = "Project name : ", value = "Project1"),
@@ -115,7 +131,7 @@ ui <- dashboardPage(
                                                                                 "Homo sapiens (Human)" = "human"
                                                                  ), 
                                                                  selected = "mouse"),
-                                       actionButton(inputId = "upload10xRNAConfirm", label = "Submit"),
+                                       actionButton(inputId = "upload10xRNAConfirm", label = "Submit", class="btn-run", icon = icon("check-circle")),
                                        tags$h3("Export working object as .RDS file"),
                                        tags$hr(),
                                        downloadButton(outputId = "utilitiesConfirmExport2", label = "Export .RDS"),
@@ -127,11 +143,15 @@ ui <- dashboardPage(
                                                                    "Homo sapiens (Human)" = "human"
                                                     ), 
                                                     selected = "mouse"),
-                                       actionButton(inputId = "uploadSeuratRdsConfirm", label = "Load Seurat object"),
-                                       selectInput("utilitiesActiveAssay", "Set active assay:",
+                                       actionButton(inputId = "uploadSeuratRdsConfirm", label = "Load Seurat object", class="btn-run", icon = icon("check-circle")),
+                                       tags$br(),
+                                       tags$br(),
+                                       tags$hr(),
+                                       tags$br(),
+                                       selectInput("utilitiesActiveAssay", "(Optional) Change active assay:",
                                                    c("Assay" = "RNA")),
                                        actionButton(inputId = "utilitiesConfirmChangeAssay", label = "Change assay"),
-                                       
+                                       tags$br(),
                                        tags$h3("Export working object as .RDS file"),
                                        tags$hr(),
                                        downloadButton(outputId = "utilitiesConfirmExport", label = "Export .RDS")
@@ -140,6 +160,8 @@ ui <- dashboardPage(
                                        tags$h3("PBMC 10x dataset (example scATAC-seq)", class="h3-example"),
                                        tags$hr(class="hr-example"),
                                        actionButton(inputId = "upload10xExampleATACConfirm", label = "Load example", class="btn-example"),
+                                       tags$br(),
+                                       tags$h3("OR"),
                                        tags$h3("Upload your file"),
                                        tags$hr(),
                                        textInput(inputId = "uploadATACprojectID", label = "Project name : ", value = "Project1"),
@@ -150,15 +172,14 @@ ui <- dashboardPage(
                                                                    "Homo sapiens (Human) - hg38" = "hg38"
                                                     ), 
                                                     selected = "mm10"),
-                                       sliderInput(inputId = "upload10xATACThreads", label = "Threads to be used:", min = 1, max = 2, value = 2, step = 1),
-                                       actionButton(inputId = "upload10xATACConfirm", label = "Submit")
+                                       sliderInput(inputId = "upload10xATACThreads", label = "Threads to be used:", min = 1, max = 100, value = 2, step = 1), #max=2 in the online version
+                                       actionButton(inputId = "upload10xATACConfirm", label = "Submit", class="btn-run", icon = icon("check-circle"))
                               )
                   )
                 ),
                 box(
                   width = 8, solidHeader = TRUE, status = "info",
                   title = "Metadata table",
-                  div(class="ldBar", id="input_loader", "data-preset"="circle"),
                   
                   tabsetPanel(type = "tabs", id = "uploadTabPanel",
                               tabPanel("scRNA-seq",
@@ -184,23 +205,30 @@ ui <- dashboardPage(
                   tags$hr(),
                   selectInput(inputId = "utilitiesRenameOldName", label = "Cluster to be renamed (old name):", choices = "-", multiple = F),
                   textInput(inputId = "utilitiesRenameNewName", label = "New name of the cluster:", value = "New_name_1"),
-                  actionButton(inputId = "utilitiesConfirmRename", label = "Rename"),
+                  actionButton(inputId = "utilitiesConfirmRename", label = "Rename", class="btn-run", icon = icon("check-circle")),
                   tags$h3("Delete cluster"),
                   tags$hr(),
                   selectInput(inputId = "utilitiesDeleteCluster", label = "Cluster to be deleted:", choices = "-", multiple = F),
-                  actionButton(inputId = "utilitiesConfirmDelete", label = "Delete"),
+                  actionButton(inputId = "utilitiesConfirmDelete", label = "Delete", class="btn-run", icon = icon("check-circle")),
                   
                   tags$h3("Active clusters"),
                   tags$hr(),
                   selectInput("utilitiesActiveClusters", "Set active clustering column:",
                               c("Cluster" = "seurat_clusters")),
-                  actionButton(inputId = "utilitiesConfirmChangeCluster", label = "Change cluster")
+                  actionButton(inputId = "utilitiesConfirmChangeCluster", label = "Change clustering column!", class="btn-run", icon = icon("check-circle")),
+                  tags$h3("Command history"),
+                  tags$hr(),
+                  actionButton(inputId = "utilitiesPlotCommands", label = "View command history!", class="btn-run", icon = icon("check-circle")),
+                  verbatimTextOutput(outputId = "history")
                 )
               )
       ),
       
       #QC tab
       tabItem(tabName = "qc",
+              bsCollapse(id = 'qcRNA_collapse', multiple = T,
+                         bsCollapsePanel('Do you need help with filtering your data?', ih_qc_rna, style = 'warning')
+              ),
               tabsetPanel(type = "tabs", id = "qcTabPanel",
                           tabPanel("scRNA-seq",
                                    fluidRow(
@@ -208,7 +236,7 @@ ui <- dashboardPage(
                                        width = 3, status = "info", solidHeader = TRUE,
                                        title = "Quality control",
                                        tags$h3("1. Display quality control plots before filtering"),
-                                       actionButton(inputId = "qcDisplay", label = "Display plots"),
+                                       actionButton(inputId = "qcDisplay", label = "Display plots", class="btn-run", icon = icon("check-circle")),
                                        tags$hr(),
                                        tags$h3("2. Filter out low quality cells"),
                                        tags$hr(),
@@ -238,13 +266,12 @@ ui <- dashboardPage(
                                        
                                        selectInput("qcColorBy", "Color by:",
                                                    c("orig.ident" = "orig.ident")),
-                                       actionButton(inputId = "qcConfirm", label = "Perform filtering"),
+                                       actionButton(inputId = "qcConfirm", label = "Perform filtering", class="btn-run", icon = icon("check-circle")),
                                      ),
                                      box(
                                        width = 9, status = "info", solidHeader = TRUE,
                                        title = "Quality control plots",
 
-                                       div(class="ldBar", id="qc_loader", "data-preset"="circle"),
                                        tabsetPanel(type="tabs", id = "qc_tabs_rna",
                                                    tabPanel("Pre-filtering plots",
                                                             column(
@@ -315,19 +342,18 @@ ui <- dashboardPage(
                                        )
                                    )
                                   )
-                          ),
+                          ), 
                           tabPanel("scATAC-seq",
                                    fluidRow(
                                      box(
                                        width = 3, status = "info", solidHeader = TRUE,
                                        title = "Quality control",
                                        tags$h3("Display soft filtered quality control plots"),
-                                       actionButton(inputId = "qcDisplayATAC", label = "OK"),
+                                       actionButton(inputId = "qcDisplayATAC", label = "Display plot!", class="btn-run", icon = icon("check-circle")),
                                      ),
                                      box(
                                        width = 9, status = "info", solidHeader = TRUE,
                                        title = "Quality control plots",
-                                       div(class="ldBar", id="qc_loader3", "data-preset"="circle"),
                                        div(
                                          column(
                                            div(id="TSS_plot_loader",
@@ -357,6 +383,14 @@ ui <- dashboardPage(
       
       #Normalization tab
       tabItem(tabName = "normalize",
+              bsCollapse(id = 'scalingRNA_collapse', multiple = T,
+                         bsCollapsePanel('Do you need help with the regress out functionality?', ih_scaling_rna, style = 'warning')
+              ),
+              tags$div("Normalization and scaling: estimated time in web server for a scRNA-seq dataset of 6,000 cells ~ 50sec", tags$br(),
+                       "(The execution times were measured in the web version of the tool. However, improved performance can be achieved by using the 
+                       stand-alone version on PCs with appropriate CPU and RAM specifications.)",
+                       class="execTimeMessage"),
+              tags$br(),
               fluidRow(
                 box(
                   width = 4, status = "info", solidHeader = TRUE,
@@ -403,12 +437,11 @@ ui <- dashboardPage(
                         )
                     ),
                   
-                  actionButton(inputId = "normalizeConfirm", label = "OK"),
+                  actionButton(inputId = "normalizeConfirm", label = "Run Normalization and Scaling process!", class="btn-run", icon = icon("check-circle")),
                 ),
                 box(
                   width = 8, status = "info", solidHeader = TRUE,
                   title = "Highly variable genes",
-                  div(class="ldBar", id="normalize_loader", "data-preset"="circle"),
                   div(id="hvgScatter_loader",
                       shinycssloaders::withSpinner(
                         plotlyOutput(outputId = "hvgScatter", height = "800px")
@@ -421,6 +454,14 @@ ui <- dashboardPage(
       
       #PCA tab
       tabItem(tabName = "pca", 
+              tags$br(),
+              tags$div("PCA estimated time in web server for a scRNA-seq dataset of 6,000 cells ~ 8sec (quick version), ~25min (slow version)", tags$br(),
+                       "LSI estimated time in web server for a scATAC-seq dataset of 6,000 cells ~ 38 sec", tags$br(),
+                       "*For datasets containing more than 10,000 cells the slow version of PCA is not suggested", tags$br(),
+                       "(The execution times were measured in the web version of the tool. However, improved performance can be achieved by using the 
+                       stand-alone version on PCs with appropriate CPU and RAM specifications.)",
+                       class="execTimeMessage"),
+              tags$br(),
               tabsetPanel(type = "tabs", id = "pcaTabPanel",
                           tabPanel("scRNA-seq: PCA",
                                    fluidRow(
@@ -433,8 +474,7 @@ ui <- dashboardPage(
                                                                                 choices = list("Yes (slow operation)" = "yes", 
                                                                                                "No" = "no"), 
                                                                                 selected = "no"), width = 12),
-                                                            column(actionButton(inputId = "PCrunPCA", label = "Run PCA"), width = 12),
-                                                            div(class="ldBar", id="PCA1_loader", "data-preset"="circle"),
+                                                            column(actionButton(inputId = "PCrunPCA", label = "Run PCA!", class="btn-run", icon = icon("check-circle")), width = 12),
                                                             div(
                                                               column(
                                                                 div(id="elbowPlotPCA_loader",
@@ -452,8 +492,8 @@ ui <- dashboardPage(
                                                    ),
                                                    tabPanel("PCA exploration",
                                                             selectInput("PCin", "Select a principal component :", choices=1:100, selected = 1, multiple = FALSE,selectize = TRUE, width = NULL, size = NULL),
-                                                            column(actionButton(inputId = "PCconfirm", label = "OK"), width = 12),
-                                                            div(class="ldBar", id="PCA2_loader", "data-preset"="circle"),
+                                                            column(actionButton(inputId = "PCconfirm", label = "Explore principal component!", class="btn-run", icon = icon("check-circle")),
+                                                                   width = 12),
                                                             div(
                                                               column(
                                                                 tags$h3("PCA loading scores (top-30 genes for this PC)"),
@@ -487,9 +527,8 @@ ui <- dashboardPage(
                                        sliderInput(inputId = "lsiDmensions", label = "Number of dimensions to use: ", min = 1, max = 100, value = 30, step = 1),#dimensions
                                        sliderInput(inputId = "lsiResolution", label = "Resolution :", min = 0.1, max = 10, value = 1, step = 0.1),#resolution
                                        sliderInput(inputId = "lsiIterations", label = "Number of iterations: ", min = 1, max = 10, value = 1, step = 1),#iterations
-                                       actionButton(inputId = "lsiConfirm", label = "Run LSI"),
+                                       actionButton(inputId = "lsiConfirm", label = "Run LSI!", class="btn-run", icon = icon("check-circle")),
                                        tags$hr(),
-                                       div(class="ldBar", id="lsi_loader", "data-preset"="circle"),
                                        verbatimTextOutput(outputId = "lsiOutput")
                                      )
                                    )
@@ -499,6 +538,13 @@ ui <- dashboardPage(
       
       #Clustering tab
       tabItem(tabName = "clustering", 
+              tags$br(),
+              tags$div("Clustering: estimated time in web server for a scRNA-seq dataset of 6,000 cells ~ 8sec", tags$br(),
+                       "Clustering: estimated time in web server for a scATAC-seq dataset of 6,000 cells ~ 38sec", tags$br(),
+                       "(The execution times were measured in the web version of the tool. However, improved performance can be achieved by using the 
+                       stand-alone version on PCs with appropriate CPU and RAM specifications.)",
+                       class="execTimeMessage"),
+              tags$br(),
               tabsetPanel(type = "tabs", id = "clusteringTabPanel",
                           tabPanel("scRNA-seq",
                                    fluidRow(
@@ -512,7 +558,7 @@ ui <- dashboardPage(
                                        tags$h3("2. Communities' detection (Louvain algorithm)"),
                                        tags$hr(),
                                        sliderInput(inputId = "clusterRes", label = "Clustering resolution :", min = 0.1, max = 5, value = 0.5, step = 0.1),
-                                       actionButton(inputId = "snnConfirm", label = "Perform clustering"),
+                                       actionButton(inputId = "snnConfirm", label = "Run clustering", class="btn-run", icon = icon("check-circle")),
                                      ),
                                      box(
                                        width = 8, status = "info", solidHeader = TRUE, title = "Clustering output",
@@ -520,15 +566,13 @@ ui <- dashboardPage(
                                                    tabPanel("Clustering results",
                                                             tabsetPanel(type = "tabs",
                                                                         tabPanel("Cluster table",
-                                                                                 div(class="ldBar", id="clust1_loader", "data-preset"="circle"),
                                                                                  dataTableOutput(outputId="clusterTable"),
                                                                                  downloadButton(outputId = "clusterTableRNAExport", label = "Save table")
                                                                         ),
                                                                         tabPanel("Cluster barplot",
                                                                                  selectInput("clusterGroupBy", "Grouping variable:",
                                                                                              c("orig.ident" = "orig.ident")),
-                                                                                 actionButton(inputId = "clusterBarplotConfirm", label = "Display barchart"),
-                                                                                 div(class="ldBar", id="clust2_loader", "data-preset"="circle"),
+                                                                                 actionButton(inputId = "clusterBarplotConfirm", label = "Display barchart!", class="btn-run", icon = icon("check-circle")),
                                                                                  div(id="clusterBarplot_loader",
                                                                                      shinycssloaders::withSpinner(
                                                                                        plotlyOutput(outputId = "clusterBarplot", height = "700px")
@@ -538,8 +582,7 @@ ui <- dashboardPage(
                                                             )															
                                                    ),
                                                    tabPanel("Shared Nearest Neighbour (SNN) Graph", 
-                                                            div(class="ldBar", id="clust3_loader", "data-preset"="circle"),
-                                                            actionButton(inputId = "snnDisplayConfirm", label = "Display SNN graph"),
+                                                            actionButton(inputId = "snnDisplayConfirm", label = "Display SNN graph!", class="btn-run", icon = icon("check-circle")),
                                                             div(id="snnSNN_loader",
                                                                 shinycssloaders::withSpinner(
                                                                   visNetworkOutput(outputId="snnSNN", height = "1300px")
@@ -557,7 +600,7 @@ ui <- dashboardPage(
                                        title = "Clustering options",
                                        sliderInput(inputId = "clusterDimensionsATAC", label = "Number of dimensions to use: ", min = 1, max = 100, value = 30, step = 1),
                                        sliderInput(inputId = "clusterResATAC", label = "Clustering resolution :", min = 0.1, max = 60, value = 0.6, step = 0.1),
-                                       actionButton(inputId = "clusterConfirmATAC", label = "Perform clustering"),
+                                       actionButton(inputId = "clusterConfirmATAC", label = "Perform clustering!", class="btn-run", icon = icon("check-circle")),
                                      ),
                                      box(
                                        width = 8, status = "info", solidHeader = TRUE, title = "Clustering output",
@@ -565,7 +608,6 @@ ui <- dashboardPage(
                                                    tabPanel("Clustering results", 
                                                             tabsetPanel(type = "tabs",
                                                                         tabPanel("Cluster table",
-                                                                                 div(class="ldBar", id="clust4_loader", "data-preset"="circle"),
                                                                                  dataTableOutput(outputId="clusterTableATAC"),
                                                                                  downloadButton(outputId = "clusterTableExportATAC", label = "Save table")
                                                                         ),
@@ -587,6 +629,13 @@ ui <- dashboardPage(
       
       #UMAP tab
       tabItem(tabName = "umap", 
+              tags$br(),
+              tags$div("UMAP and tSNE: estimated time in web server for a scRNA-seq dataset of 6,000 cells ~ 47sec", tags$br(),
+                       "UMAP and tSNE: estimated time in web server for a scATAC-seq dataset of 6,000 cells ~ 1min 20sec", tags$br(),
+                       "(The execution times were measured in the web version of the tool. However, improved performance can be achieved by using the 
+                       stand-alone version on PCs with appropriate CPU and RAM specifications.)",
+                       class="execTimeMessage"),
+              tags$br(),
               tabsetPanel(type = "tabs", id = "umapTabPanel",
                           tabPanel("scRNA-seq",
                                    fluidRow(
@@ -601,13 +650,12 @@ ui <- dashboardPage(
                                                  title = "If PHATE is selected, the runtime increases when a value > 3 is used.\nPlease note that tSNE doesn't return more than 3 dimensions.", placement = "bottom"
                                                )
                                            ),
-                                         actionButton(inputId = "umapRunUmap", label = "Run UMAP"),
-                                         actionButton(inputId = "umapRunTsne", label = "Run tSNE"),
-                                         actionButton(inputId = "umapRunDFM", label = "Run Diffusion Map"),
-                                         actionButton(inputId = "umapRunPhate", label = "Run PHATE"),
+                                         actionButton(inputId = "umapRunUmap", label = "Run UMAP!", class="btn-run", icon = icon("check-circle")),
+                                         actionButton(inputId = "umapRunTsne", label = "Run tSNE!", class="btn-run", icon = icon("check-circle")),
+                                         actionButton(inputId = "umapRunDFM", label = "Run Diffusion Map!", class="btn-run", icon = icon("check-circle")),
+                                         actionButton(inputId = "umapRunPhate", label = "Run PHATE!", class="btn-run", icon = icon("check-circle")),
                                          tags$h3("Display settings"),
                                          tags$hr(),
-                                         div(class="ldBar", id="dim_red1_loader", "data-preset"="circle"),
                                          selectInput("umapType", "Plot type:",
                                                      c("-" = "-")
                                          ),
@@ -620,11 +668,10 @@ ui <- dashboardPage(
                                          sliderInput("umapDotSize", "Size:", min = 1, max = 20, value = 5, step = 0.5),
                                          sliderInput("umapDotOpacity", "Opacity:", min = 0, max = 1, value = 1, step = 0.1),
                                          sliderInput("umapDotBorder", "Border width:", min = 0, max = 10, value = 0.5, step = 0.1),
-                                         actionButton(inputId = "umapConfirm", label = "Update plot")
+                                         actionButton(inputId = "umapConfirm", label = "Update plot!", class="btn-run", icon = icon("check-circle"))
                                      ),
                                      
                                      box(width = 9, status = "info", solidHeader = TRUE, title = "Plot", height = "1200px",
-                                         div(class="ldBar", id="dim_red2_loader", "data-preset"="circle"),
                                          div(id="umapPlot_loader",
                                              shinycssloaders::withSpinner(
                                                plotlyOutput(outputId = "umapPlot", height = "1100px")
@@ -645,10 +692,9 @@ ui <- dashboardPage(
                                                  title = "Please note that tSNE doesn't return more than 2 dimensions.", placement = "bottom"
                                                )
                                            ),
-                                         actionButton(inputId = "umapRunUmapTsneATAC", label = "Run UMAP and tSNE"),
+                                         actionButton(inputId = "umapRunUmapTsneATAC", label = "Run UMAP and tSNE!", class="btn-run", icon = icon("check-circle")),
                                          tags$h3("Display settings"),
                                          tags$hr(),
-                                         div(class="ldBar", id="dim_red3_loader", "data-preset"="circle"),
                                          selectInput("umapTypeATAC", "Plot type:",
                                                      c("UMAP" = "umap",
                                                        "tSNE" = "tsne")
@@ -662,11 +708,10 @@ ui <- dashboardPage(
                                          sliderInput("umapDotSizeATAC", "Size:", min = 1, max = 20, value = 5, step = 0.5),
                                          sliderInput("umapDotOpacityATAC", "Opacity:", min = 0, max = 1, value = 1, step = 0.1),
                                          sliderInput("umapDotBorderATAC", "Border width:", min = 0, max = 10, value = 0.5, step = 0.1),
-                                         actionButton(inputId = "umapConfirmATAC", label = "Display plot")
+                                         actionButton(inputId = "umapConfirmATAC", label = "Display plot!", class="btn-run", icon = icon("check-circle"))
                                      ),
                                      
                                      box(width = 9, status = "info", solidHeader = TRUE, title = "Plot", height = "1200px",
-                                         div(class="ldBar", id="dim_red4_loader", "data-preset"="circle"),
                                          div(id="umapPlotATAC_loader",
                                              shinycssloaders::withSpinner(
                                                plotlyOutput(outputId = "umapPlotATAC", height = "1100px")
@@ -680,26 +725,25 @@ ui <- dashboardPage(
       
       #Feature inspection
       tabItem(tabName = "features",
+              bsCollapse(id = 'signature_collapse', multiple = T,
+                         bsCollapsePanel('Do you need help with adding a new signature?', ih_signatureFP_rna, style = 'warning')
+              ),
+              tags$div("Signature scoring: estimated time in web server for a scRNA-seq dataset of 6,000 cells ~ 33sec", tags$br(),
+                       "(The execution times were measured in the web version of the tool. However, improved performance can be 
+                                                          achieved by using the stand-alone version on PCs with appropriate CPU and RAM specifications.)",
+                       class="execTimeMessage"),
+              tags$br(),
               tabsetPanel(type = "tabs", id = "featuresTabPanel",
                           tabPanel("scRNA-seq",
                                    fluidRow(
                                      tabsetPanel(type = "tabs",
                                                  tabPanel("Feature plot", fluidRow(
                                                    box(width = 3, status = "info", solidHeader = TRUE, title = "Options",
-                                                       radioButtons("findMarkersFeatureSignature", label = "Select between gene or signature to plot: ",
-                                                                    choices = list("Gene" = "gene", 
-                                                                                   "Gene signature" = "signature"
-                                                                    ), 
-                                                                    selected = "gene"),
                                                        selectizeInput(inputId = 'findMarkersGeneSelect',
-                                                                      label = 'Select a gene:',
+                                                                      label = 'Type the name of a gene, gene signature or numeric metadata column: 
+                                                                      (e.g. "Ccl2" or "Signature1_Ucell", or "nCount_RNA")',
                                                                       choices = NULL,
                                                                       selected = NULL,
-                                                                      multiple = FALSE),
-                                                       selectizeInput(inputId = 'findMarkersSignatureSelect',
-                                                                      label = 'Select signature/numeric variable:',
-                                                                      choices = "-",
-                                                                      selected = "-",
                                                                       multiple = FALSE),
                                                        selectInput("findMarkersReductionType", "Plot type:",
                                                                    c("-" = "-")
@@ -714,15 +758,14 @@ ui <- dashboardPage(
                                                        ),
                                                        sliderInput("findMarkersMaxCutoff", "Set max expression value: (quantile)", min = 0, max = 99, value = 99, step = 1),
                                                        sliderInput("findMarkersMinCutoff", "Set minimum expression value: (quantile)", min = 0, max = 99, value = 0, step = 1),
-                                                       actionButton(inputId = "findMarkersFPConfirm", label = "Display plot"),
+                                                       actionButton(inputId = "findMarkersFPConfirm", label = "Display plot!", class="btn-run", icon = icon("check-circle")),
                                                        tags$hr(),
                                                        tags$h3("Add a new signature"),
                                                        textInput(inputId = "findMarkersSignatureName", label = "Gene signature name :", value = "Signature1"),
                                                        textAreaInput(inputId = "findMarkersSignatureMembers", label = "Paste a list of genes", cols = 80, rows = 15, placeholder = "Prg4\nTspan15\nCol22a1\nHtra4"),
-                                                       actionButton(inputId = "findMarkersSignatureAdd", label = "Calculate signature score")
+                                                       actionButton(inputId = "findMarkersSignatureAdd", label = "Calculate signature score!", class="btn-run", icon = icon("check-circle"))
                                                    ),
                                                    box(width = 9, status = "info", solidHeader = TRUE, title = "Plot",
-                                                       div(class="ldBar", id="DEA4_loader", "data-preset"="circle"),
                                                        div(id="findMarkersFeaturePlot_loader",
                                                            shinycssloaders::withSpinner(
                                                              plotlyOutput(outputId = "findMarkersFeaturePlot", height = "1300px")
@@ -756,10 +799,9 @@ ui <- dashboardPage(
                                                        ),
                                                        sliderInput("findMarkersFeaturePairMaxCutoff", "Set max expression value: (quantile)", min = 0, max = 99, value = 99, step = 1),
                                                        sliderInput("findMarkersFeaturePairMinCutoff", "Set minimum expression value: (quantile)", min = 0, max = 99, value = 0, step = 1),
-                                                       actionButton(inputId = "findMarkersFeaturePairConfirm", label = "Display plot")
+                                                       actionButton(inputId = "findMarkersFeaturePairConfirm", label = "Display plot!", class="btn-run", icon = icon("check-circle"))
                                                    ),
                                                    box(width=9, status="info", solidHeader=TRUE, title="Plot",
-                                                       div(class="ldBar", id="DEA5_loader", "data-preset"="circle"),
                                                        div(
                                                          column(
                                                            div(id="findMarkersFPfeature1_loader",
@@ -791,25 +833,15 @@ ui <- dashboardPage(
                                                  ),
                                                  tabPanel("Violin plot", fluidRow(
                                                    box(width = 3, status = "info", solidHeader = TRUE, title = "Options",
-                                                       radioButtons("findMarkersViolinFeaturesSignature", label = "Select between gene or signature: ",
-                                                                    choices = list("Gene" = "gene", 
-                                                                                   "Gene signature" = "signature"
-                                                                    ), 
-                                                                    selected = "gene"),
                                                        selectizeInput(inputId = 'findMarkersGeneSelect2',
-                                                                      label = 'Search for gene:',
+                                                                      label = 'Type the name of a gene, gene signature or numeric metadata column: 
+                                                                      (e.g. "Ccl2" or "Signature1_Ucell", or "nCount_RNA")',
                                                                       choices = NULL,
                                                                       selected = NULL,
                                                                       multiple = FALSE), # allow for multiple inputs
-                                                       selectizeInput(inputId = 'findMarkersViolinSignatureSelect',
-                                                                      label = 'Select signature/numeric variable:',
-                                                                      choices = "-",
-                                                                      selected = "-",
-                                                                      multiple = FALSE),
-                                                       actionButton(inputId = "findMarkersViolinConfirm", label = "Display plot")
+                                                       actionButton(inputId = "findMarkersViolinConfirm", label = "Display plot!", class="btn-run", icon = icon("check-circle"))
                                                    ),
                                                    box(width = 9, status = "info", solidHeader = TRUE, title = "Plot",
-                                                       div(class="ldBar", id="DEA6_loader", "data-preset"="circle"),
                                                        div(id="findMarkersViolinPlot_loader",
                                                            shinycssloaders::withSpinner(
                                                              plotlyOutput(outputId = "findMarkersViolinPlot", height = "800px")
@@ -833,10 +865,9 @@ ui <- dashboardPage(
                                                       c("UMAP" = "umap",
                                                         "tSNE" = "tsne")
                                           ),
-                                          actionButton(inputId = "findMarkersFPConfirmATAC", label = "Display plot"),
+                                          actionButton(inputId = "findMarkersFPConfirmATAC", label = "Display plot!", class="btn-run", icon = icon("check-circle")),
                                       ),
                                       box(width = 9, status = "info", solidHeader = TRUE, title = "Plot",
-                                          div(class="ldBar", id="DEA10_loader", "data-preset"="circle"),
                                           div(id="findMarkersFeaturePlotATAC_loader",
                                               shinycssloaders::withSpinner(
                                                 plotOutput(outputId = "findMarkersFeaturePlotATAC", height = "1100px")
@@ -851,6 +882,14 @@ ui <- dashboardPage(
       #ATAC
       #DEA tab
       tabItem(tabName = "findMarkers", 
+              tags$br(),
+              tags$div("Marker genes: estimated time in web server for a scRNA-seq dataset of 6,000 cells ~ 1min 36sec", tags$br(),
+                       "Marker genes: estimated time in web server for a scATAC-seq dataset of 6,000 cells ~ 1min 15sec", tags$br(),
+                       "Marker peaks: estimated time in web server for a scATAC-seq dataset of 6,000 cells ~ 8min 30sec", tags$br(),
+                       "(The execution times were measured in the web version of the tool. However, improved performance can be achieved by using the 
+                       stand-alone version on PCs with appropriate CPU and RAM specifications.)",
+                       class="execTimeMessage"),
+              tags$br(),
               tabsetPanel(type = "tabs", id = "findMarkersTabPanel",
                           tabPanel("scRNA-seq",
                                    fluidRow(
@@ -893,19 +932,17 @@ ui <- dashboardPage(
                                                  title = "Only return markers that have a p-value < slected threshold, or a power > selected threshold (if the test is ROC) :", placement = "bottom"
                                                )
                                            ),
-                                         actionButton(inputId = "findMarkersConfirm", label = "OK")
+                                         actionButton(inputId = "findMarkersConfirm", label = "Find Marker genes!", class="btn-run", icon = icon("check-circle"))
                                      ),
                                      
                                      box(
                                        width = 9, status = "info", solidHeader = TRUE, title = "DEA results",
                                        tabsetPanel(type = "tabs",
                                                    tabPanel("Marker genes", 
-                                                            div(class="ldBar", id="DEA1_loader", "data-preset"="circle"),
                                                             dataTableOutput(outputId="findMarkersTable"),
                                                             downloadButton(outputId = "findMarkersRNAExport", label = "Save table")),
                                                    tabPanel("Heatmap", 
-                                                            div(class="ldBar", id="DEA2_loader", "data-preset"="circle"),
-                                                            actionButton(inputId = "findMarkersTop10HeatmapConfirm", label = "Display top-10 marker genes heatmap"),
+                                                            actionButton(inputId = "findMarkersTop10HeatmapConfirm", label = "Display top-10 marker genes heatmap!", class="btn-run", icon = icon("check-circle")),
                                                             div(id="findMarkersHeatmap_loader",
                                                                 shinycssloaders::withSpinner(
                                                                   plotlyOutput(outputId = "findMarkersHeatmap", height = "1300px")
@@ -914,8 +951,7 @@ ui <- dashboardPage(
                                                             ),
                                                    
                                                    tabPanel("Dotplot", 
-                                                            div(class="ldBar", id="DEA3_loader", "data-preset"="circle"),
-                                                            actionButton(inputId = "findMarkersTop10DotplotConfirm", label = "Display top-10 marker genes dotplot"),
+                                                            actionButton(inputId = "findMarkersTop10DotplotConfirm", label = "Display top-10 marker genes dotplot!", class="btn-run", icon = icon("check-circle")),
                                                             div(id="findMarkersDotplot_loader",
                                                                 shinycssloaders::withSpinner(
                                                                   plotlyOutput(outputId = "findMarkersDotplot", height = "1300px")
@@ -925,11 +961,10 @@ ui <- dashboardPage(
                                                    tabPanel("VolcanoPlot", fluidRow(
                                                      box(width = 3, status = "info", solidHeader = TRUE, title = "Cluster selection",
                                                          selectInput("findMarkersClusterSelect", "Cluster:", choices=c("-"="-"), multiple = F, selectize = F),
-                                                         actionButton(inputId = "findMarkersVolcanoConfirm", "Display volcano plot")
+                                                         actionButton(inputId = "findMarkersVolcanoConfirm", "Display volcano plot!", class="btn-run", icon = icon("check-circle"))
                                                          ),
                                                      
                                                      box(width = 9, status = "info", solidHeader = TRUE, title = "Volcano plot",
-                                                         div(class="ldBar", id="DEA7_loader", "data-preset"="circle"),
                                                          div(id="findMarkersVolcanoPlot_loader",
                                                              shinycssloaders::withSpinner(
                                                                plotlyOutput(outputId = "findMarkersVolcanoPlot", height = "800px")
@@ -960,7 +995,7 @@ ui <- dashboardPage(
                                          sliderInput(inputId = "findMarkersLogFCATAC", label = "Log2FC threshold:", min = 0, max = 3, value = 0.25, step = 0.01),
                                          
                                          sliderInput(inputId = "findMarkersFDRATAC", label = "FDR threshold:", min = 0, max = 1, value = 0.01, step = 0.01),
-                                         actionButton(inputId = "findMarkersConfirmATAC", label = "OK"),
+                                         actionButton(inputId = "findMarkersConfirmATAC", label = "Run analysis!", class="btn-run", icon = icon("check-circle")),
                                          
                                          tags$h3("Marker peaks"),
                                          tags$hr(),
@@ -988,15 +1023,14 @@ ui <- dashboardPage(
                                          #       )
                                          #   ),
                                          
-                                         actionButton(inputId = "findMarkersPeaksConfirmATAC", label = "OK"),
+                                         actionButton(inputId = "findMarkersPeaksConfirmATAC", label = "Run analysis!", class="btn-run", icon = icon("check-circle")),
                                      ),
                                      
-                                     box(
+                                     box(width = 9, status = "info", solidHeader = TRUE,
                                        tabsetPanel(type = "tabs", id = "ATAC_markers_tabs",
                                                    tabPanel("Marker genes (ATAC)", fluidRow(
                                                      tabsetPanel(type = "tabs", id = "marker_genes_tab_id",
                                                                  tabPanel("Marker genes table",
-                                                                          div(class="ldBar", id="DEA8_loader", "data-preset"="circle"),
                                                                           
                                                                           div(id="findMarkersGenesATACTable_loader",
                                                                               shinycssloaders::withSpinner(
@@ -1018,8 +1052,6 @@ ui <- dashboardPage(
                                                    tabPanel("Marker peaks (ATAC)", fluidRow(
                                                      tabsetPanel(type = "tabs", id = "marker_peaks_tab_id",
                                                        tabPanel("Marker peaks table",
-                                                                div(class="ldBar", id="DEA9_loader", "data-preset"="circle"),
-                                                                
                                                                 div(id="findMarkersPeaksATACTable_loader",
                                                                     shinycssloaders::withSpinner(
                                                                       dataTableOutput(outputId="findMarkersPeaksTableATAC"),
@@ -1037,29 +1069,6 @@ ui <- dashboardPage(
                                                      )
                                                     )
                                                    )
-                                                  #  tabPanel("Gene-score plot", fluidRow(
-                                                  #    box(width = 3, status = "info", solidHeader = TRUE, title = "Options",
-                                                  #        selectizeInput(inputId = 'findMarkersGeneSelectATAC',
-                                                  #                       label = 'Select a gene:',
-                                                  #                       choices = NULL,
-                                                  #                       selected = NULL,
-                                                  #                       multiple = FALSE),
-                                                  #        selectInput("findMarkersReductionTypeATAC", "Plot type:",
-                                                  #                    c("UMAP" = "umap",
-                                                  #                      "tSNE" = "tsne")
-                                                  #        ),
-                                                  #        actionButton(inputId = "findMarkersFPConfirmATAC", label = "Display plot"),
-                                                  #    ),
-                                                  #    box(width = 9, status = "info", solidHeader = TRUE, title = "Plot",
-                                                  #        div(class="ldBar", id="DEA10_loader", "data-preset"="circle"),
-                                                  #        div(id="findMarkersFeaturePlotATAC_loader",
-                                                  #            shinycssloaders::withSpinner(
-                                                  #              plotOutput(outputId = "findMarkersFeaturePlotATAC", height = "1100px")
-                                                  #            )
-                                                  #        )
-                                                  #    )
-                                                  #  )
-                                                  # )
                                        )
                                      )
                                    )
@@ -1069,12 +1078,21 @@ ui <- dashboardPage(
       
       #Doublets' detection
       tabItem(tabName = "doubletDetection", 
+              tags$br(),
+              tags$div("Doublet detection: estimated time in web server for a scRNA-seq dataset of 6,000 cells ~ 2min 16sec", tags$br(),
+                       "Doublet detection: estimated time in web server for a scATAC-seq dataset of 6,000 cells ~ 7min 50sec", tags$br(),
+                       "(The execution times were measured in the web version of the tool. However, improved performance can be achieved by using the 
+                       stand-alone version on PCs with appropriate CPU and RAM specifications.)",
+                       class="execTimeMessage"),
+              tags$br(),
               tabsetPanel(type = "tabs", id = "doubletDetectionTabPanel",
                           tabPanel("scRNA-seq",
                                    fluidRow(
                                      box(
                                        width = 4, status = "info", solidHeader = TRUE,
                                        title = "Doublet detection parameters",
+                                       tags$h3("1. Options for doublet dection"),
+                                       tags$hr(),
                                        sliderInput(inputId = "doubletsPN", label = "Artificial doublet's rate :", min = 0.01, max = 1, value = 0.25, step = 0.01),
                                        sliderInput(inputId = "doubletsPCs", label = "Number of principal components to use :", min = 1, max = 100, value = 10, step = 1),
                                        radioButtons("doubletsPKRadio", label = "PC neighborhood size estimation: ",
@@ -1084,12 +1102,22 @@ ui <- dashboardPage(
                                                     selected = "auto"),
                                        sliderInput(inputId = "doubletsPK", label = "PC neighborhood size (used only when manual is selected):", min = 0, max = 1, value = 0.09, step = 0.01),
                                        sliderInput(inputId = "doubletsNExp", label = "Percentage of doubles expected :", min = 0.01, max = 1, value = 0.03, step = 0.01),
-                                       actionButton(inputId = "doubletsConfirm", label = "Perform doublets' detection"),
+                                       selectInput("doubletsReduction", "Plot type:",
+                                                   c("-" = "-")),
+                                       actionButton(inputId = "doubletsConfirm", label = "Perform doublets' detection!", class="btn-run", icon = icon("check-circle")),
+                                       tags$h3("2. Options for doublet removal (optional)"),
+                                       tags$hr(),
+                                       radioButtons("doubletsCellRemoval", label = "Remove doublet cells: ",
+                                                    choices = list("All predicted doublets" = "all", 
+                                                                   "Only heterotypic doublets" = "heterotypic"
+                                                    ), 
+                                                    selected = "all"),
+                                       actionButton(inputId = "doubletsRemove", label = "Delete doublets!", class="btn-run", icon = icon("check-circle"))
                                      ),
                                      box(
                                        width = 8, status = "info", solidHeader = TRUE, title = "Doublet detection output",
-                                       div(class="ldBar", id="doubletRNA_loader1", "data-preset"="circle"),
-                                       column(verbatimTextOutput(outputId = "doubletsInfo"), width = 4)
+                                       verbatimTextOutput(outputId = "doubletsInfo"),
+                                       plotlyOutput(outputId = "doubletPCAplot", height = "700px")
                                        )
                                    )
                           ),
@@ -1097,7 +1125,9 @@ ui <- dashboardPage(
                                    fluidRow(
                                      box(
                                        width = 4, status = "info", solidHeader = TRUE,
-                                       title = "Doublet detection options",
+                                       title = "Doublet detection parameters",
+                                       tags$h3("1. Options for doublet dection"),
+                                       tags$hr(),
                                        sliderInput(inputId = "doubletsATACk", label = "The number of cells neighboring a simulated doublet to be considered as putative doublets :", min = 5, max = 100, value = 10, step = 1),
                                        radioButtons("doubletsATACLSI", label = "Order of operations in the TF-IDF normalization: ",
                                                     choices = list("tf-logidf" = "1", 
@@ -1105,11 +1135,15 @@ ui <- dashboardPage(
                                                                    "logtf-logidf" = "3"
                                                     ), 
                                                     selected = "1"),
-                                       actionButton(inputId = "doubletsATACConfirm", label = "Perform doublets' detection"), 
+                                       actionButton(inputId = "doubletsATACConfirm", label = "Perform doublets' detection!", class="btn-run", icon = icon("check-circle")), 
+                                       tags$h3("2. Options for doublet removal (optional)"),
+                                       tags$hr(),
+                                       sliderInput(inputId = "doubletsATACfilterRatio", label = "The maximum ratio of predicted doublets to filter 
+                                                   based on the number of pass-filter cells:", min = 0.1, max = 5, value = 1, step = 0.1),
+                                       actionButton(inputId = "doubletsATACDelete", label = "Delete doublets", class="btn-run", icon = icon("check-circle")),
                                      ),
                                      box(
                                        width = 8, status = "info", solidHeader = TRUE, title = "Doublet detection output",
-                                       div(class="ldBar", id="doubletATAC_loader2", "data-preset"="circle"),
                                        div(id="doubletATAC_loader3",
                                            shinycssloaders::withSpinner(
                                             plotOutput(outputId = "doubletsScoreATAC")
@@ -1128,25 +1162,36 @@ ui <- dashboardPage(
       
       #Cell cycle phase analysis
       tabItem(tabName = "cellCycle",
+              tags$br(),
+              tags$div("Cell cycle phase analyis: estimated time in web server for a scRNA-seq dataset of 6,000 cells ~ 4sec", tags$br(),
+                       "(The execution times were measured in the web version of the tool. However, improved performance can be achieved by using the 
+                       stand-alone version on PCs with appropriate CPU and RAM specifications.)",
+                       class="execTimeMessage"),
+              tags$br(),
               fluidRow(
                 box(
                   width = 12, status = "info", solidHeader = T,
                   title = "Cell cycle phase analysis",
                   tabsetPanel(type = "tabs",
                               tabPanel("Dimensionality reduction plot", 
+                                       tags$br(),
+                                       tags$div("After succesfully running cell cycle 
+                                       phase analysis the columns S.Score, G2M.Score and CC.Difference are stored in the metadata
+                                       table. You can regress out the cell cycle effect by returning to the tab DATA NORMALIZATION
+                                       & SCALING and repeating step3, after selecting the preferred metadata variables.",id="cellCycleMessage"),
+                                       tags$br(),
+                                       tags$hr(),
                                        selectInput("cellCycleReduction", "Plot type:",
                                                    c("-" = "-")
                                        ),
-                                       actionButton(inputId = "cellCycleRun", label = "Run cell cycle analysis"),
-                                       div(class="ldBar", id="CC1_loader", "data-preset"="circle"),
+                                       actionButton(inputId = "cellCycleRun", label = "Run cell cycle analysis!", class="btn-run", icon = icon("check-circle")),
                                        div(id="cellCyclePCA_loader",
                                            shinycssloaders::withSpinner(
                                              plotlyOutput(outputId = "cellCyclePCA", height = "700px")
                                            )
-                                       )
+                                       ),
                               ),
                               tabPanel("Barplot",
-                                       div(class="ldBar", id="CC2_loader", "data-preset"="circle"),
                                        div(id="cellCycleBarplot_loader",
                                            shinycssloaders::withSpinner(
                                              plotlyOutput(outputId = "cellCycleBarplot", height = "1100px")
@@ -1160,6 +1205,15 @@ ui <- dashboardPage(
       
       #Enrichment analysis -gProfiler
       tabItem(tabName = "gProfiler", 
+              bsCollapse(id = 'flameRNA_collapse', multiple = T,
+                         bsCollapsePanel('Do you need help with enrichment analysis of multiple lists using Flame?', ih_flame_rna, style = 'warning')
+              ),
+              tags$div("Functional enrichment analysis: estimated time in web server for a scRNA-seq dataset of 6,000 cells ~ 3sec (per genelist)", tags$br(),
+                       "Motif enrichment analysis: estimated time in web server for a scATAC-seq dataset of 6,000 cells ~ 7min 05sec", tags$br(),
+                       "(The execution times were measured in the web version of the tool. However, improved performance can be achieved by using the 
+                       stand-alone version on PCs with appropriate CPU and RAM specifications.)",
+                       class="execTimeMessage"),
+              tags$br(),
               tabsetPanel(type = "tabs", id = "gProfilerTabPanel",
                           tabPanel("scRNA-seq",
                                    fluidRow(
@@ -1200,7 +1254,7 @@ ui <- dashboardPage(
                                                       selected = "bonferroni"
                                          ), 
                                          sliderInput("gProfilerSliderSignificanceTerms", "Significance for enriched terms :", min = 0, max = 1, value = 0.05, step = 0.01),
-                                         actionButton(inputId = "gProfilerConfirm", label = "OK"),
+                                         actionButton(inputId = "gProfilerConfirm", label = "Run enrichment analysis!", class="btn-run", icon = icon("check-circle")),
                                          tags$h3("3. Multiple cluster enrichment analysis"),
                                          tags$hr(),
                                          selectizeInput(
@@ -1210,17 +1264,15 @@ ui <- dashboardPage(
                                            multiple = TRUE,
                                            options = list(maxItems = 10)
                                          ),
-                                         actionButton(inputId = "sendToFlame", label = "Send to Flame")
+                                         actionButton(inputId = "sendToFlame", label = "Send to Flame!", class="btn-run", icon = icon("check-circle"))
                                      ),
                                      box(
                                        width = 10, status = "info", solidHeader = TRUE, title = "Enrichment analysis results",
                                        tabsetPanel(type = "tabs",
                                                    tabPanel("Table of functional terms", 
-                                                            div(class="ldBar", id="gprof1_loader", "data-preset"="circle"),
                                                             dataTableOutput(outputId = "gProfilerTable"),
                                                             downloadButton(outputId = "gProfilerRNAExport", label = "Save table")),
                                                    tabPanel("Manhattan plot", 
-                                                            div(class="ldBar", id="gprof2_loader", "data-preset"="circle"),
                                                             div(id="gProfilerManhattan_loader",
                                                                 shinycssloaders::withSpinner(
                                                                   plotlyOutput(outputId = "gProfilerManhattan")
@@ -1249,13 +1301,12 @@ ui <- dashboardPage(
                                                      )),
                                          sliderInput(inputId = "findMotifsLogFCATAC", label = "Log2FC threshold:", min = 0, max = 3, value = 0.25, step = 0.01),
                                          sliderInput(inputId = "findMotifsFDRATAC", label = "FDR threshold:", min = 0, max = 1, value = 0.01, step = 0.01),
-                                         actionButton(inputId = "findMotifsConfirmATAC", label = "OK"),
+                                         actionButton(inputId = "findMotifsConfirmATAC", label = "Run analysis!", class="btn-run", icon = icon("check-circle")),
                                      ),
                                      
                                      box(width = 9, status = "info", solidHeader = TRUE, title = "Motif enrichment analysis results",
                                          tabsetPanel(type = "tabs",
                                                      tabPanel("Table of enriched motifs", 
-                                                                div(class="ldBar", id="motif_loader", "data-preset"="circle"),
                                                                 div(id="findMotifsATACTable_loader",
                                                                   shinycssloaders::withSpinner(
                                                                     dataTableOutput(outputId="findMotifsTableATAC")
@@ -1279,6 +1330,13 @@ ui <- dashboardPage(
       
       #Clusters' annotation
       tabItem(tabName = "annotateClusters",
+              tags$br(),
+              tags$div("Cell type annotation: estimated time in web server for a scRNA-seq dataset of 6,000 cells ~ 22sec", tags$br(),
+                       "scATAC-scRNA integration: estimated time in web server for two datasets of 12,000 cells ~ 11min 12sec", tags$br(),
+                       "(The execution times were measured in the web version of the tool. However, improved performance can be achieved by using the 
+                       stand-alone version on PCs with appropriate CPU and RAM specifications.)",
+                       class="execTimeMessage"),
+              tags$br(),
               tabsetPanel(type="tabs", id = "annotateClustersTabPanel",
                           tabPanel("scRNA-seq",
                                    fluidRow(
@@ -1309,18 +1367,16 @@ ui <- dashboardPage(
                                                     selected = "all_genes_pearson"
                                        ),
                                        tags$hr(),
-                                       actionButton(inputId = "annotateClustersConfirm", label = "OK"),
+                                       actionButton(inputId = "annotateClustersConfirm", label = "Run cluster annotation analysis!", class="btn-run", icon = icon("check-circle")),
                                      ),
                                      box(
                                        width = 9, status = "info", solidHeader = TRUE, title = "Cell type annotation",
                                        tabsetPanel(type = "tabs",
                                                    tabPanel("Top-5 hits table", 
-                                                            div(class="ldBar", id="annot1_loader", "data-preset"="circle"),
                                                             dataTableOutput(outputId="annotateClustersCIPRTable"),
                                                             downloadButton(outputId = "annotationRNAExport", label = "Save table")
                                                    ),
                                                    tabPanel("Top-5 hits dotplot", 
-                                                            div(class="ldBar", id="annot2_loader", "data-preset"="circle"),
                                                             div(id="annotateClustersCIPRDotplot_loader",
                                                                 shinycssloaders::withSpinner(
                                                                   plotlyOutput(outputId="annotateClustersCIPRDotplot", height = "1100px")
@@ -1336,10 +1392,10 @@ ui <- dashboardPage(
                                      box(
                                        width = 3, status = "info", solidHeader = TRUE, title = "Annotation options",
                                        fileInput(inputId = "annotateClustersRDSInput", label = "Upload an .RDS file", accept = ".RDS"),
-                                       actionButton(inputId = "annotateClustersConfirmATAC", label = "OK"),
+                                       actionButton(inputId = "annotateClustersConfirmATAC", label = "Run analysis!", class="btn-run", icon = icon("check-circle")),
                                      ),
                                      box(
-                                       width = 9, status = "info", solidHeader = TRUE, title = "Cell type annotation from scRNA-seq", # #
+                                       width = 9, status = "info", solidHeader = TRUE, title = "Cell type annotation from scRNA-seq",
                                        div(id="annotateClustersUMAP_loader",
                                            shinycssloaders::withSpinner(
                                              plotlyOutput(outputId="annotateClustersUMAPplot", height = "1100px")
@@ -1353,25 +1409,32 @@ ui <- dashboardPage(
       
       #Trajectory analysis
       tabItem(tabName = "trajectory",
+              tags$br(),
+              tags$div("Trajectory inference: estimated time in web server for a scRNA-seq dataset of 6,000 cells ~ 14sec", tags$br(),
+                       "Trajectory inference: estimated time in web server for a scATAC-seq dataset of 6,000 cells ~ 1min 09sec", tags$br(),
+                       "(The execution times were measured in the web version of the tool. However, improved performance can be achieved by using the 
+                       stand-alone version on PCs with appropriate CPU and RAM specifications.)",
+                       class="execTimeMessage"),
+              tags$br(),
               tabsetPanel(type="tabs", id = "trajectoryTabPanel",
                           tabPanel("scRNA-seq", 
                                    fluidRow(
                                      box(
                                        width = 3, status = "info", solidHeader = TRUE,
                                        title = "Trajectory parameters",
-                                       selectInput("trajectoryReduction", "Dimensionality reduction method:", choices=c("PCA"="pca","UMAP"="umap", "tSNE"="tsne", "Diffusion Map"="dfm"), selected = "PCA",
+                                       selectInput("trajectoryReduction", "Dimensionality reduction method:", 
+                                                   choices=c("PCA"="pca","UMAP"="umap", "tSNE"="tsne", "Diffusion Map"="dfm"), selected = "PCA",
                                                    multiple = FALSE,selectize = TRUE, width = NULL, size = NULL),
                                        sliderInput("trajectorySliderDimensions", "Number of dimensions to use :", min = 0, max = 100, value = 3, step = 1),
                                        selectInput("trajectoryStart", "Initial state:", choices=c("-"="-"), selected = "-", multiple = F, selectize = F),
                                        selectInput("trajectoryEnd", "Final state:", choices=c("-"="-"), selected = "0", multiple = F, selectize = F),
-                                       actionButton(inputId = "trajectoryConfirm", label = "OK")
+                                       actionButton(inputId = "trajectoryConfirm", label = "Run trajectory analysis!", class="btn-run", icon = icon("check-circle"))
                                      ),
 
                                    box(
                                      width = 9, status = "info", solidHeader = TRUE, title = "Trajectory analysis results",
                                      tabsetPanel(type = "tabs",
                                                  tabPanel("Structure overview", 
-                                                          div(class="ldBar", id="traj1_loader", "data-preset"="circle"),
                                                           div(id="trajectoryPlot_loader",
                                                               shinycssloaders::withSpinner(
                                                                 plotOutput(outputId="trajectoryPlot", height = "1100px")
@@ -1385,10 +1448,9 @@ ui <- dashboardPage(
                                                                    choices = c("Lineage1"),
                                                                    selected = "Lineage1",
                                                                    multiple = FALSE),
-                                                       actionButton(inputId = "trajectoryConfirmLineage", label = "ok")
+                                                       actionButton(inputId = "trajectoryConfirmLineage", label = "Select lineage!", class="btn-run", icon = icon("check-circle"))
                                                    ),
                                                    box(width = 9, status = "info", solidHeader = TRUE, title = "Pseudotime plot",
-                                                       div(class="ldBar", id="traj2_loader", "data-preset"="circle"),
                                                        div(id="trajectoryPseudotimePlot_loader",
                                                            shinycssloaders::withSpinner(
                                                              plotOutput(outputId = "trajectoryPseudotimePlot", height = "1100px")
@@ -1415,7 +1477,7 @@ ui <- dashboardPage(
                                          selected = "-"),
                              selectInput("trajectoryStartATAC", "Initial state:", choices=c("-"="-"), selected = "-", multiple = F, selectize = F),
                              selectInput("trajectoryEndATAC", "Final state:", choices=c("-"="-"), selected = "-", multiple = F, selectize = F),
-                             actionButton(inputId = "trajectoryConfirmATAC", label = "OK")
+                             actionButton(inputId = "trajectoryConfirmATAC", label = "Run analysis!", class="btn-run", icon = icon("check-circle"))
                            ),
                            box(
                              width = 9, status = "info", solidHeader = TRUE, 
@@ -1425,14 +1487,12 @@ ui <- dashboardPage(
                                          choices = c("Lineage1"),
                                          selected = "Lineage1",
                                          multiple = FALSE),
-                             actionButton(inputId = "trajectoryConfirmLineageATAC", label = "Display pseudotime ranking"),
-                             div(class="ldBar", id="traj4_loader", "data-preset"="circle"),
+                             actionButton(inputId = "trajectoryConfirmLineageATAC", label = "Display pseudotime ranking!", class="btn-run", icon = icon("check-circle")),
                              div(id="trajectoryPseudotimePlotATAC_loader",
                                  shinycssloaders::withSpinner(
                                    plotOutput(outputId = "trajectoryPseudotimePlotATAC", height = "1100px")
                                    )
                                  ),
-                             div(class="ldBar", id="traj3_loader", "data-preset"="circle"),
                              verbatimTextOutput(outputId="trajectoryTextATAC")
                            )
                          )
@@ -1442,17 +1502,22 @@ ui <- dashboardPage(
       
       #L-R analysis
       tabItem(tabName = "ligandReceptor",
+              tags$br(),
+              tags$div("L-R analysis: estimated time in web server for a scRNA-seq dataset of 6,000 cells ~ 15sec (per cluster pair)", tags$br(),
+                       "(The execution times were measured in the web version of the tool. However, improved performance can be achieved by using the 
+                       stand-alone version on PCs with appropriate CPU and RAM specifications.)",
+                       class="execTimeMessage"),
+              tags$br(),
                fluidRow(
                  box(
                    width = 3, status = "info", solidHeader = TRUE,
                    title = "L-R analysis parameters",
                    selectInput("ligandReceptorSender", "Ligand expressing cluster:", choices=c("-"="-"), multiple = F, selectize = F),
                    selectInput("ligandReceptorReciever", "Receptor expressing cluster:", choices=c("-"="-"), multiple = F, selectize = F),
-                   actionButton(inputId = "ligandReceptorConfirm", label = "OK")
+                   actionButton(inputId = "ligandReceptorConfirm", label = "Run ligand-receptor analysis!", class="btn-run", icon = icon("check-circle"))
                  ),
                  box(
                    width = 9, status = "info", solidHeader = TRUE, title = "L-R analysis results",
-                   div(class="ldBar", id="lr_loader", "data-preset"="circle"),
                    div(
                      tabsetPanel(type = "tabs",
                                  tabPanel("All interactions",
@@ -1477,53 +1542,92 @@ ui <- dashboardPage(
       
       #GRN analysis
       tabItem(tabName = "grn",
+              bsCollapse(id = 'scenicRNA_collapse', multiple = T,
+                         bsCollapsePanel('Do you need help with SCENIC analysis?', ih_scenic_rna, style = 'warning')
+              ),
+              tags$div("TF activity inference: estimated time in web server for a scRNA-seq dataset of 6,000 cells ~ 4min 05sec", tags$br(),
+                       "Detection of positive regulators: estimated time in web server for a scATAC-seq dataset of 6,000 cells ~ 36min 50sec", tags$br(),
+                       "(The execution times were measured in the web version of the tool. However, improved performance can be achieved by using the 
+                       stand-alone version on PCs with appropriate CPU and RAM specifications.)",
+                       class="execTimeMessage"),
+              tags$br(),
               tabsetPanel(type="tabs", id = "grnTabPanel",
                           tabPanel("scRNA-seq",
-                                   fluidRow(
-                                     box(width = 3, status = "info", solidHeader = TRUE, title = "GRN input parameters",
-                                         div(class="ldBar", id="loom_production_loader", "data-preset"="circle"),
-                                         tags$h3("Prepare files for pyscenic"),
-                                         tags$hr(),
-                                         radioButtons("grnGenomeBuild", label = h3("Select genome build : "),
-                                                      choices = list("Mus musculus (Mouse) - mm10" = "mm10", 
-                                                                     "Homo sapiens (Human) - hg19" = "hg19",
-                                                                     "Homo sapiens (Human) - hg38" = "hg38"
-                                                      ), 
-                                                      selected = "mm10"),
-                                         
-                                         actionButton(inputId = "grnProduceLoom", label = "Prepare .RDS and .loom files for download"),
-                                         tags$br(),
-                                         div(
-                                           tags$br(),
-                                           downloadButton(outputId = "grnDownloadLoom", label = "Export loom file"),
-                                           downloadButton(outputId = "grnDownloadRDS", label = "Export RDS file"),
-                                         ),
-                                         
-                                         div(class="ldBar", id="loom_analysis_loader", "data-preset"="circle"),
-                                         tags$h3("Analyze pyscenic output"),
-                                         tags$hr(),
-                                         fileInput(inputId = "grnLoomInput", label = "Upload a .loom file", accept = ".loom"),
-                                         fileInput(inputId = "grnRDSInput", label = "Upload an .RDS file", accept = ".RDS"),
-                                         actionButton(inputId = "grnLoomAnalysis", label = "Analyze files"),
-                                         
-                                         tags$h3("Visualization options"),
-                                         tags$hr(),
-                                         selectInput(inputId = "grnMatrixSelectionRNA", label = "Regulons - display:", choices = c("Matrix of AUC values"="auc",
-                                                                                                                                   "Matrix of RSS scores"="rss")),
-                                         sliderInput(inputId = "grnTopRegulonsRNA", label = "Display top regulons:", min = 5, max = 100, value = 10, step = 1),
-                                         actionButton(inputId = "grnConfirmVisualizationRNA", label = "Plot")
-                                     ),
-                                     box(width = 9, status = "info", solidHeader = TRUE, title = "GRN output",
-                                         div( dataTableOutput(outputId="grnMatrixRNA") ),
-                                         tags$br(),
-                                         tags$hr(),
-                                         div(id="grnHeatmapRNA_loader",
-                                             shinycssloaders::withSpinner(
-                                               plotlyOutput(outputId = "grnHeatmapRNA", height = "800px")
-                                             )
-                                         )
-                                     )
+                                   tabsetPanel(type="tabs", 
+                                               tabPanel("Transcription factor activity inference",
+                                                        fluidRow(
+                                                          box(width = 3, status = "info", solidHeader = TRUE, title = "Analysis parameters",
+                                                              radioButtons("grnComplexes", label = h3("Complexes:"),
+                                                                           choices = list("Keep complexes together (suggested)" = "keep",
+                                                                             "Split complexes into subunits" = "split"
+                                                                           ),
+                                                                           selected = "keep"
+                                                                           ),
+                                                              radioButtons("grnAnalysisMethod", label = h3("Model used in the analysis:"),
+                                                                           choices = list("Multivariate linear model" = "mlm",
+                                                                                          "Univariate linear model" = "ulm",
+                                                                                          "Weighted sum" = "wsum"
+                                                                           ),
+                                                                           selected = "ulm",
+                                                              ),
+                                                              actionButton(inputId = "grnRunDecoupler", label = "Run analysis!", class="btn-run", icon = icon("check-circle"))
+                                                              ),
+                                                          box(width = 9, status = "info", solidHeader = TRUE, title = "TF activity analysis output",
+                                                              dataTableOutput(outputId= "grnMatrixRNA_DecoupleR"),
+                                                              downloadButton(outputId = "grnMatrixDecoupleRRNAExport", label = "Save table"),
+                                                              tags$hr(),
+                                                              plotlyOutput(outputId = "grnHeatmapRNA_DecoupleR", height = "800px")
+                                                          )
+                                                          )
+                                               ),
+                                               tabPanel("GRN analysis", 
+                                                        fluidRow(
+                                                          box(width = 3, status = "info", solidHeader = TRUE, title = "GRN input parameters",
+                                                              tags$h3("Prepare files for pyscenic"),
+                                                              tags$hr(),
+                                                              radioButtons("grnGenomeBuild", label = h3("Select genome build : "),
+                                                                           choices = list("Mus musculus (Mouse) - mm10" = "mm10", 
+                                                                                          "Homo sapiens (Human) - hg19" = "hg19",
+                                                                                          "Homo sapiens (Human) - hg38" = "hg38"
+                                                                           ), 
+                                                                           selected = "mm10"),
+                                                              
+                                                              actionButton(inputId = "grnProduceLoom", label = "Prepare .RDS and .loom files for download!", class="btn-run", icon = icon("check-circle")),
+                                                              tags$br(),
+                                                              div(
+                                                                tags$br(),
+                                                                downloadButton(outputId = "grnDownloadLoom", label = "Export loom file"),
+                                                                downloadButton(outputId = "grnDownloadRDS", label = "Export RDS file"),
+                                                              ),
+                                                              
+                                                              tags$h3("Analyze pyscenic output"),
+                                                              tags$hr(),
+                                                              fileInput(inputId = "grnLoomInput", label = "Upload a .loom file", accept = ".loom"),
+                                                              fileInput(inputId = "grnRDSInput", label = "Upload an .RDS file", accept = ".RDS"),
+                                                              actionButton(inputId = "grnLoomAnalysis", label = "Analyze files", class="btn-run", icon = icon("check-circle")),
+                                                              
+                                                              tags$h3("Visualization options"),
+                                                              tags$hr(),
+                                                              selectInput(inputId = "grnMatrixSelectionRNA", label = "Regulons - display:", choices = c("Matrix of AUC values"="auc",
+                                                                                                                                                        "Matrix of RSS scores"="rss")),
+                                                              sliderInput(inputId = "grnTopRegulonsRNA", label = "Display top regulons:", min = 5, max = 100, value = 10, step = 1),
+                                                              actionButton(inputId = "grnConfirmVisualizationRNA", label = "Display Plot!", class="btn-run", icon = icon("check-circle"))
+                                                          ),
+                                                          box(width = 9, status = "info", solidHeader = TRUE, title = "GRN output",
+                                                              div( dataTableOutput(outputId="grnMatrixRNA") ),
+                                                              downloadButton(outputId = "grnMatrixScenicRNAExport", label = "Save table"),
+                                                              tags$br(),
+                                                              tags$hr(),
+                                                              div(id="grnHeatmapRNA_loader",
+                                                                  shinycssloaders::withSpinner(
+                                                                    plotlyOutput(outputId = "grnHeatmapRNA", height = "800px")
+                                                                  )
+                                                              )
+                                                          )
+                                                        )
+                                               )
                                    )
+                                   
                           ),
                           tabPanel("scATAC-seq",
                                    fluidRow(
@@ -1539,12 +1643,11 @@ ui <- dashboardPage(
                                                    )),
                                        sliderInput(inputId = "grnFdrATAC", label = "FDR threshold:", min = 0, max = 1, value = 0.1, step = 0.01),
                                        sliderInput(inputId = "grnCorrlationATTAC", label = "Correllation threshold:", min = 0, max = 1, value = 0.7, step = 0.1),
-                                       actionButton(inputId = "grnConfirmATAC", label = "OK")
+                                       actionButton(inputId = "grnConfirmATAC", label = "Run analysis!", class="btn-run", icon = icon("check-circle"))
                                      ),
                                      box(width = 9, status = "info", solidHeader = TRUE, title = "Gene regulatory networks results",
                                          tabsetPanel(type = "tabs",
                                                      tabPanel("Positive regulators table",
-                                                              div(class="ldBar", id="grn2_loader", "data-preset"="circle"),
                                                               div(id="grnATACTable_loader",
                                                                   shinycssloaders::withSpinner(
                                                                     dataTableOutput(outputId="grnMatrixATAC")
@@ -1560,7 +1663,6 @@ ui <- dashboardPage(
                                                               )
                                                      ),
                                                      tabPanel("Peak to gene links",
-                                                              
                                                               div(id="grnATACTable2_loader",
                                                                   shinycssloaders::withSpinner(
                                                                     dataTableOutput(outputId="grnP2GlinksTable"),
@@ -1600,11 +1702,10 @@ ui <- dashboardPage(
                                    multiple = FALSE),
                     sliderInput("visualizeTracksBPupstream", "BP upstream :", min = 100, max = 100000, value = 50000, step = 1000),
                     sliderInput("visualizeTracksBPdownstream", "BP downstream :", min = 100, max = 100000, value = 50000, step = 1000),
-                    actionButton(inputId = "visualizeTracksConfirm", label = "OK")
+                    actionButton(inputId = "visualizeTracksConfirm", label = "Visualize tracks!", class="btn-run", icon = icon("check-circle"))
                     ),
                 box(width = 9, status = "info", solidHeader = TRUE,
                     title = "scATAC-seq tracks",
-                    div(class="ldBar", id="tracks_loader", "data-preset"="circle"),
                     div(id="visualizeTracksOutput_loader",
                         shinycssloaders::withSpinner(
                           plotOutput(outputId="visualizeTracksOutput", height = "1100px")
@@ -1637,6 +1738,13 @@ ui <- dashboardPage(
                                       br(),
                                       file_upload_tab_intro,
                                       file_upload_10x,
+                                      br(),
+                                      file_upload_tab_new_project
+                                    ),
+                                    tabPanel("scRNA-seq: Seurat RDS file input",
+                                      br(),
+                                      file_upload_tab_intro,
+                                      file_upload_RDS,
                                       br(),
                                       file_upload_tab_new_project
                                     ),
@@ -1809,6 +1917,22 @@ ui <- dashboardPage(
                                   )    
                                   
                          ),
+                         tabPanel("Doublets' detection",
+                                  tabsetPanel(type = "tabs",
+                                              tabPanel("scRNA-seq: Doublets' detection",
+                                                       br(),
+                                                       doublets_tab_intro,
+                                                       br(),
+                                                       doublets_tab_rna
+                                              ),
+                                              tabPanel("scATAC-seq: Doublets' detection",
+                                                       br(),
+                                                       doublets_tab_intro,
+                                                       br(),
+                                                       doublets_tab_atac       
+                                              )
+                                  )
+                         ),
                          tabPanel("Cell Cycle phase",
                                   br(),
                                   cellCycle_tab_intro,
@@ -1832,10 +1956,20 @@ ui <- dashboardPage(
                                             )
                          ),
                          tabPanel("Cluster Annotation",
-                                  br(),
-                                  annot_tab_intro,
-                                  br(),
-                                  annot_cipr_rna
+                                  tabsetPanel(type = "tabs",
+                                              tabPanel("scRNA-seq: Cluster annotation",
+                                                       br(),
+                                                       annot_tab_intro,
+                                                       br(),
+                                                       annot_cipr_rna
+                                              ),
+                                              tabPanel("scATAC-seq: Integration with scRNA-seq",
+                                                       br(),
+                                                       annot_tab_intro,
+                                                       br(),
+                                                       annot_atac
+                                              )
+                                  )
                          ),
                          tabPanel("Trajectory Inference",
                                   tabsetPanel(type = "tabs",
@@ -1880,7 +2014,13 @@ ui <- dashboardPage(
                                   tracks_tab_intro,
                                   br(),
                                   tracks_tab_atac
-                                  )
+                                  ),
+                         tabPanel("Utilities",
+                                  br(),
+                                  utility_tab_intro,
+                                  br(),
+                                  utility_tab_rna
+                         )
                        )
                 )
               ) #fluidRow end

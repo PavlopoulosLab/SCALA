@@ -28,6 +28,10 @@ library(missMDA)
 library(dismo)
 library(DoubletFinder)
 library(phateR) #pip install phate //\\ #install.packages("phateR") //\\ *devtools::install_github("scottgigante/seurat", ref="patch/add-PHATE-again") //\\ #reticulate::py_install("phate", pip=TRUE)
+library(decoupleR) #BiocManager::install("saezlab/decoupleR") or BiocManager::install("decoupleR")
+library(tibble)
+library(tidyr)
+library(shinyBS)
 #ATAC libraries
 library(ArchR)
 library(pheatmap)
@@ -96,7 +100,8 @@ export_enrichedTerms_RNA <- ""
 export_annotation_RNA <- ""
 export_ligandReceptor_full_RNA <- ""
 export_ligandReceptor_short_RNA <- ""
-
+export_scenicAUC_full_RNA <- ""
+export_decoupleRZscores_full_RNA <- ""
 
 #ATAC variables
 ArrowFiles <- NULL
