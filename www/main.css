@@ -109,6 +109,7 @@ td{ /* for tags */
   background-color: #F28C28;
   color: #FFFFFF;
   font-weight: bold;
+  padding:4px; 
 }
 
 .h3-example
@@ -123,7 +124,31 @@ td{ /* for tags */
   border-color: #FF6600;
 }
 
-#metadataTable, #metadataTableATAC{
+.btn-run
+{
+  background-color: #4CAF50;
+  color: #FFFFFF;
+  font-weight: bold;
+}
+
+.btn-run:hover {
+  background-color: #4CAF55 !important;
+  box-shadow: 0 12px 16px 0 rgba(0,0,0,0.24),0 17px 50px 0 rgba(0,0,0,0.19) !important;
+  color: #FFFFFF!important;
+  font-weight: bold!important;
+}
+
+.execTimeMessage {
+  background-color: #222d32 !important;
+  color: #FFFFFF!important;
+  font-weight: bold!important;
+  border-radius: 10px;
+  box-shadow: 5px 5px #bcc0c4;
+  padding:5px;
+}
+
+#metadataTable, #metadataTableATAC, #findMarkersTable, #findMarkersGenesTableATAC, #findMarkersPeaksTableATAC, #gProfilerTable, #findMotifsTableATAC,
+#annotateClustersCIPRTable, #grnMatrixRNA_DecoupleR, #grnMatrixRNA, #grnMatrixATAC, #grnP2GlinksTable, #grnMotifTable{
   overflow-x: scroll;
 }
 
@@ -147,3 +172,18 @@ td{ /* for tags */
 #clust2_loader{
   margin-top: 450px;
 }
+
+#grn2_loader{
+  height: 0px;
+}
+
+#cellCycleMessage {
+  background-color: #5197A3 !important;
+  color: #FFFFFF!important;
+  font-weight: bold!important;
+  border-radius: 10px;
+  box-shadow: 5px 5px #bcc0c4;
+  padding:5px;
+}
+
+
