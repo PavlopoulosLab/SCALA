@@ -780,7 +780,7 @@ server <- function(input, output, session) {
         
         output$genesCounts <- renderPlotly(
           {
-            p <- FeatureScatter(init_seurat_object, feature1 = "nCount_RNA", feature2 = "nFeature_RNA", group.by = "orig.ident", 
+            p <- FeatureScatter(init_seurat_object, feature1 = "nCount_RNA", feature2 = "nFeature_RNA", group.by = "orig.ident", raster = F,
                                 cols = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(init_seurat_object@meta.data[, 'orig.ident']))))
             gp <- plotly::ggplotly(p)
             print(gp)
@@ -871,7 +871,7 @@ server <- function(input, output, session) {
         )
         output$filteredMtCounts <- renderPlotly(
           {
-            p <- FeatureScatter(seurat_object, feature1 = "nCount_RNA", feature2 = "percent.mt", group.by = input$qcColorBy, 
+            p <- FeatureScatter(seurat_object, feature1 = "nCount_RNA", feature2 = "percent.mt", group.by = input$qcColorBy, raster = F, 
                                 cols = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(seurat_object@meta.data[, input$qcColorBy]))))
             gp <- plotly::ggplotly(p)
             print(gp)
@@ -879,7 +879,7 @@ server <- function(input, output, session) {
         )
         output$filteredGenesCounts <- renderPlotly(
           {
-            p <- FeatureScatter(seurat_object, feature1 = "nCount_RNA", feature2 = "nFeature_RNA", group.by = input$qcColorBy, 
+            p <- FeatureScatter(seurat_object, feature1 = "nCount_RNA", feature2 = "nFeature_RNA", group.by = input$qcColorBy, raster = F,
                                 cols = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(seurat_object@meta.data[, input$qcColorBy]))))
             gp <- plotly::ggplotly(p)
             print(gp)
@@ -2068,7 +2068,7 @@ observeEvent(input$findMarkersFPConfirm, {
                             order = order_exp, reduction = input$findMarkersReductionType, max.cutoff = maxq, min.cutoff = minq)
         
         plot <- FeaturePlot(seurat_object, features = geneS, pt.size = 1.5, label = show_label, label.size = 5, cols = c("lightgrey", "red"), 
-                            order = order_exp, reduction = input$findMarkersReductionType, max.cutoff = maxq, min.cutoff = minq) + 
+                            order = order_exp, reduction = input$findMarkersReductionType, max.cutoff = maxq, min.cutoff = minq, raster = F) + 
           xlim(min(plot_temp$data[label_x]), max(plot_temp$data[label_x])) + ylim(min(plot_temp$data[label_y]), max(plot_temp$data[label_y])) +
           theme_bw() +
           theme(axis.text.x = element_text(face = "bold", color = "black", size = 25, angle = 0),
@@ -2133,7 +2133,7 @@ observeEvent(input$findMarkersViolinConfirm, {
             
             geneS <- input$findMarkersGeneSelect2
             print(geneS)
-            plot <- VlnPlot(seurat_object, features = geneS, pt.size = 0,
+            plot <- VlnPlot(seurat_object, features = geneS, pt.size = 0, raster = F,
                             cols = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(seurat_object@meta.data[, 'seurat_clusters'])))) +
               theme_bw() +
               theme(axis.text.x = element_text(face = "bold", color = "black", size = 25, angle = 0),
@@ -4623,7 +4623,7 @@ output$findMotifsATACExport <- downloadHandler(
                             order = order_exp, reduction = input$findMarkersFeaturePairReductionType, blend = TRUE, max.cutoff = maxq, min.cutoff = minq)
         
         plot <- FeaturePlot(seurat_object, features = c(geneS1, geneS2), blend.threshold = blendThr, 
-                            pt.size = 1.5, label = show_label, label.size = 5, cols = c("lightgrey", "red", "dodgerblue4"), 
+                            pt.size = 1.5, label = show_label, label.size = 5, cols = c("lightgrey", "red", "dodgerblue4"), raster = F,
                             order = order_exp, reduction = input$findMarkersFeaturePairReductionType, blend = TRUE, max.cutoff = maxq, min.cutoff = minq) +
           theme_bw() +
           theme(axis.text.x = element_text(face = "bold", color = "black", size = 25, angle = 0),
@@ -4755,7 +4755,7 @@ output$findMotifsATACExport <- downloadHandler(
             axis.title.x = element_blank(),
             legend.position = "none") +
           labs(title = "", y="Genes detected/cell")
-        plotly::ggplotly(p, tooltip = c("x", "y")) 
+        plotly::ggplotly(p, tooltip = c("x", "y"))
       }
     )
     
@@ -4790,7 +4790,7 @@ output$findMotifsATACExport <- downloadHandler(
     
     output$filteredMtCounts <- renderPlotly(
       {
-        p <- FeatureScatter(seurat_object, feature1 = "nCount_RNA", feature2 = "percent.mt", group.by = "orig.ident", 
+        p <- FeatureScatter(seurat_object, feature1 = "nCount_RNA", feature2 = "percent.mt", group.by = "orig.ident", raster = F,
                             cols = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(seurat_object@meta.data[, 'orig.ident']))))
         gp <- plotly::ggplotly(p)
         print(gp)
@@ -4799,7 +4799,7 @@ output$findMotifsATACExport <- downloadHandler(
     
     output$filteredGenesCounts <- renderPlotly(
       {
-        p <- FeatureScatter(seurat_object, feature1 = "nCount_RNA", feature2 = "nFeature_RNA", group.by = "orig.ident", 
+        p <- FeatureScatter(seurat_object, feature1 = "nCount_RNA", feature2 = "nFeature_RNA", group.by = "orig.ident", raster = F,
                             cols = colorRampPalette(brewer.pal(12, "Paired"))(length(unique(seurat_object@meta.data[, 'orig.ident']))))
         gp <- plotly::ggplotly(p)
         print(gp)

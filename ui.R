@@ -1194,7 +1194,7 @@ ui <- dashboardPage(
                               tabPanel("Barplot",
                                        div(id="cellCycleBarplot_loader",
                                            shinycssloaders::withSpinner(
-                                             plotlyOutput(outputId = "cellCycleBarplot", height = "1100px")
+                                             plotlyOutput(outputId = "cellCycleBarplot", height = "3100px")
                                            )
                                        )
                               )
