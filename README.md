@@ -294,6 +294,21 @@ https://github.com/aertslab/pySCENIC/blob/master/resources/hs_hgnc_curated_tfs.t
 
 
 
+---
+
+## 📚 Publication
+
+**SCALA: A complete solution for multimodal analysis of single-cell Next Generation Sequencing data**
+Tzaferis C., Karatzas E., Baltoumas F.A., Pavlopoulos G.A., Kollias G., Konstantopoulos D.
+*Computational and Structural Biotechnology Journal*. 2023 Oct 20;21:5382–5393. doi: [10.1016/j.csbj.2023.10.032](https://doi.org/10.1016/j.csbj.2023.10.032)
+PMID: [38022693](https://pubmed.ncbi.nlm.nih.gov/38022693/)  PMCID: [PMC10651449](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC10651449/)
+
+---
+
+## 📄 License
+
+This project is licensed under the **MIT License**. See [LICENSE](LICENSE) for details.
+
 
 
 
