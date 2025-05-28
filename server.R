@@ -4704,12 +4704,7 @@ output$findMotifsATACExport <- downloadHandler(
   
   updateGeneSearchFP <- function()
   {
-    if(DefaultAssay(seurat_object) == "RNA")
-      total_genes <- rownames(seurat_object@assays$RNA@counts)
-    else if(DefaultAssay(seurat_object) == "tfactivity")
-      total_genes <- rownames(seurat_object@assays$tfactivity@counts)
-    else if(DefaultAssay(seurat_object) == "integrated")
-      total_genes <- rownames(seurat_object@assays$integrated@counts)
+    total_genes <- rownames(seurat_object[[DefaultAssay(seurat_object)]]@counts)
     
     #get signature names or numeric columns
     colnames(seurat_object@meta.data)
